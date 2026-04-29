@@ -1,0 +1,33 @@
+{
+  "name": "financial-agent",
+  "version": "1.0.0",
+  "description": "财务综述 Agent - 智能财务分析 Web 应用",
+  "main": "main.py",
+  "scripts": {
+    "start": "uvicorn main:app --host 0.0.0.0 --port 8000",
+    "dev": "uvicorn main:app --reload"
+  },
+  "dependencies": {
+    "fastapi": "^0.109.0",
+    "uvicorn": "^0.27.0",
+    "pandas": "^2.1.4",
+    "numpy": "^1.26.3",
+    "openpyxl": "^3.1.2",
+    "python-multipart": "^0.0.6"
+  },
+  "cloudbase": {
+    "framework": {
+      "name": "financial-agent",
+      "plugins": {
+        "server": {
+          "inputs": {
+            "serviceName": "financial-agent",
+            "servicePort": 8000
+          },
+          "deployCommand": "pip install -r requirements.txt",
+          "startCommand": "uvicorn main:app --host 0.0.0.0 --port 8000"
+        }
+      }
+    }
+  }
+}

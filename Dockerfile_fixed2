@@ -1,0 +1,34 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 安装系统工具（curl用于healthcheck）
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
+# 安装依赖（使用清华镜像）
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt --timeout 600 || \
+    pip install --no-cache-dir -r requirements.txt --timeout 600
+
+# 复制后端代码
+COPY backend/main.py .
+COPY backend/data_loader.py .
+COPY backend/calculators.py .
+COPY backend/agent.py .
+COPY backend/api_extensions.py .
+COPY backend/special_logic.py .
+COPY backend/vip_progress.py .
+COPY backend/admin_api.py .
+COPY backend/cloudbase-config.json .
+
+# 复制前端文件（供后端静态文件服务）
+COPY frontend/ /app/frontend/
+
+# 复制数据文件
+COPY 管理报表.xlsx .
+
+# 暴露端口
+EXPOSE 80
+
+# 启动命令
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]

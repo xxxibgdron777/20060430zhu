@@ -1,0 +1,3629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>财务综述 Agent</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="/static/echarts.min.js"></script>
+<style>
+:root {
+  /* 苹果风格配色系统 */
+  --bg: #F2F2F7;              /* 苹果默认全局浅灰 */
+  --white: #FFFFFF;            /* 纯白卡片背景 */
+  --gray-secondary: #E5E5EA;   /* 次级卡片/分组区域 */
+  --text: #1d1d1f;             /* 主文本 */
+  --text2: #6e6e73;            /* 次要文本 */
+  --text3: #aeaeb2;            /* 辅助文本 */
+  --green: #34C759;            /* 苹果绿色 */
+  --red: #FF3B30;              /* 苹果红色 */
+  --accent: #FF9500;            /* 苹果橙色 */
+  --accent-light: #FFF8E7;      /* 强调色浅色 */
+  --blue: #007AFF;              /* 苹果蓝色 */
+  --amber: #E6A23C;            /* 土黄色 */
+  --orange: #F56C36;            /* 橙色 */
+  --purple: #AF52DE;            /* 苹果紫色 */
+  --radius: 12px;              /* 卡片圆角 */
+  --radius-sm: 8px;            /* 按钮圆角 */
+  --shadow: 0 1px 3px rgba(0,0,0,.06);       /* 轻量阴影 */
+  --shadow-lg: 0 4px 16px rgba(0,0,0,.1);    /* 悬浮加深阴影 */
+  --glass: rgba(255,255,255,.78);
+  --glass-border: 1px solid rgba(255,255,255,.5);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Hiragino Sans GB', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+/* === Nav === */
+.nav { position: sticky; top: 0; z-index: 100; backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); background: var(--glass); border-bottom: var(--glass-border); }
+.nav-inner { max-width: 1480px; margin: 0 auto; padding: 10px 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.nav-brand { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; letter-spacing: -.3px; }
+.nav-brand i { color: var(--accent); font-size: 20px; }
+.nav-brand .subtitle { font-size: 11px; font-weight: 700; color: var(--red); margin-left: 8px; vertical-align: middle; }
+.tabs { display: flex; gap: 4px; background: rgba(0,0,0,.04); padding: 4px; border-radius: 14px; }
+.tab-btn { padding: 7px 18px; border: none; background: 0 0; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text2); transition: .25s; display: flex; align-items: center; gap: 6px; }
+.tab-btn.active { background: var(--white); color: var(--text); box-shadow: 0 1px 6px rgba(0,0,0,.08); }
+.tab-btn i { font-size: 12px; }
+
+/* === Layout === */
+.content { max-width: 1480px; margin: 0 auto; padding: 20px 28px 48px; }
+.tab-panel { display: none; } .tab-panel.active { display: block; animation: fadeUp .3s ease; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* === Controls === */
+.controls { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; }
+.mode-switch { display: flex; gap: 3px; background: rgba(0,0,0,.04); padding: 3px; border-radius: 14px; }
+.mode-btn { padding: 6px 18px; border: none; background: 0 0; border-radius: 11px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text2); transition: .2s; }
+.mode-btn.active { background: var(--accent); color: #1E2A3A; font-weight: 600; }
+.month-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.month-pill { padding: 5px 13px; border: none; background: var(--white); border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 500; color: var(--text2); box-shadow: 0 1px 3px rgba(0,0,0,.05); transition: .15s; }
+.month-pill.active { background: var(--accent); color: #1E2A3A; font-weight: 600; box-shadow: 0 2px 8px rgba(246,180,62,.3); }
+.month-pill:hover:not(.active) { background: #eee; }
+.month-pill.special { font-weight: 600; }
+
+/* === KPI Cards - 苹果风格布局（优化间距） === */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; margin-bottom: 28px; }
+@media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; } }
+@media (max-width: 600px) { .kpi-grid { grid-template-columns: 1fr; gap: 20px; } }
+
+/* KPI卡片主体 */
+.kpi-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  transition: box-shadow .25s, transform .2s;
+  overflow: hidden;
+}
+.kpi-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.1); transform: translateY(-2px); }
+
+/* 第一行：大字标题 */
+.kpi-header { font-size: 17px; font-weight: 600; color: var(--text2); margin-bottom: 8px; letter-spacing: .3px; }
+
+/* 第一行：大数字 */
+.kpi-value { font-size: 28px; font-weight: 700; letter-spacing: -.8px; line-height: 1.2; margin-bottom: 0; }
+.kpi-value .unit { font-size: 13px; font-weight: 400; color: var(--text2); margin-left: 4px; }
+
+/* 同比/环比/增长率行 - 背景框 */
+.kpi-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(0,0,0,.05);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-top: 12px;
+}
+.kpi-row:last-child { margin-bottom: 0; }
+
+/* 箭头图标 */
+.kpi-row .arrow { font-size: 12px; }
+
+/* 百分比数值 */
+.kpi-row .pct { font-weight: 600; }
+
+/* 括号内文字 - 灰色斜体小字 */
+.kpi-row .prev { font-size: 10px; color: var(--text3); font-style: italic; font-weight: normal; }
+
+/* 累计模式布局 */
+.kpi-row.kpi-cumulative {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.kpi-row.kpi-cumulative .cum-left,
+.kpi-row.kpi-cumulative .cum-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+.kpi-row.kpi-cumulative .cum-right {
+  justify-content: flex-end;
+}
+
+/* 正值绿色 */
+.kpi-row.positive .arrow { color: var(--green); }
+.kpi-row.positive .pct { color: var(--green); }
+.positive { color: var(--green); } 
+
+/* 负值红色 */
+.kpi-row.negative .arrow { color: var(--red); }
+.kpi-row.negative .pct { color: var(--red); }
+.negative { color: var(--red); }
+
+/* === 总收入卡片 - 三行结构 === */
+.income-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  transition: box-shadow .25s, transform .2s;
+}
+.income-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.1); transform: translateY(-2px); }
+
+/* 第一行：大字标题 + 大数字 */
+.income-card-header { font-size: 20px; font-weight: 700; color: var(--amber); margin-bottom: 10px; letter-spacing: .3px; }
+.income-card-value { font-size: 36px; font-weight: 800; color: var(--blue); letter-spacing: -1px; line-height: 1.2; margin-bottom: 0; }
+.income-card-value .unit { font-size: 15px; font-weight: 400; color: var(--text2); margin-left: 4px; }
+
+/* 同比/环比行 - 极浅灰圆角背景 */
+.income-card-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(0,0,0,.05);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-top: 10px;
+}
+.income-card-row:last-child { margin-bottom: 0; }
+.income-card-row .arrow { font-size: 12px; }
+.income-card-row .pct { font-weight: 600; color: var(--orange); }
+.income-card-row .prev { font-size: 10px; color: var(--text3); font-style: italic; font-weight: normal; }
+
+/* 累计模式左右布局 */
+.income-card-row.kpi-cumulative {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.income-card-row.kpi-cumulative .cum-left,
+.income-card-row.kpi-cumulative .cum-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+.income-card-row.kpi-cumulative .cum-right {
+  justify-content: flex-end;
+}
+
+/* 正值绿色/负值红色 */
+.income-card-row.positive .arrow { color: var(--green); }
+.income-card-row.positive .pct { color: var(--green); }
+.income-card-row.negative .arrow { color: var(--red); }
+.income-card-row.negative .pct { color: var(--red); }
+
+/* 四张卡片颜色 - 总收入:土黄, 总支出:蓝, 总结余:绿, 结余率:橙 */
+.card-income-header { color: var(--amber) !important; }
+.card-income-value { color: var(--amber) !important; }
+.card-expense-header { color: var(--blue) !important; }
+.card-balance-header { color: var(--green) !important; }
+.card-rate-header { color: var(--orange) !important; }
+
+.card-expense-value { color: var(--blue) !important; }
+.card-balance-value { color: var(--green) !important; }
+.card-rate-value { color: var(--orange) !important; }
+
+.card-expense .kpi-row.positive .arrow,
+.card-expense .kpi-row.positive .pct { color: var(--blue) !important; }
+.card-balance .kpi-row.positive .arrow,
+.card-balance .kpi-row.positive .pct { color: var(--green) !important; }
+.card-rate .kpi-row.positive .arrow,
+.card-rate .kpi-row.positive .pct { color: var(--orange) !important; }
+
+/* KPI badge旧样式保留兼容 */
+.kpi-badge { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: var(--radius-sm); background: rgba(0,0,0,.025); font-size: 12px; font-weight: 500; line-height: 1.4; margin-bottom: 6px; }
+.kpi-badge:last-child { margin-bottom: 0; }
+.kpi-badge .arrow { font-size: 10px; }
+.kpi-badge .prev { font-size: 11px; color: var(--text3); font-style: italic; }
+
+/* === Charts === */
+.charts-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 28px;
+  margin-bottom: 28px;
+}
+@media (max-width: 900px) { .charts-row { grid-template-columns: 1fr; gap: 24px; } }
+
+/* 图表卡片主体 - 统一视觉风格 */
+.chart-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  transition: box-shadow .25s, transform .2s;
+}
+.chart-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.1); transform: translateY(-2px); }
+
+.chart-title {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+}
+.chart-title i { color: var(--accent); font-size: 15px; }
+.chart-box { width: 100%; height: 280px; }
+
+/* === 趋势图分栏 === */
+.trend-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+.trend-sub-chart { background: rgba(0,0,0,.02); border-radius: 10px; padding: 12px; }
+.trend-sub-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+.trend-legend-row { display: flex; gap: 10px; margin-top: 6px; }
+.trend-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 3px 8px;
+  border: 1.5px solid;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.6);
+}
+.trend-legend-item i { font-size: 10px; }
+@media (max-width: 900px) { .trend-grid { grid-template-columns: 1fr 1fr; gap: 12px; } .trend-legend-item { font-size: 10px; padding: 2px 6px; } }
+
+/* === Tables === */
+/* 响应式表格容器 - Grid布局避免横向滚动 */
+.table-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  transition: box-shadow .25s;
+}
+.table-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.1); }
+
+.table-wrap { overflow-x: auto; border-radius: var(--radius-sm); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; /* 苹果风格正文14px */ }
+th, td { padding: 12px 14px; text-align: left; white-space: nowrap; border-bottom: 1px solid #f0f0f0; }
+th { background: #fafafa; font-weight: 600; font-size: 12px; color: var(--text2); position: sticky; top: 0; z-index: 1; }
+tbody tr:hover { background: rgba(0,122,255,.04); }
+tbody tr { cursor: default; transition: background .1s; }
+tbody tr.clickable { cursor: pointer; }
+tbody tr.clickable:hover { background: rgba(255,149,0,.08); }
+.back-btn { padding: 7px 16px; border: 1px solid #e0e0e0; background: var(--white); border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; color: var(--text2); margin-bottom: 10px; transition: .15s; display: inline-flex; align-items: center; gap: 5px; }
+.back-btn:hover { background: #f5f5f5; border-color: #ccc; }
+
+/* === 树形表格样式 === */
+/* 展开/收起图标 */
+.tree-toggle {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+  color: var(--text2);
+  font-size: 10px;
+  margin-right: 6px;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.tree-toggle.expanded { transform: rotate(90deg); }
+.tree-toggle.empty { visibility: hidden; }
+
+/* 树形层级缩进 */
+.tree-indent-1 { padding-left: 28px !important; }
+.tree-indent-2 { padding-left: 48px !important; }
+.tree-indent-3 { padding-left: 68px !important; }
+
+/* 树形行 */
+.tree-row { display: flex; align-items: center; }
+.tree-row .tree-label {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+/* 展开加载中的占位行 */
+.tree-loading {
+  color: var(--text3);
+  font-style: italic;
+  font-size: 12px;
+  padding: 8px 0 8px 48px;
+}
+.tree-loading::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #e0e0e0;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 子行默认隐藏 */
+.tree-children { display: none; }
+.tree-children.show { display: table-row-group; }
+
+/* 树形表格hover效果 */
+tbody tr.tree-parent:hover { background: rgba(255,149,0,.06); }
+tbody tr.tree-child:hover { background: rgba(0,122,255,.04); }
+tbody tr.tree-grandchild:hover { background: rgba(0,122,255,.04); }
+
+/* 一级行高亮 */
+.tree-parent { background: rgba(255,149,0,.03); }
+.tree-parent td:first-child { border-left: 3px solid var(--accent); }
+
+/* 展开按钮容器 */
+.tree-toggle-area { width: 28px; text-align: center; }
+
+/* === 新表格布局样式 - 苹果风格 === */
+/* 数字列宽度 */
+.num-col { width: 150px; text-align: right !important; }
+
+/* 数字单元格 - 两行布局 */
+.num-cell {
+  padding: 10px 14px !important;
+  vertical-align: top;
+  text-align: right;
+}
+
+/* 主数字行 - 18px粗体（苹果风格大数值） */
+.num-main {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+/* 同比行 - 浅灰圆角背景（透明度30%） */
+.yoy-row {
+  display: block;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 10px;  /* 脚注10px */
+  line-height: 1.4;
+  margin-top: 3px;
+}
+
+/* 同比标签 */
+.yoy-label {
+  color: var(--text3);
+  margin-right: 4px;
+}
+
+/* 同比数值 - 10px斜体不加粗，深灰色（收入/支出/管理费） */
+.yoy-value {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 10px;
+  color: #666;  /* 深灰色，不区分增减 */
+}
+
+/* 结余列涨跌颜色：增加绿色，减少红色 */
+.yoy-value.positive { color: #34C759; font-style: italic; } /* 结余增加用绿色 */
+.yoy-value.negative { color: #FF3B30; font-style: italic; } /* 结余减少用红色 */
+
+/* 结余单元格 - 主数字行也加斜体 */
+.balance-cell .num-main {
+  font-size: 18px;
+  font-weight: 700;
+  font-style: italic;  /* 损益斜体 */
+}
+
+/* 表格行高增加 */
+tbody tr { height: auto; }
+tbody tr td { padding-top: 14px; padding-bottom: 14px; }
+
+/* === Special Panel === */
+.special-panel { margin-top: 16px; }
+.share-btn { padding: 7px 16px; background: var(--blue); color: #fff; border: none; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: .15s; }
+.share-btn:hover { opacity: .85; }
+
+/* === Q&A === */
+.qa-search { display: flex; gap: 10px; margin-bottom: 18px; }
+.qa-input { flex: 1; padding: 12px 18px; border: 1.5px solid #e5e5e5; border-radius: 16px; font-size: 14px; outline: 0; transition: .2s; background: var(--white); }
+.qa-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(246,180,62,.12); }
+.qa-btn { padding: 12px 28px; background: var(--accent); color: #1E2A3A; border: none; border-radius: 16px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: .15s; }
+.qa-btn:hover { opacity: .85; }
+.preset-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.preset-btn { padding: 8px 16px; background: var(--white); border: 1.5px solid #e5e5e5; border-radius: 22px; font-size: 12px; cursor: pointer; transition: .15s; font-weight: 500; }
+.preset-btn:hover { background: var(--accent-light); border-color: var(--accent); }
+.drill-link { color: var(--blue); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.drill-link:hover { color: #0056b3; }
+
+/* === Budget === */
+.budget-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+.upload-label { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--accent); color: #1E2A3A; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: .15s; }
+.upload-label:hover { opacity: .85; }
+.admin-btn { padding: 8px 16px; background: var(--white); border: 1.5px solid #e5e5e5; border-radius: 10px; font-size: 12px; cursor: pointer; font-weight: 500; transition: .15s; }
+.admin-btn:hover { border-color: #ccc; }
+.admin-area { display: none; align-items: center; gap: 10px; }
+.admin-area.show { display: flex; }
+.over-budget td { background: #FFF0F0 !important; }
+.team-admin-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f8f9fa; border-radius: 12px; margin-bottom: 16px; }
+.team-login-area { display: flex; align-items: center; gap: 12px; }
+.team-admin-show { display: flex; align-items: center; gap: 8px; }
+.sync-btn { padding: 8px 16px; background: var(--green); color: #fff; border: none; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+/* === Modal === */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.3); backdrop-filter: blur(8px); z-index: 200; justify-content: center; align-items: center; }
+.modal-overlay.show { display: flex; animation: fadeIn .2s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal { background: var(--white); border-radius: var(--radius); padding: 28px; width: 92vw; max-width: 1080px; max-height: 88vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,.18); animation: modalUp .3s ease; }
+@keyframes modalUp { from { opacity: 0; transform: translateY(20px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.modal-header h3 { font-size: 18px; font-weight: 700; }
+.modal-close { width: 34px; height: 34px; border: none; background: rgba(0,0,0,.05); border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: .15s; }
+.modal-close:hover { background: rgba(0,0,0,.1); }
+.notes-area { width: 100%; min-height: 80px; padding: 12px 16px; border: 1.5px solid #e5e5e5; border-radius: var(--radius-sm); font-size: 13px; resize: vertical; outline: 0; font-family: inherit; line-height: 1.6; transition: .2s; }
+.notes-area:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(246,180,62,.1); }
+.suggestion-item { padding: 10px 14px; margin-bottom: 8px; border-radius: 10px; background: var(--accent-light); font-size: 13px; line-height: 1.6; border-left: 3px solid var(--accent); }
+.suggestion-item.warning { background: #FFF3E0; border-left-color: #FF9500; }
+.suggestion-item.danger { background: #FFE5E5; border-left-color: #FF3B30; }
+.suggestion-item.info { background: #E8F4FD; border-left-color: #007AFF; }
+.analysis-team-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+.analysis-team-row:last-child { border-bottom: none; }
+.analysis-team-name { font-weight: 600; font-size: 13px; min-width: 120px; }
+.analysis-team-stats { display: flex; gap: 16px; font-size: 12px; color: var(--text2); }
+.analysis-team-balance { font-weight: 600; min-width: 80px; text-align: right; }
+.analysis-team-balance.positive { color: var(--green); }
+.analysis-team-balance.negative { color: var(--red); }
+.analysis-summary { display: flex; gap: 20px; padding: 12px 0; border-bottom: 2px solid var(--accent-light); margin-bottom: 14px; }
+.analysis-summary-item { display: flex; flex-direction: column; }
+.analysis-summary-label { font-size: 11px; color: var(--text3); margin-bottom: 2px; }
+.analysis-summary-value { font-size: 16px; font-weight: 600; }
+.analysis-summary-value.positive { color: var(--green); }
+.analysis-summary-value.negative { color: var(--red); }
+
+/* === AI Suggestions（响应式 Grid + minmax） === */
+.ai-suggestions { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.suggestion-card { background: var(--white); border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06); border-left: 3px solid var(--accent); transition: box-shadow .2s, transform .2s; }
+.suggestion-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); transform: translateY(-1px); }
+.suggestion-card.warning { border-left-color: var(--accent); }
+.suggestion-card.danger { border-left-color: var(--red); }
+.suggestion-card.info { border-left-color: var(--blue); }
+.suggestion-card h4 { font-size: 13px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.suggestion-card p { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+.suggestion-card .action-btn { padding: 5px 12px; background: var(--accent-light); border: 1px solid var(--accent); border-radius: 8px; font-size: 11px; cursor: pointer; color: var(--text); }
+.suggestion-card .action-btn:hover { background: var(--accent); color: #fff; }
+
+/* === Utility === */
+.loading { text-align: center; padding: 40px; color: var(--text3); }
+.spinner { display: inline-block; width: 22px; height: 22px; border: 2.5px solid #e5e5e5; border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.empty-state { text-align: center; padding: 48px 20px; color: var(--text3); }
+.empty-state i { font-size: 36px; display: block; margin-bottom: 14px; }
+.sort-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+.comparison-card { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 14px; background: rgba(0,0,0,.02); border-radius: var(--radius-sm); }
+
+/* === Cumulative Mode === */
+.cumulative-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.cumulative-left, .cumulative-right { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.cumulative-right .contribution { font-size: 11px; color: var(--text3); }
+
+/* 下钻面板（产品/项目明细） */
+.drill-panel { background: var(--white); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+.drill-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.drill-panel-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.drill-panel-title .breadcrumb { color: var(--text3); font-weight: 400; font-size: 14px; }
+.drill-panel-content { }
+.drill-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.drill-table th, .drill-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+.drill-table th { background: #fafafa; font-weight: 600; font-size: 11px; color: var(--text2); position: sticky; top: 0; }
+.drill-table tbody tr:hover { background: rgba(255,149,0,.04); cursor: pointer; }
+.drill-table .num { text-align: right; font-weight: 500; }
+.drill-table .num.balance.positive { color: var(--green); font-weight: 600; }
+.drill-table .num.balance.negative { color: var(--red); font-weight: 600; }
+.drill-table .yoy-cell { font-size: 10px; color: var(--text3); font-style: italic; }
+.drill-table .yoy-cell.positive { color: var(--green); }
+.drill-table .yoy-cell.negative { color: var(--red); }
+
+/* 详情按钮样式 */
+.detail-btn {
+  padding: 4px 10px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: .15s;
+}
+.detail-btn:hover {
+  opacity: .8;
+  transform: scale(1.05);
+}
+.detail-btn i {
+  pointer-events: none;
+}
+
+/* 详情弹窗样式 */
+.detail-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  backdrop-filter: blur(6px);
+  z-index: 300;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn .2s;
+}
+.detail-modal-content {
+  background: var(--white);
+  border-radius: 16px;
+  width: 95vw;
+  max-width: 1100px;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  animation: modalUp .3s ease;
+}
+.detail-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid #eee;
+  background: linear-gradient(135deg, var(--accent-light) 0%, #fff 100%);
+}
+.detail-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+.detail-modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(0,0,0,.05);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: .15s;
+}
+.detail-modal-close:hover {
+  background: rgba(0,0,0,.12);
+}
+.detail-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(90vh - 70px);
+}
+
+/* 弹窗内月份分列表格 */
+.detail-tree-table {
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.detail-monthly-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 1400px;
+}
+
+.detail-monthly-table th,
+.detail-monthly-table td {
+  padding: 8px 10px;
+  text-align: right;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+}
+
+.detail-monthly-table th {
+  background: #fafafa;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--text2);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.detail-monthly-table th.sticky-col,
+.detail-monthly-table td.sticky-col {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 1;
+  text-align: left;
+  min-width: 140px;
+  border-right: 2px solid #e0e0e0;
+}
+
+.detail-monthly-table th.sticky-col {
+  background: #fafafa;
+  z-index: 3;
+}
+
+.detail-monthly-table .num-col {
+  min-width: 70px;
+}
+
+.detail-monthly-table .highlight-col {
+  background: rgba(0,122,255,0.05);
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.detail-monthly-table .highlight-cell {
+  background: rgba(0,122,255,0.03);
+}
+
+.detail-modal-body .loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--text2);
+}
+.detail-modal-body .loading i {
+  font-size: 24px;
+  margin-bottom: 10px;
+  display: block;
+}
+.detail-summary {
+  margin-bottom: 16px;
+}
+.detail-summary h4 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent);
+}
+/* 小字版KPI卡片 - 放在表格上方 */
+.detail-kpi-mini-grid {
+  display: flex;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+.detail-kpi-mini-card {
+  flex: 1;
+  min-width: 80px;
+  text-align: center;
+  padding: 6px 8px;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+.detail-kpi-mini-label {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 2px;
+}
+.detail-kpi-mini-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.detail-kpi-mini-value .unit {
+  font-size: 10px;
+  font-weight: 400;
+  margin-left: 1px;
+}
+.detail-kpi-mini-value.positive { color: var(--green); }
+.detail-kpi-mini-value.negative { color: var(--red); }
+
+/* 可收起区块样式 */
+.section-header.collapsible {
+  cursor: pointer;
+  user-select: none;
+}
+.section-header.collapsible:hover {
+  background: rgba(0,0,0,0.03);
+}
+.section-toggle {
+  display: inline-block;
+  width: 16px;
+  font-size: 10px;
+  color: var(--text2);
+  transition: transform 0.2s;
+  text-align: center;
+  cursor: pointer;
+}
+.collapsible-body[data-for="income"] { display: table-row-group; }
+.collapsible-body[data-for="expense"] { display: table-row-group; }
+.collapsible-body[data-for="fee"] { display: table-row-group; }
+/* 收入区块标题 - 绿色 */
+.income-header td { background: rgba(52,199,89,0.08) !important; }
+.income-header .row-name { color: #22863a; font-weight: 600; }
+/* 支出区块标题 - 红色 */
+.expense-header td { background: rgba(255,59,48,0.08) !important; }
+.expense-header .row-name { color: #c82333; font-weight: 600; }
+/* 管理费区块标题 - 蓝色 */
+.fee-header td { background: rgba(0,122,255,0.08) !important; }
+.fee-header .row-name { color: #007aff; font-weight: 600; }
+
+/* 分析建议区域 */
+.detail-analysis-section {
+  margin-top: 20px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+.detail-analysis-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.detail-analysis-title i {
+  margin-right: 6px;
+  color: var(--accent);
+}
+.detail-analysis-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.analysis-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.analysis-item i {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.analysis-item.warning {
+  background: rgba(255,149,0,0.1);
+  color: #d97706;
+  border-left: 3px solid #ff9500;
+}
+.analysis-item.warning i { color: #ff9500; }
+.analysis-item.success {
+  background: rgba(52,199,89,0.1);
+  color: #22863a;
+  border-left: 3px solid #34C759;
+}
+.analysis-item.success i { color: #34C759; }
+.analysis-item.info {
+  background: rgba(0,122,255,0.08);
+  color: #007aff;
+  border-left: 3px solid #007aff;
+}
+.analysis-item.info i { color: #007aff; }
+
+/* 注释编辑区域 */
+.detail-note-section {
+  margin-top: 16px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+}
+.detail-note-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.detail-note-title i {
+  margin-right: 6px;
+  color: var(--accent);
+}
+.detail-note-input {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 12px;
+  font-size: 13px;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.6;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.detail-note-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255,149,0,0.15);
+}
+.detail-note-hint {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 6px;
+}
+.detail-note-hint i {
+  margin-right: 4px;
+}
+
+.detail-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.detail-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+  border-radius: 14px;
+  padding: 18px;
+  text-align: center;
+  border: 1px solid #eee;
+  transition: transform .2s, box-shadow .2s;
+}
+.detail-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+}
+.detail-card-label {
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.detail-card-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+.detail-section {
+  margin-bottom: 24px;
+}
+.detail-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.detail-section-title i {
+  color: var(--accent);
+}
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 16px;
+}
+.detail-table th, .detail-table td {
+  padding: 10px 12px;
+  text-align: right;
+  border-bottom: 1px solid #f0f0f0;
+}
+.detail-table th {
+  background: #fafafa;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--text2);
+  text-align: left;
+}
+.detail-table th:first-child, .detail-table td:first-child {
+  text-align: left;
+}
+.detail-table tbody tr:hover {
+  background: rgba(255,149,0,.04);
+}
+.detail-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.detail-kpi-card {
+  background: linear-gradient(135deg, var(--accent-light) 0%, #fff 100%);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid rgba(255,149,0,.2);
+}
+.detail-kpi-label {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+.detail-kpi-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.detail-kpi-value.positive {
+  color: var(--green);
+}
+.detail-kpi-value.negative {
+  color: var(--red);
+}
+.detail-trend {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 11px;
+}
+.detail-trend-item {
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(0,0,0,.05);
+}
+.detail-trend-item.up {
+  color: var(--green);
+}
+.detail-trend-item.down {
+  color: var(--red);
+}
+.detail-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.detail-tab {
+  padding: 8px 16px;
+  border: 1px solid #e5e5e5;
+  background: #fff;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all .2s;
+}
+.detail-tab:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.detail-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+/* === 备注编辑区域 === */
+.notes-edit-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.notes-edit-area .tips-text {
+  color: #fff;
+  font-size: 13px;
+  flex: 0 0 auto;
+  min-width: 200px;
+  max-width: 400px;
+}
+.notes-edit-area .tips-text span {
+  font-weight: 600;
+}
+.notes-edit-area .editable-note {
+  outline: none;
+  border-radius: 4px;
+  padding: 2px 6px;
+  transition: all .2s;
+}
+.notes-edit-area.unlocked .editable-note {
+  background: rgba(255,255,255,0.95);
+  color: #333;
+  border: 2px solid rgba(255,255,255,0.6);
+}
+.notes-edit-area.unlocked .editable-note:focus {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+}
+.notes-edit-area .edit-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.notes-edit-area .password-input {
+  padding: 6px 12px;
+  border: 2px solid rgba(255,255,255,0.6);
+  border-radius: 8px;
+  font-size: 13px;
+  background: transparent;
+  color: #fff;
+  width: 120px;
+  outline: none;
+}
+.notes-edit-area .password-input::placeholder {
+  color: rgba(255,255,255,0.7);
+}
+.notes-edit-area .password-input:focus {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+}
+.notes-edit-area .confirm-btn {
+  padding: 6px 14px;
+  background: rgba(255,255,255,0.95);
+  color: #667eea;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+}
+.notes-edit-area .confirm-btn:hover {
+  background: #fff;
+  transform: scale(1.05);
+}
+.notes-edit-area .edit-note-input {
+  padding: 8px 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-radius: 8px;
+  font-size: 13px;
+  background: rgba(255,255,255,0.95);
+  color: #333;
+  flex: 1;
+  min-width: 200px;
+  outline: none;
+}
+.notes-edit-area .edit-note-input:focus {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+}
+.notes-edit-area.unlocked .edit-area {
+  display: none;
+}
+.notes-edit-area.locked .edit-note-input {
+  display: none;
+}
+.notes-edit-area.locked .edit-status {
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<!-- 全局登录页面 -->
+<div id="loginOverlay" style="position:fixed;inset:0;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;align-items:center;justify-content:center;z-index:99999">
+  <div style="background:#fff;border-radius:20px;padding:40px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center">
+    <i class="fa-solid fa-chart-pie" style="font-size:48px;color:#667eea;margin-bottom:20px"></i>
+    <h2 style="margin:0 0 8px;font-size:22px;color:#333">财务综述 Agent</h2>
+    <p style="margin:0 0 24px;color:#888;font-size:14px">请输入访问密码</p>
+    <input type="password" id="globalPwd" placeholder="请输入密码" style="width:100%;padding:14px 16px;border:2px solid #e5e5e5;border-radius:12px;font-size:15px;outline:0;box-sizing:border-box;margin-bottom:16px;text-align:center">
+    <button onclick="doGlobalLogin()" style="width:100%;padding:14px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">进入系统</button>
+    <p id="loginError" style="color:#FF3B30;margin:12px 0 0;font-size:13px;display:none">密码错误，请重试</p>
+  </div>
+</div>
+<script>
+function doGlobalLogin() {
+  const pwd = document.getElementById('globalPwd').value;
+  if (pwd === '123') {
+    localStorage.setItem('globalAuth', '1');
+    document.getElementById('loginOverlay').style.display = 'none';
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('globalPwd').value = '';
+  }
+}
+// 页面加载时检查登录状态
+if (localStorage.getItem('globalAuth') === '1') {
+  document.getElementById('loginOverlay').style.display = 'none';
+}
+// 回车键登录
+document.getElementById('globalPwd').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') doGlobalLogin();
+});
+</script>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand"><i class="fa-solid fa-chart-pie"></i> 财务综述 Agent<span class="subtitle">智能分析</span></div>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="product"><i class="fa-solid fa-chart-line"></i> 产品线损益</button>
+      <button class="tab-btn" data-tab="team"><i class="fa-solid fa-users-line"></i> 创业团队经营分析</button>
+
+      <button class="tab-btn" data-tab="qa"><i class="fa-solid fa-magnifying-glass-chart"></i> 智能问答</button>
+      <button class="tab-btn" data-tab="budget"><i class="fa-solid fa-scale-balanced"></i> 预算对比</button>
+      <button class="tab-btn" data-tab="vip"><i class="fa-solid fa-heart-pulse"></i> VIP健康管理</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Tab1: 产品线损益 -->
+<div id="tab-product" class="tab-panel active">
+  <div class="content">
+    <div class="controls">
+      <div class="month-pills" id="monthPillsProduct"></div>
+    </div>
+
+    <!-- KPI 卡片区 -->
+    <div class="kpi-grid" id="kpiGridProduct">
+      <!-- KPI 卡片将动态生成 -->
+    </div>
+
+    <!-- 下钻表格区（苹果风格卡片） -->
+    <div class="table-card" id="tableCardProduct">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+        <div id="tableTitleProduct" style="font-size:20px;font-weight:600"></div>
+        <div id="sortBtnsProduct" class="sort-bar"></div>
+      </div>
+      <div id="backBtnAreaProduct"></div>
+      <div class="table-wrap" id="tableWrapProduct"></div>
+    </div>
+
+    <!-- 空行分隔 -->
+    <div style="height: 24px;"></div>
+
+    <!-- 图表区 -->
+    <div class="charts-row">
+      <div class="chart-card" id="trendChartCard">
+        <div class="chart-title"><i class="fa-solid fa-chart-area"></i> 月度收入趋势</div>
+        <div class="trend-grid" id="trendChartGrid">
+          <div class="trend-sub-chart"><div class="trend-sub-title" style="color:#F6B43E"><i class="fa-solid fa-house-chimney"></i> 物业板块</div><div class="trend-legend-row"><span class="trend-legend-item" style="border-color:#F6B43E;color:#F6B43E"><i class="fa-solid fa-chart-line"></i> 同比 <span id="yoyWuYe">-</span></span><span class="trend-legend-item" style="border-color:#F6B43E;color:#F6B43E"><i class="fa-solid fa-chart-simple"></i> 环比 <span id="momWuYe">-</span></span></div><div id="trendChartWuYe" class="chart-box" style="height:200px"></div></div>
+          <div class="trend-sub-chart"><div class="trend-sub-title" style="color:#34C759"><i class="fa-solid fa-suitcase-medical"></i> 医养板块</div><div class="trend-legend-row"><span class="trend-legend-item" style="border-color:#34C759;color:#34C759"><i class="fa-solid fa-chart-line"></i> 同比 <span id="yoyYiYang">-</span></span><span class="trend-legend-item" style="border-color:#34C759;color:#34C759"><i class="fa-solid fa-chart-simple"></i> 环比 <span id="momYiYang">-</span></span></div><div id="trendChartYiYang" class="chart-box" style="height:200px"></div></div>
+          <div class="trend-sub-chart"><div class="trend-sub-title" style="color:#007AFF"><i class="fa-solid fa-utensils"></i> 餐饮板块</div><div class="trend-legend-row"><span class="trend-legend-item" style="border-color:#007AFF;color:#007AFF"><i class="fa-solid fa-chart-line"></i> 同比 <span id="yoyCanYin">-</span></span><span class="trend-legend-item" style="border-color:#007AFF;color:#007AFF"><i class="fa-solid fa-chart-simple"></i> 环比 <span id="momCanYin">-</span></span></div><div id="trendChartCanYin" class="chart-box" style="height:200px"></div></div>
+          <div class="trend-sub-chart"><div class="trend-sub-title" style="color:#FF6B6B"><i class="fa-solid fa-gift"></i> 美好生活</div><div class="trend-legend-row"><span class="trend-legend-item" style="border-color:#FF6B6B;color:#FF6B6B"><i class="fa-solid fa-chart-line"></i> 同比 <span id="yoyMeiHao">-</span></span><span class="trend-legend-item" style="border-color:#FF6B6B;color:#FF6B6B"><i class="fa-solid fa-chart-simple"></i> 环比 <span id="momMeiHao">-</span></span></div><div id="trendChartMeiHao" class="chart-box" style="height:200px"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 特殊面板 -->
+    <div id="specialPanelProduct"></div>
+  </div>
+</div>
+
+<!-- Tab2: 创业团队经营分析 -->
+<div id="tab-team" class="tab-panel">
+  <div class="content">
+
+
+    <div class="controls">
+      <div class="month-pills" id="monthPillsTeam"></div>
+    </div>
+
+
+    <!-- 创业团队树状表格 -->
+    <div class="table-card" id="tableCardTeam">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+        <div id="tableTitleTeam" style="font-size:20px;font-weight:600">创业团队 · H团队线-上级（万元）</div>
+        <div id="sortBtnsTeam"></div>
+      </div>
+      <div id="backBtnAreaTeam"></div>
+      <div class="table-wrap" id="tableWrapTeam"></div>
+    </div>
+
+    <div id="specialPanelTeam"></div>
+  </div>
+</div>
+
+<!-- Tab3: 智能问答 -->
+<div id="tab-qa" class="tab-panel">
+  <div class="content">
+    <div class="qa-search">
+      <input type="text" class="qa-input" id="qaInput" placeholder="输入财务问题，如：哪些板块结余率低于5%？">
+      <button class="qa-btn" id="qaBtn"><i class="fa-solid fa-paper-plane"></i> 提问</button>
+    </div>
+    <div class="preset-grid" id="presetGrid"></div>
+    <div class="card" id="qaResult"><div class="empty-state"><div class="spinner"></div><br>选择预设问题或输入查询开始分析</div></div>
+  </div>
+</div>
+
+<!-- Tab3: 预算对比 -->
+<div id="tab-budget" class="tab-panel">
+  <div class="content">
+    <div class="budget-header">
+      <h3 style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px"><i class="fa-solid fa-scale-balanced" style="color:var(--accent)"></i> 预算 vs 实际对比</h3>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <!-- 月份筛选 -->
+        <div class="month-pills" id="monthPillsBudget"></div>
+        <!-- 累计切换 -->
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="month-pill" id="budgetSingleBtn" onclick="setBudgetMode('single')">单月</button>
+          <button class="month-pill active" id="budgetCumulativeBtn" onclick="setBudgetMode('cumulative')">累计</button>
+        </div>
+        <div class="admin-area" id="adminArea">
+          <label class="upload-label"><i class="fa-solid fa-cloud-arrow-up"></i> 上传预算<input type="file" accept=".xlsx,.xls" id="budgetFile" style="display:none"></label>
+          <button class="sync-btn" id="syncBtn"><i class="fa-solid fa-rotate"></i> 同步</button>
+          <button class="admin-btn" id="exportBtn"><i class="fa-solid fa-download"></i> 导出</button>
+          <span style="font-size:12px;color:var(--green)"><i class="fa-solid fa-circle-check"></i> 管理员</span>
+        </div>
+        <div id="budgetLogin" style="display:flex;gap:6px">
+          <input type="password" id="adminPwd" placeholder="管理员密码" style="padding:7px 14px;border:1.5px solid #e5e5e5;border-radius:10px;font-size:12px;outline:0">
+          <button class="admin-btn" id="loginBtn"><i class="fa-solid fa-lock"></i> 登录</button>
+        </div>
+      </div>
+    </div>
+    <div class="card"><div class="table-wrap" id="budgetTableWrap"><div class="empty-state"><div class="spinner"></div><br>加载预算数据...</div></div></div>
+  </div>
+</div>
+
+<!-- Tab4: VIP健康管理 -->
+<div id="tab-vip" class="tab-panel">
+  <div class="content">
+    <div class="budget-header">
+      <h3 style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px"><i class="fa-solid fa-heart-pulse" style="color:var(--accent)"></i> VIP健康管理</h3>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="admin-btn" id="vipAddBtn"><i class="fa-solid fa-plus"></i> 新增记录</button>
+        <button class="admin-btn" id="vipExportBtn"><i class="fa-solid fa-download"></i> 导出</button>
+      </div>
+    </div>
+    
+    <!-- VIP汇总卡片 -->
+    <div class="kpi-grid" id="vipSummaryGrid" style="margin-bottom:16px">
+      <div class="kpi-card"><div class="kpi-header">总客户数</div><div class="kpi-value" id="vipTotal">-</div></div>
+      <div class="kpi-card"><div class="kpi-header">进行中</div><div class="kpi-value" style="color:var(--blue)" id="vipInProgress">-</div></div>
+      <div class="kpi-card"><div class="kpi-header">已完成</div><div class="kpi-value" style="color:var(--green)" id="vipCompleted">-</div></div>
+      <div class="kpi-card"><div class="kpi-header">未开始</div><div class="kpi-value" style="color:var(--text3)" id="vipNotStarted">-</div></div>
+    </div>
+    
+    <!-- VIP表格 -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+        <div style="font-size:14px;font-weight:600"><i class="fa-solid fa-list" style="color:var(--accent);margin-right:6px"></i>疗程记录列表</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="vipSearch" placeholder="搜索客户/产品..." style="padding:7px 14px;border:1.5px solid #e5e5e5;border-radius:10px;font-size:12px;outline:0;width:180px">
+          <select id="vipProductFilter" style="padding:7px 12px;border:1.5px solid #e5e5e5;border-radius:10px;font-size:12px;outline:0">
+            <option value="">全部产品</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>产品</th>
+              <th>客户姓名</th>
+              <th>开始日期</th>
+              <th>结束日期</th>
+              <th>进度</th>
+              <th>备注</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="vipTableBody"><tr><td colspan="8" class="loading"><div class="spinner"></div> 加载中...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VIP编辑Modal -->
+<div class="modal-overlay" id="vipModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <h3 id="vipModalTitle"><i class="fa-solid fa-heart-pulse" style="color:var(--accent)"></i> 新增VIP健康管理记录</h3>
+      <button class="modal-close" id="vipModalClose"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div style="display:grid;gap:14px">
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">健康管理产品 *</label>
+        <select id="vipFormProduct" style="width:100%;padding:10px 14px;border:1.5px solid #e5e5e5;border-radius:12px;font-size:13px;outline:0" required>
+          <option value="">请选择产品</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">客户姓名 *</label>
+        <input type="text" id="vipFormName" placeholder="请输入客户姓名" style="width:100%;padding:10px 14px;border:1.5px solid #e5e5e5;border-radius:12px;font-size:13px;outline:0" required>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">开始日期 *</label>
+          <input type="date" id="vipFormStart" style="width:100%;padding:10px 14px;border:1.5px solid #e5e5e5;border-radius:12px;font-size:13px;outline:0" required>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">结束日期</label>
+          <input type="date" id="vipFormEnd" style="width:100%;padding:10px 14px;border:1.5px solid #e5e5e5;border-radius:12px;font-size:13px;outline:0">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">服务进度: <span id="vipFormProgressVal">0</span>%</label>
+        <input type="range" id="vipFormProgress" min="0" max="100" value="0" step="5" style="width:100%;accent-color:var(--accent)">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">备注</label>
+        <textarea id="vipFormNotes" placeholder="可选" style="width:100%;padding:10px 14px;border:1.5px solid #e5e5e5;border-radius:12px;font-size:13px;outline:0;min-height:60px;resize:vertical"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="admin-btn" id="vipModalCancel" style="padding:10px 24px">取消</button>
+      <button class="share-btn" id="vipModalSave" style="padding:10px 24px"><i class="fa-solid fa-check"></i> 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 删除确认Modal -->
+<div class="modal-overlay" id="vipDelModal">
+  <div class="modal" style="max-width:400px;text-align:center">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:-20px"><button class="modal-close" id="vipDelClose"><i class="fa-solid fa-xmark"></i></button></div>
+    <div style="font-size:48px;color:var(--red);margin-bottom:12px"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    <h3 style="font-size:18px;margin-bottom:8px">确认删除</h3>
+    <p style="color:var(--text2);margin-bottom:20px">确定要删除这条VIP健康管理记录吗？此操作不可撤销。</p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="admin-btn" id="vipDelCancel" style="padding:10px 24px">取消</button>
+      <button class="share-btn" id="vipDelConfirm" style="padding:10px 24px;background:var(--red)"><i class="fa-solid fa-trash"></i> 确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- 经营分享 Modal -->
+<div class="modal-overlay" id="shareModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="shareTitle"></h3>
+      <button class="modal-close" id="shareClose"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="shareContent"></div>
+    <div style="margin-top:22px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px"><i class="fa-solid fa-pen-to-square" style="color:var(--accent)"></i> 分析注释</div>
+      <textarea class="notes-area" id="shareNotes" placeholder="在此记录你的分析注释...（自动保存到浏览器本地）"></textarea>
+    </div>
+  </div>
+</div>
+
+<script>
+let S = {
+  tab: 'product', year: 2026,
+  // 产品线Tab状态
+  monthsProduct: [], isCumulativeProduct: false, isYtdProduct: false,
+  drillLevelProduct: 'board', drillFilterProduct: null, drillBoardProduct: null,
+  // 创业团队Tab状态
+  monthsTeam: [], isCumulativeTeam: false, isYtdTeam: false,
+  drillLevelTeam: 'nature', drillFilterTeam: null, _prevNatureTeam: null,
+  isAdmin: sessionStorage.getItem('isAdmin') === '1',
+  meta: null, lastMonth: 3,
+};
+
+// === Helpers ===
+const API_BASE = 'http://122.51.134.23';
+async function apiGet(p, params) {
+  const u = new URL(API_BASE + p);
+  if (params) Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null) u.searchParams.set(k, v); });
+  return (await fetch(u)).json();
+}
+async function apiPost(p, body) {
+  const r = await fetch(API_BASE + p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error('API Error: ' + r.status);
+  return r.json();
+}
+function fmt(v) { 
+    if (v == null || v === '' || v === 'NaN' || v === 'nan' || v === 'NULL' || v === 'null' || v === 'undefined' || (typeof v === 'number' && isNaN(v))) return '-'; 
+    const n = Number(v); 
+    return isNaN(n) ? '-' : Math.round(n).toLocaleString('zh-CN'); 
+}
+function fmtPct(v) { return v == null ? '-' : (v >= 0 ? '+' : '') + Math.round(v) + '%'; }
+function fmtPctSign(v) { return v == null ? '-' : (v >= 0 ? '+' : '') + Math.round(v) + '%'; }
+function pctCls(v) { return v == null ? '' : v >= 0 ? 'positive' : 'negative'; }
+function numCls(v) { return v == null ? '' : v >= 0 ? 'positive' : 'negative'; }
+
+// === Tab Routing ===
+function switchTab(name) {
+  S.tab = name;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+  location.hash = name === 'product' ? '' : '#' + name;
+  
+  // 根据Tab刷新对应内容
+  if (name === 'product') refreshProductTab();
+  if (name === 'team') refreshTeamTab();
+  if (name === 'qa') initQA();
+  if (name === 'budget') loadBudget();
+  if (name === 'vip') initVIP();
+}
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (['product', 'team', 'qa', 'budget', 'vip'].includes(h)) switchTab(h); });
+
+// === Month Selector - Product Tab ===
+function renderMonthsProduct() {
+  const c = document.getElementById('monthPillsProduct');
+  if (!c) return;
+  const activeMs = new Set(S.monthsProduct);
+  let h = '';
+  for (let m = 1; m <= 12; m++) {
+    const cls = activeMs.has(m) ? 'active' : '';
+    h += '<button class="month-pill ' + cls + '" data-m="' + m + '">' + m + '月</button>';
+  }
+  h += '<button class="month-pill special ' + (S.isCumulativeProduct ? 'active' : '') + '" data-cum="1">累计</button>';
+  h += '<button class="month-pill special ' + (S.isYtdProduct ? 'active' : '') + '" data-ytd="1">3-12月</button>';
+  c.innerHTML = h;
+  c.querySelectorAll('.month-pill').forEach(p => p.addEventListener('click', () => {
+    if (p.dataset.cum) { S.isCumulativeProduct = true; S.isYtdProduct = false; S.monthsProduct = Array.from({ length: S.lastMonth }, (_, i) => i + 1); }
+    else if (p.dataset.ytd) { S.isCumulativeProduct = false; S.isYtdProduct = true; S.monthsProduct = Array.from({ length: Math.max(1, S.lastMonth - 2) }, (_, i) => i + 3); }
+    else { S.isCumulativeProduct = false; S.isYtdProduct = false; S.monthsProduct = [parseInt(p.dataset.m)]; }
+    S.drillLevelProduct = 'board'; S.drillFilterProduct = null; S.drillBoardProduct = null;
+    document.getElementById('specialPanelProduct').innerHTML = '';
+    renderMonthsProduct();
+    refreshProductTab();
+  }));
+}
+
+// === Month Selector - Team Tab ===
+function renderMonthsTeam() {
+  const c = document.getElementById('monthPillsTeam');
+  if (!c) return;
+  const activeMs = new Set(S.monthsTeam);
+  let h = '';
+  for (let m = 1; m <= 12; m++) {
+    const cls = activeMs.has(m) ? 'active' : '';
+    h += '<button class="month-pill ' + cls + '" data-m="' + m + '">' + m + '月</button>';
+  }
+  h += '<button class="month-pill special ' + (S.isCumulativeTeam ? 'active' : '') + '" data-cum="1">累计</button>';
+  h += '<button class="month-pill special ' + (S.isYtdTeam ? 'active' : '') + '" data-ytd="1">3-12月</button>';
+  c.innerHTML = h;
+  c.querySelectorAll('.month-pill').forEach(p => p.addEventListener('click', () => {
+    if (p.dataset.cum) { S.isCumulativeTeam = true; S.isYtdTeam = false; S.monthsTeam = Array.from({ length: S.lastMonth }, (_, i) => i + 1); }
+    else if (p.dataset.ytd) { S.isCumulativeTeam = false; S.isYtdTeam = true; S.monthsTeam = Array.from({ length: Math.max(1, S.lastMonth - 2) }, (_, i) => i + 3); }
+    else { S.isCumulativeTeam = false; S.isYtdTeam = false; S.monthsTeam = [parseInt(p.dataset.m)]; }
+    S.drillLevelTeam = 'nature'; S.drillFilterTeam = null;
+    document.getElementById('specialPanelTeam').innerHTML = '';
+    renderMonthsTeam();
+    refreshTeamTab();
+  }));
+}
+
+// === KPI Cards - Product Tab ===
+async function loadKPIProduct() {
+  try {
+    const ms = S.monthsProduct.join(',');
+    const d = await apiGet('/api/kpi', { year: S.year, months: ms, mode: 'product' });
+    if (!d) {
+      console.warn('KPI Product API 返回空数据');
+      return;
+    }
+    const isSingle = d.is_single;
+    const momLabel = d.mom_label || '';
+    const prevYear = d.prev_year || (S.year - 1);
+    
+    // 总收入卡片 - 统一使用 kpi-card 结构
+    const incomeYoYPct = d.yoy['income_pct'];
+    const incomeYoYPrev = d.yoy['income_prev'];
+    const incomeMomPct = d.mom['income_pct'];
+    const incomeMomPrev = d.mom['income_prev'];
+    const incomeValDisplay = Math.round(d.income);
+    const incomeYoYPctFmt = incomeYoYPct != null ? fmtPctSign(incomeYoYPct) : '-';
+    const incomeYoYPrevFmt = d.yoy['income_prev_formatted'] || fmt(Math.round(incomeYoYPrev));
+    const incomeYoYArrow = incomeYoYPct != null ? '<i class="fa-solid fa-arrow-trend-' + (incomeYoYPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
+    const incomeYoYPctCls = pctCls(incomeYoYPct);
+    
+    let incomeHtml = '<div class="kpi-card card-income">';
+    // 第一行：大字标题 + 大数字
+    incomeHtml += '<div class="kpi-header card-income-header">总收入</div>';
+    incomeHtml += '<div class="kpi-value card-income-value">' + incomeValDisplay + '<span class="unit">万元</span></div>';
+    // 第二行：同比
+    incomeHtml += '<div class="kpi-row ' + incomeYoYPctCls + '">';
+    incomeHtml += incomeYoYArrow + '同比 <span class="pct">' + incomeYoYPctFmt + '</span> <span class="prev">(' + prevYear + '年同期 ' + incomeYoYPrevFmt + '万)</span>';
+    incomeHtml += '</div>';
+    // 第三行：环比（单月）或 累计增长（累计）
+    if (isSingle) {
+      const incomeMomPctFmt = incomeMomPct != null ? fmtPctSign(incomeMomPct) : '-';
+      const incomeMomPrevFmt = d.mom['income_prev_formatted'] || fmt(Math.round(incomeMomPrev));
+      const incomeMomArrow = incomeMomPct != null ? '<i class="fa-solid fa-arrow-trend-' + (incomeMomPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
+      const incomeMomPctCls = pctCls(incomeMomPct);
+      incomeHtml += '<div class="kpi-row ' + incomeMomPctCls + '">';
+      incomeHtml += incomeMomArrow + '环比 <span class="pct">' + incomeMomPctFmt + '</span> <span class="prev">(vs ' + momLabel + ' ' + incomeMomPrevFmt + '万)</span>';
+      incomeHtml += '</div>';
+    } else if (d.cumulative) {
+      const growthKey = 'income_growth';
+      const growthPct = d.cumulative[growthKey + '_pct'];
+      const growthPctFmt = growthPct != null ? fmtPctSign(growthPct) : '-';
+      const prevRangeLabel = d.cumulative.prev_range_label || momLabel;
+      const contribution = d.month_contribution;
+      const growthArrow = growthPct != null ? '<i class="fa-solid fa-arrow-trend-' + (growthPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
+      const growthPctCls = pctCls(growthPct);
+      incomeHtml += '<div class="kpi-row kpi-cumulative">';
+      incomeHtml += '<div class="cum-left">';
+      incomeHtml += growthArrow + '较' + prevRangeLabel + ' <span class="pct">' + growthPctFmt + '</span>';
+      incomeHtml += '</div>';
+      if (contribution) {
+        const contribVal = contribution.income || 0;
+        const contribSign = contribVal >= 0 ? '+' : '-';
+        const contribValFmt = fmt(Math.abs(Math.round(contribVal)));
+        incomeHtml += '<div class="cum-right">';
+        incomeHtml += '<span class="prev">其中' + contribution.month + '月 </span>';
+        incomeHtml += '<span class="pct ' + (contribVal >= 0 ? 'positive' : 'negative') + '">' + contribSign + contribValFmt + '万</span>';
+        incomeHtml += '</div>';
+      }
+      incomeHtml += '</div>';
+    }
+    incomeHtml += '</div>';
+    
+    // 其他卡片
+    const otherCards = [
+      { label: '总支出', val: d.expense, yoy: d.yoy, mom: d.mom, isRate: false, isSingle: isSingle, momLabel: momLabel, prevYear: prevYear, cumulative: d.cumulative, monthContribution: d.month_contribution },
+      { label: '总结余', val: d.balance, yoy: d.yoy, mom: d.mom, isRate: false, isSingle: isSingle, momLabel: momLabel, prevYear: prevYear, cumulative: d.cumulative, monthContribution: d.month_contribution },
+      { label: '结余率', val: d.balance_rate, yoy: d.yoy, mom: d.mom, isRate: true, isSingle: isSingle, momLabel: momLabel, prevYear: prevYear, cumulative: d.cumulative, monthContribution: d.month_contribution }
+    ];
+    
+    // 根据卡片标签设置颜色 class
+    let html = incomeHtml;
+    for (const c of otherCards) {
+      const cardColorClass = c.label === '总支出' ? 'card-expense' : c.label === '总结余' ? 'card-balance' : 'card-rate';
+      const yoyKey = c.label === '总支出' ? 'expense' : 'balance';
+      const yoyPct = c.yoy[yoyKey + '_pct'];
+      const yoyPrev = c.yoy[yoyKey + '_prev'];
+      const momPct = c.mom[yoyKey + '_pct'];
+      const momPrev = c.mom[yoyKey + '_prev'];
+      
+      const valDisplay = c.isRate ? (c.val != null ? c.val.toFixed(1) + '%' : '-') : Math.round(c.val);
+      const valUnit = c.isRate ? '' : '<span class="unit">万元</span>';
+      
+      let html2 = '<div class="kpi-header ' + cardColorClass + '-header">' + c.label + '</div>';
+      html2 += '<div class="kpi-value ' + cardColorClass + '-value">' + valDisplay + valUnit + '</div>';
+      
+      const yoyPctFmt = yoyPct != null ? fmtPctSign(yoyPct) : '-';
+      const yoyPrevFmt = c.yoy[yoyKey + '_prev_formatted'] || fmt(Math.round(yoyPrev));
+      const yoyArrow = yoyPct != null ? '<i class="fa-solid fa-arrow-trend-' + (yoyPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
+      const yoyPctCls = pctCls(yoyPct);
+      html2 += '<div class="kpi-row ' + yoyPctCls + '">';
+      html2 += yoyArrow + '同比 <span class="pct">' + yoyPctFmt + '</span> <span class="prev">(' + prevYear + '年同期 ' + yoyPrevFmt + '万)</span>';
+      html2 += '</div>';
+      
+      if (c.isSingle) {
+        const momPctFmt = momPct != null ? fmtPctSign(momPct) : '-';
+        const momPrevFmt = c.mom[yoyKey + '_prev_formatted'] || fmt(Math.round(momPrev));
+        const momArrow = momPct != null ? '<i class="fa-solid fa-arrow-trend-' + (momPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
+        const momPctCls = pctCls(momPct);
+        html2 += '<div class="kpi-row ' + momPctCls + '">';
+        html2 += momArrow + '环比 <span class="pct">' + momPctFmt + '</span> <span class="prev">(vs ' + momLabel + ' ' + momPrevFmt + '万)</span>';
+        html2 += '</div>';
+      } else if (c.cumulative) {
+        const growthKey = yoyKey === 'income' ? 'income_growth' : 'balance_growth';
+        const growthPct = c.cumulative[growthKey + '_pct'];
+        const growthPctFmt = growthPct != null ? fmtPctSign(growthPct) : '-';
+        const prevRangeLabel = c.cumulative.prev_range_label || momLabel;
+        const contribution = c.monthContribution;
+        const growthArrow = growthPct != null ? '<i class="fa-solid fa-arrow-trend-' + (growthPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
+        const growthPctCls = pctCls(growthPct);
+        
+        html2 += '<div class="kpi-row kpi-cumulative">';
+        html2 += '<div class="cum-left">';
+        html2 += growthArrow + '较' + prevRangeLabel + ' <span class="pct">' + growthPctFmt + '</span>';
+        html2 += '</div>';
+        if (contribution) {
+          const contribKey = yoyKey;
+          const contribVal = contribution[contribKey] || 0;
+          const contribSign = contribVal >= 0 ? '+' : '-';
+          const contribValFmt = fmt(Math.abs(Math.round(contribVal)));
+          html2 += '<div class="cum-right">';
+          html2 += '<span class="prev">其中' + contribution.month + '月 </span>';
+          html2 += '<span class="pct ' + (contribVal >= 0 ? 'positive' : 'negative') + '">' + contribSign + contribValFmt + '万</span>';
+          html2 += '</div>';
+        }
+        html2 += '</div>';
+      }
+      
+      html += '<div class="kpi-card ' + cardColorClass + '">' + html2 + '</div>';
+    }
+    document.getElementById('kpiGridProduct').innerHTML = html;
+  } catch (e) { console.error('KPI Product error:', e); }
+}
+
+// === KPI Cards - Team Tab ===
+async function loadKPITeam() {
+  if (!S.monthsTeam || S.monthsTeam.length === 0) return;
+  const ms = S.monthsTeam.join(',');
+  try {
+    const d = await apiGet('/api/kpi', { year: S.year, months: ms, mode: 'team' });
+    if (!d) {
+      console.warn('KPI Team API 返回空数据');
+      return;
+    }
+    const isSingle = d.is_single;
+    const momLabel = d.mom_label || '';
+    const prevYear = d.prev_year || (S.year - 1);
+    
+    const cards = [
+      { label: '总收入', val: d.income, yoy: d.yoy, mom: d.mom, isRate: false, isSingle: isSingle, momLabel: momLabel, prevYear: prevYear, cumulative: d.cumulative, monthContribution: d.month_contribution },
+      { label: '总支出', val: d.expense, yoy: d.yoy, mom: d.mom, isRate: false, isSingle: isSingle, momLabel: momLabel, prevYear: prevYear, cumulative: d.cumulative, monthContribution: d.month_contribution },
+      { label: '总结余', val: d.balance, yoy: d.yoy, mom: d.mom, isRate: false, isSingle: isSingle, momLabel: momLabel, prevYear: prevYear, cumulative: d.cumulative, monthContribution: d.month_contribution },
+      { label: '结余率', val: d.balance_rate, yoy: d.yoy, mom: d.mom, isRate: true, isSingle: isSingle, momLabel: momLabel, prevYear: prevYear, cumulative: d.cumulative, monthContribution: d.month_contribution }
+    ];
+    
+    let html = '';
+    for (const c of cards) {
+      const yoyKey = c.label === '总收入' ? 'income' : c.label === '总支出' ? 'expense' : 'balance';
+      const yoyPct = c.yoy[yoyKey + '_pct'];
+      const yoyPrev = c.yoy[yoyKey + '_prev'];
+      const momPct = c.mom[yoyKey + '_pct'];
+      const momPrev = c.mom[yoyKey + '_prev'];
+      
+      // 第一行：大数字，取整
+      const valDisplay = c.isRate ? (c.val != null ? c.val.toFixed(1) + '%' : '-') : Math.round(c.val);
+      const valUnit = c.isRate ? '' : '<span class="unit">万元</span>';
+      
+      let html2 = '<div class="kpi-header">' + c.label + '</div>';
+      html2 += '<div class="kpi-value">' + valDisplay + valUnit + '</div>';
+      
+      // 第二行：同比
+      const yoyPctFmt = yoyPct != null ? fmtPctSign(yoyPct) : '-';
+      const yoyPrevFmt = c.yoy[yoyKey + '_prev_formatted'] || fmt(Math.round(yoyPrev));
+      const yoyArrow = yoyPct != null ? '<i class="fa-solid fa-arrow-trend-' + (yoyPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
+      const yoyPctCls = pctCls(yoyPct);
+      html2 += '<div class="kpi-row ' + yoyPctCls + '">';
+      html2 += yoyArrow + '同比 <span class="pct">' + yoyPctFmt + '</span> <span class="prev">(' + prevYear + '年同期 ' + yoyPrevFmt + '万)</span>';
+      html2 += '</div>';
+      
+      // 第三行：环比（单月模式）或 累计增长+贡献值（累计模式）
+      if (c.isSingle) {
+        const momPctFmt = momPct != null ? fmtPctSign(momPct) : '-';
+        const momPrevFmt = c.mom[yoyKey + '_prev_formatted'] || fmt(Math.round(momPrev));
+        const momArrow = momPct != null ? '<i class="fa-solid fa-arrow-trend-' + (momPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
+        const momPctCls = pctCls(momPct);
+        html2 += '<div class="kpi-row ' + momPctCls + '">';
+        html2 += momArrow + '环比 <span class="pct">' + momPctFmt + '</span> <span class="prev">(vs ' + momLabel + ' ' + momPrevFmt + '万)</span>';
+        html2 += '</div>';
+      } else if (c.cumulative) {
+        const growthKey = yoyKey === 'income' ? 'income_growth' : 'balance_growth';
+        const growthPct = c.cumulative[growthKey + '_pct'];
+        const growthPctFmt = growthPct != null ? fmtPctSign(growthPct) : '-';
+        const prevRangeLabel = c.cumulative.prev_range_label || momLabel;
+        const contribution = c.monthContribution;
+        const growthArrow = growthPct != null ? '<i class="fa-solid fa-arrow-trend-' + (growthPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
+        const growthPctCls = pctCls(growthPct);
+        
+        // 累计模式：左右布局
+        html2 += '<div class="kpi-row kpi-cumulative">';
+        // 左侧：较X-X月增长 +/-X%
+        html2 += '<div class="cum-left">';
+        html2 += growthArrow + '较' + prevRangeLabel + ' <span class="pct">' + growthPctFmt + '</span>';
+        html2 += '</div>';
+        // 右侧：其中X月 +/-XXX万
+        if (contribution) {
+          const contribKey = yoyKey === 'income' ? 'income' : 'balance';
+          const contribVal = contribution[contribKey] || 0;
+          const contribSign = contribVal >= 0 ? '+' : '-';
+          const contribValFmt = fmt(Math.abs(Math.round(contribVal)));
+          html2 += '<div class="cum-right">';
+          html2 += '<span class="prev">其中' + contribution.month + '月 </span>';
+          html2 += '<span class="pct ' + (contribVal >= 0 ? 'positive' : 'negative') + '">' + contribSign + contribValFmt + '万</span>';
+          html2 += '</div>';
+        }
+        html2 += '</div>';
+      }
+      
+      html += '<div class="kpi-card">' + html2 + '</div>';
+    }
+    document.getElementById('kpiGridTeam').innerHTML = html;
+  } catch (e) { console.error('KPI Team error:', e); }
+}
+
+// === Charts - Product Tab ===
+let pieChartProduct;
+let trendCharts = {};
+function initChartsProduct() {
+  const pieEl = document.getElementById('pieChartProduct');
+  if (pieEl) pieChartProduct = echarts.init(pieEl);
+  const trendIds = ['trendChartWuYe', 'trendChartYiYang', 'trendChartCanYin', 'trendChartMeiHao'];
+  trendIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) trendCharts[id] = echarts.init(el);
+  });
+  window.addEventListener('resize', () => { 
+    if (pieChartProduct) pieChartProduct.resize(); 
+    Object.values(trendCharts).forEach(c => c && c.resize());
+  });
+}
+async function loadChartsProduct() {
+  try {
+    // 月度收入趋势 - 不受月份筛选影响，独立取数
+    const trendData = await apiGet('/api/trend');
+    const boardMap = [
+      { name: '物业板块', key: '物业板块', idSuffix: 'WuYe', chartId: 'trendChartWuYe', color: '#F6B43E', colorLight: '#FFD180' },
+      { name: '医养板块', key: '医养板块', idSuffix: 'YiYang', chartId: 'trendChartYiYang', color: '#34C759', colorLight: '#81D9A5' },
+      { name: '餐饮板块', key: '餐饮板块', idSuffix: 'CanYin', chartId: 'trendChartCanYin', color: '#007AFF', colorLight: '#66B5FF' },
+      { name: '美好生活', key: '美好生活', idSuffix: 'MeiHao', chartId: 'trendChartMeiHao', color: '#FF6B6B', colorLight: '#FF9999' }
+    ];
+    
+    // 月度收入趋势：X轴固定1-12月，不与月份筛选联动
+    const allMonths = Array.from({length: 12}, (_, i) => (i + 1) + '月');
+    const allByMonth = {};
+    for (const yr of ['2025', '2026']) { for (const item of (trendData[yr] || [])) { allByMonth[yr + '-' + item.month] = item; } }
+    
+    // 判断是否为移动端
+    const isMobile = window.innerWidth <= 900;
+    
+    for (const board of boardMap) {
+      const chart = trendCharts[board.chartId];
+      if (!chart) continue;
+      chart.setOption({
+        tooltip: {
+          trigger: 'axis',
+          backgroundColor: 'rgba(255,255,255,0.98)',
+          borderColor: '#e0e0e0',
+          borderWidth: 1,
+          padding: [8, 12],
+          textStyle: { color: '#333', fontSize: isMobile ? 10 : 11 }
+        },
+        grid: { left: isMobile ? 35 : 50, right: 15, top: 8, bottom: 24, containLabel: false },
+        xAxis: {
+          type: 'category',
+          data: allMonths,
+          axisLabel: { fontSize: isMobile ? 8 : 10, color: '#888' },
+          axisLine: { lineStyle: { color: '#e0e0e0' } },
+          axisTick: { show: false }
+        },
+        yAxis: {
+          type: 'value',
+          name: '万元',
+          nameTextStyle: { fontSize: 10, color: '#bbb' },
+          axisLabel: { fontSize: isMobile ? 8 : 10, color: '#888', formatter: '{value}' },
+          axisLine: { show: false },
+          splitLine: { lineStyle: { color: '#f5f5f5', type: 'dashed' } }
+        },
+        legend: {
+          show: true,
+          top: 0,
+          right: 0,
+          textStyle: { fontSize: isMobile ? 9 : 11 },
+          itemWidth: isMobile ? 12 : 15
+        },
+        series: [
+          {
+            name: '2026 ' + board.name,
+            type: 'line', smooth: true, symbol: 'circle', symbolSize: isMobile ? 4 : 5,
+            lineStyle: { width: 2.5 },
+            itemStyle: { color: board.color },
+            areaStyle: { opacity: 0.1, color: board.color },
+            data: Array.from({length: 12}, (_, m) => { const d = allByMonth['2026-' + (m + 1)]; return d ? d[board.key] : null; })
+          },
+          {
+            name: '2025 ' + board.name,
+            type: 'line', smooth: true, symbol: 'circle', symbolSize: isMobile ? 3 : 4,
+            lineStyle: { width: 1.5, type: 'dashed' },
+            itemStyle: { color: board.colorLight },
+            areaStyle: { opacity: 0.05, color: board.colorLight },
+            data: Array.from({length: 12}, (_, m) => { const d = allByMonth['2025-' + (m + 1)]; return d ? d[board.key] : null; })
+          }
+        ]
+      });
+
+      // 计算并更新同比环比值（基于2026年最新有数据的月份）
+      const yoyKey = board.key + '_yoy';
+      const momKey = board.key + '_mom';
+      let latestYoy = null, latestMom = null;
+      for (let m = 11; m >= 0; m--) {
+        const d = allByMonth['2026-' + (m + 1)];
+        if (d) {
+          latestYoy = d[yoyKey];
+          latestMom = d[momKey];
+          break;
+        }
+      }
+      const yoyEl = document.getElementById('yoy' + board.idSuffix);
+      const momEl = document.getElementById('mom' + board.idSuffix);
+      if (yoyEl) yoyEl.textContent = latestYoy != null ? (latestYoy >= 0 ? '+' + latestYoy + '%' : latestYoy + '%') : '-';
+      if (momEl) momEl.textContent = latestMom != null ? (latestMom >= 0 ? '+' + latestMom + '%' : latestMom + '%') : '-';
+    }
+  } catch (e) { console.error('Charts Product error:', e); }
+}
+
+// === KPI - Team Tab ===
+async function loadKPITeam() {
+  try {
+    const ms = S.monthsTeam.join(',');
+    const d = await apiGet('/api/kpi', { year: S.year, months: ms, mode: 'team' });
+    if (!d) {
+      document.getElementById('kpiGridTeam').innerHTML = '<div class="empty-state">暂无数据</div>';
+      return;
+    }
+    const isSingle = d.is_single;
+    const momLabel = d.mom_label || '';
+
+    const cards = [
+      { label: '总收入', val: d.income, yoy: d.yoy, mom: d.mom, isRate: false, isSingle: isSingle, momLabel: momLabel },
+      { label: '总支出', val: d.expense, yoy: d.yoy, mom: d.mom, isRate: false, isSingle: isSingle, momLabel: momLabel },
+      { label: '平台管理费', val: d.platform_fee, yoy: d.yoy, mom: d.mom, isRate: false, isSingle: isSingle, momLabel: momLabel },
+      { label: '结余', val: d.balance, yoy: d.yoy, mom: d.mom, isRate: false, isSingle: isSingle, momLabel: momLabel },
+      { label: '结余率', val: d.balance_rate, yoy: d.yoy, mom: d.mom, isRate: true, isSingle: isSingle, momLabel: momLabel }
+    ];
+
+    let html = '';
+    for (const c of cards) {
+      const yoyKey = c.label === '总收入' ? 'income' : c.label === '总支出' ? 'expense' : c.label === '平台管理费' ? 'platform_fee' : c.label === '结余' ? 'balance' : 'balance_rate';
+      const yoyPct = c.yoy ? c.yoy[yoyKey + '_pct'] : null;
+      const yoyPrev = c.yoy ? c.yoy[yoyKey + '_prev'] : null;
+      const momPct = c.mom ? c.mom[yoyKey + '_pct'] : null;
+      const momPrev = c.mom ? c.mom[yoyKey + '_prev'] : null;
+
+      const cls = c.isRate ? 'rate-cell' : 'num-cell';
+      const valStr = c.isRate ? (c.val != null ? c.val + '%' : '-') : (c.val != null ? fmt(c.val) : '-');
+
+      let extra = '';
+      if (c.isSingle && momPct != null) {
+        extra += '<div class="mom-row"><span class="yoy-label">环比</span> <span class="yoy-value ' + pctCls(momPct) + '">' + fmtPct(momPct) + '</span></div>';
+      } else if (!c.isSingle && momPct != null) {
+        extra += '<div class="mom-row"><span class="yoy-label">环比</span> <span class="yoy-value ' + pctCls(momPct) + '">' + fmtPct(momPct) + '</span></div>';
+      }
+      if (yoyPct != null) {
+        extra += '<div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ' + pctCls(yoyPct) + '">' + fmtPct(yoyPct) + '</span></div>';
+      }
+
+      html += '<div class="kpi-card"><div class="kpi-label">' + c.label + '</div><div class="kpi-value ' + cls + '">' + valStr + '</div><div class="kpi-extra">' + extra + '</div></div>';
+    }
+    document.getElementById('kpiGridTeam').innerHTML = html;
+  } catch (e) { console.error('KPI Team error:', e); document.getElementById('kpiGridTeam').innerHTML = '<div class="empty-state">加载失败</div>'; }
+}
+
+// === 创业团队经营分析 ===
+let teamAnnotations = {};
+async function loadTeamAnalysis() {
+  const el = document.getElementById('teamAnalysisContent');
+  const loading = document.getElementById('teamAnalysisLoading');
+  if (!el) return;
+
+  if (!S.monthsTeam || S.monthsTeam.length === 0) {
+    el.innerHTML = '<div class="empty-state">请先选择月份</div>';
+    return;
+  }
+
+  loading.style.display = 'inline';
+  try {
+    const ms = S.monthsTeam.join(',');
+    const d = await apiGet('/api/team/analysis', { year: S.year, months: ms });
+    if (!d || !d.suggestions || d.suggestions.length === 0) {
+      el.innerHTML = '<div class="empty-state">暂无分析建议</div>';
+      return;
+    }
+    el.innerHTML = d.suggestions.map(s => '<div style="margin-bottom:12px;padding:10px;background:var(--bg2);border-radius:6px"><div style="font-weight:600;margin-bottom:4px">' + (s.team || '总体') + '</div><div>' + s.advice + '</div></div>').join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty-state">加载失败: ' + e.message + '</div>';
+  }
+  loading.style.display = 'none';
+}
+
+async function loadTeamAnnotations() {
+  try {
+    const ms = S.monthsTeam.join(',');
+    const d = await apiGet('/api/team/annotations', { year: S.year, months: ms });
+    teamAnnotations = d.annotations || {};
+    renderTeamAnnotations();
+    checkTeamEditStatus();
+  } catch (e) { console.error('Load annotations error:', e); }
+}
+
+function renderTeamAnnotations() {
+  const el = document.getElementById('teamAnnotationList');
+  if (!el) return;
+  const ms = S.monthsTeam.join(',');
+  let html = '';
+  for (const key of Object.keys(teamAnnotations)) {
+    const ann = teamAnnotations[key];
+    html += '<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start"><div><span style="font-weight:600">' + (ann.team || key) + ':</span> ' + (ann.text || '') + '</div><div style="font-size:12px;color:#999">' + (ann.updated_at || '') + '</div></div>';
+  }
+  el.innerHTML = html || '<div style="color:#999;font-size:13px">暂无注释</div>';
+}
+
+async function saveTeamAnnotation() {
+  const input = document.getElementById('teamAnnotationInput');
+  const text = input.value.trim();
+  if (!text) return;
+  try {
+    const ms = S.monthsTeam.join(',');
+    await apiPost('/api/team/annotation', { year: S.year, months: ms, text: text });
+    input.value = '';
+    await loadTeamAnnotations();
+  } catch (e) { alert('保存失败: ' + e.message); }
+}
+
+function checkTeamEditStatus() {
+  const status = document.getElementById('teamEditStatus');
+  const editEnabled = window._teamEditEnabled;
+  if (status) {
+    status.textContent = editEnabled ? '(可编辑)' : '';
+  }
+}
+
+function loginTeamEdit() {
+  const pwd = document.getElementById('teamEditPwd').value;
+  // 简单的客户端验证，实际应发送到服务器验证
+  const validPwd = 'admin123'; // 示例密码，生产环境应使用服务端验证
+  if (pwd === validPwd) {
+    window._teamEditEnabled = true;
+    document.getElementById('teamEditArea').innerHTML = '<span style="font-size:11px;color:var(--green)"><i class="fa-solid fa-check-circle"></i> 已解锁</span>';
+    checkTeamEditStatus();
+  } else {
+    alert('密码错误');
+  }
+}
+
+// === Charts - Team Tab ===
+let pieChartTeam, trendChartTeam;
+function initChartsTeam() {
+  const pieEl = document.getElementById('pieChartTeam');
+  const trendEl = document.getElementById('trendChartTeam');
+  if (pieEl) pieChartTeam = echarts.init(pieEl);
+  if (trendEl) trendChartTeam = echarts.init(trendEl);
+  window.addEventListener('resize', () => { if (pieChartTeam) pieChartTeam.resize(); if (trendChartTeam) trendChartTeam.resize(); });
+}
+async function loadChartsTeam() {
+  if (!pieChartTeam || !trendChartTeam) return;
+  if (!S.monthsTeam || S.monthsTeam.length === 0) return;
+  try {
+    const ms = S.monthsTeam.join(',');
+    const colors = ['#F6B43E', '#34C759', '#007AFF', '#FF6B6B', '#AF52DE'];
+    const pieData = [
+      { name: '创业团队A', value: 100 },
+      { name: '创业团队B', value: 80 },
+      { name: '创业团队C', value: 60 },
+      { name: '创业团队D', value: 40 }
+    ];
+    pieChartTeam.setOption({
+      tooltip: { trigger: 'item', formatter: '{b}: {c}万 ({d}%)' },
+      color: colors,
+      series: [{ type: 'pie', radius: ['44%', '72%'], center: ['50%', '54%'],
+        label: { show: true, fontSize: 12, formatter: '{b}\n{d}%' },
+        emphasis: { label: { fontSize: 14, fontWeight: 'bold' } },
+        itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+        data: pieData }]
+    });
+    
+    const trendData = await apiGet('/api/trend');
+    const boards = ['物业板块', '医养板块', '餐饮板块', '美好生活'];
+    const bc = { '物业板块': '#F6B43E', '医养板块': '#34C759', '餐饮板块': '#007AFF', '美好生活': '#FF6B6B' };
+    const allByMonth = {};
+    for (const yr of ['2025', '2026']) { for (const item of (trendData[yr] || [])) { allByMonth[yr + '-' + item.month] = item; } }
+    const xAll = []; for (let yr = 2025; yr <= 2026; yr++) for (let m = 1; m <= 12; m++) xAll.push(yr + '-' + m);
+    const series = [];
+    for (const board of boards.slice(0, 3)) {
+      series.push({
+        name: board.replace('板块', ''), type: 'line', smooth: true, symbol: 'circle', symbolSize: 5,
+        lineStyle: { width: 2.5 }, itemStyle: { color: bc[board] },
+        areaStyle: { opacity: .06, color: bc[board] },
+        data: xAll.map(key => { const d = allByMonth[key]; return d ? d[board] : null; })
+      });
+    }
+    trendChartTeam.setOption({
+      tooltip: { trigger: 'axis' },
+      legend: { data: boards.slice(0, 3).map(b => b.replace('板块', '')), bottom: 0, textStyle: { fontSize: 12 } },
+      grid: { left: 60, right: 20, top: 20, bottom: 40 },
+      xAxis: { type: 'category', data: xAll.map(k => { const [y, m] = k.split('-'); return m + '月'; }),
+        axisLabel: { fontSize: 10, interval: 0, formatter: function (v, i) { return (i < 12 ? '25' : '26') + v; } } },
+      yAxis: { type: 'value', name: '万元', axisLabel: { fontSize: 11 } },
+      color: boards.slice(0, 3).map(b => bc[b]),
+      series: series
+    });
+  } catch (e) { console.error('Charts Team error:', e); }
+}
+
+// === Drill Table - Product Tab ===
+// 获取同比数据的辅助函数
+async function getPrevYearDataProduct(level, board, product) {
+  const prevYear = S.year - 1;
+  try {
+    const r = await apiPost('/api/product/drill', { year: prevYear, months: S.monthsProduct, level: level, board: board, product: product });
+    if (r.data) {
+      const map = {};
+      for (const row of r.data) {
+        const key = row.业务板块 || row.产品 || row.项目 || '';
+        map[key] = row;
+      }
+      return map;
+    }
+  } catch (e) { console.error('Failed to load prev year data', e); }
+  return {};
+}
+
+// 获取产品线环比数据
+async function getProductMomData(data) {
+  if (!data || data.length === 0) return {};
+  try {
+    const months = S.monthsProduct || [];
+    if (months.length === 0) return {};
+    
+    const lastMonth = Math.max(...months);
+    let momMonths;
+    if (lastMonth === 1) {
+      return {};
+    } else {
+      momMonths = [lastMonth - 1];
+    }
+    
+    const r = await apiPost('/api/product/drill', { year: S.year, months: momMonths, level: 'board' });
+    if (r.data) {
+      const map = {};
+      for (const row of r.data) {
+        const key = row.业务板块 || '';
+        map[key] = row;
+      }
+      return map;
+    }
+  } catch (e) { console.error('Failed to load mom data', e); }
+  return {};
+}
+
+// === Drill Table - Team Tab ===
+async function getPrevYearDataTeam(level, filter) {
+  const prevYear = S.year - 1;
+  try {
+    const body = { year: prevYear, months: S.monthsTeam, level: level };
+    if (level === 'parent') body.nature = filter;
+    if (level === 'account') body.parent = filter;
+    const r = await apiPost('/api/team/drill', body);
+    if (r.data) {
+      const map = {};
+      for (const row of r.data) {
+        // 根据层级使用正确的字段作为key
+        let key;
+        if (level === 'nature') {
+          key = row['H团队线性质'] || '';
+        } else if (level === 'parent') {
+          key = row['H团队线-上级'] || '';
+        } else if (level === 'account') {
+          key = row['H团队线-核算'] || '';
+        } else {
+          key = row['H团队线性质'] || '';
+        }
+        map[key] = row;
+      }
+      return map;
+    }
+  } catch (e) { console.error('Failed to load prev year data', e); }
+  return {};
+}
+
+// 获取创业团队环比数据
+async function getTeamMomData(data) {
+  if (!data || data.length === 0) return {};
+  try {
+    // 计算环比月份（当前选中月份的上一个月份）
+    const months = S.monthsTeam || [];
+    if (months.length === 0) return {};
+    
+    // 获取最后一个月份的上一个月份
+    const lastMonth = Math.max(...months);
+    let momMonths;
+    if (lastMonth === 1) {
+      // 1月份环比去年12月，暂不支持
+      return {};
+    } else {
+      momMonths = [lastMonth - 1];
+    }
+    
+    // 调用API获取上月数据
+    const r = await apiPost('/api/team/drill', { year: S.year, months: momMonths, level: 'nature' });
+    if (r.data) {
+      const map = {};
+      for (const row of r.data) {
+        const key = row['H团队线性质'] || '';
+        map[key] = row;
+      }
+      return map;
+    }
+  } catch (e) { console.error('Failed to load mom data', e); }
+  return {};
+}
+
+// 格式化同比金额（保留整数）
+function fmtYoy(val) {
+  if (val == null || val === '' || isNaN(val)) return '-';
+  const rounded = Math.round(val);
+  const sign = rounded >= 0 ? '+' : '';
+  return sign + rounded + '万';
+}
+
+// 显示团队详情弹窗
+window.showTeamDetail = async function(name, level, nature) {
+  // 创建弹窗
+  let modal = document.getElementById('teamDetailModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'teamDetailModal';
+    modal.className = 'detail-modal';
+    document.body.appendChild(modal);
+  }
+  
+  // 显示加载状态
+  modal.innerHTML = '<div class="detail-modal-content"><div class="detail-modal-header"><h3><i class="fa-solid fa-chart-line" style="color:var(--accent);margin-right:8px"></i>团队经营详情</h3><button class="detail-modal-close" onclick="closeTeamDetail()">&times;</button></div><div class="detail-modal-body"><div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> 加载中...</div></div></div>';
+  modal.style.display = 'flex';
+  
+  try {
+    let data, html = '';
+    
+    // 获取环比数据
+    const momMonths = S.monthsTeam.length > 1 ? S.monthsTeam.slice(0, -1) : S.monthsTeam;
+    let momData = {};
+    
+    // 用于计算占比的上级汇总数据
+    let parentTotals = { totalIncome: 0, totalExpense: 0 };
+    
+    if (level === 0) {
+      // 团队性质级别详情 - 需要获取所有上级团队的数据来计算占比
+      data = await apiPost('/api/team/drill', { year: S.year, months: S.monthsTeam, level: 'nature' });
+      const row = (data.data || []).find(r => r['H团队线性质'] === name);
+      if (row) {
+        // 获取环比数据
+        const momApiData = await apiPost('/api/team/drill', { year: S.year, months: momMonths, level: 'nature' });
+        const momRow = (momApiData.data || []).find(r => r['H团队线性质'] === name);
+        momData = momRow || {};
+        // 该团队性质下的所有上级团队数据作为父级汇总
+        parentTotals.totalIncome = (data.data || []).reduce((sum, r) => sum + (r.收入 || 0), 0);
+        parentTotals.totalExpense = (data.data || []).reduce((sum, r) => sum + ((r.支出 || 0)), 0);
+        
+        // 获取按收支列分组的详情数据
+        const detailData = await apiPost('/api/team/detail', { year: S.year, months: S.monthsTeam, level: 'nature', name: name });
+        
+        html = generateTeamDetailHTML(name, row, momData, parentTotals, level, detailData);
+      }
+    } else if (level === 1) {
+      // 上级团队级别详情 - 获取该上级团队下的所有核算单元来计算占比
+      data = await apiPost('/api/team/drill', { year: S.year, months: S.monthsTeam, level: 'parent', nature: nature });
+      const row = (data.data || []).find(r => r['H团队线-上级'] === name);
+      if (row) {
+        // 获取环比数据
+        const momApiData = await apiPost('/api/team/drill', { year: S.year, months: momMonths, level: 'parent', nature: nature });
+        const momRow = (momApiData.data || []).find(r => r['H团队线-上级'] === name);
+        momData = momRow || {};
+        // 该上级团队的数据作为父级汇总
+        parentTotals.totalIncome = (data.data || []).reduce((sum, r) => sum + (r.收入 || 0), 0);
+        parentTotals.totalExpense = (data.data || []).reduce((sum, r) => sum + ((r.支出 || 0)), 0);
+        
+        // 获取按收支列分组的详情数据
+        const detailData = await apiPost('/api/team/detail', { year: S.year, months: S.monthsTeam, level: 'parent', name: name });
+        
+        html = generateTeamDetailHTML(name, row, momData, parentTotals, level, detailData);
+      }
+    } else {
+      // 核算单元级别详情 - 获取该上级团队下的所有核算单元来计算占比
+      const parentApiData = await apiPost('/api/team/drill', { year: S.year, months: S.monthsTeam, level: 'account', parent: name });
+      const rows = parentApiData.data || [];
+      if (rows.length > 0) {
+        // 计算该上级团队的总收入和总支出
+        parentTotals.totalIncome = rows.reduce((sum, r) => sum + (r.收入 || 0), 0);
+        parentTotals.totalExpense = rows.reduce((sum, r) => sum + ((r.支出 || 0)), 0);
+        
+        html = `
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-list"></i> 核算单元明细（共${rows.length}个）</div>
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th>核算单元</th>
+                  <th>收入</th>
+                  <th>支出</th>
+                  <th>管理费</th>
+                  <th>结余(万元)</th>
+                  <th>结余率</th>
+                </tr>
+              </thead>
+              <tbody>`;
+        for (const r of rows) {
+          // 按公式计算：结余 = 收入 - 支出 - 管理费
+          const income = r.收入 || 0; // 收入求和
+          const expense = (r.支出 || 0); // 支出已经是正值
+          const fee = (r.平台管理费 || 0);
+          const balance = income - expense - fee; // 收入 - 支出 - 管理费
+          const balColor = balance >= 0 ? 'var(--green)' : 'var(--red)';
+          const balRate = income > 0 ? ((balance / income * 100).toFixed(1)) : '0.0';
+          html += `<tr>
+            <td style="font-weight:500">${r['H团队线-核算'] || ''}</td>
+            <td class="num">${fmt(income)}万</td>
+            <td class="num">${fmt(expense)}万</td>
+            <td class="num">${fmt(fee)}万</td>
+            <td class="num" style="color:${balColor};font-weight:600">${fmt(balance)}万元</td>
+            <td class="num" style="color:${balColor}">${balRate}%</td>
+          </tr>`;
+        }
+        // 合计行
+        const totalIncome = rows.reduce((sum, r) => sum + (r.收入 || 0), 0);
+        const totalExpense = rows.reduce((sum, r) => sum + ((r.支出 || 0)), 0);
+        const totalFee = rows.reduce((sum, r) => sum + ((r.平台管理费 || 0)), 0);
+        const totalBalance = totalIncome - totalExpense - totalFee;
+        const totalBalColor = totalBalance >= 0 ? 'var(--green)' : 'var(--red)';
+        const totalBalRate = totalIncome > 0 ? ((totalBalance / totalIncome * 100).toFixed(1)) : '0.0';
+        html += `<tr style="background:#f8f9fa;font-weight:700">
+          <td>合计</td>
+          <td class="num">${fmt(totalIncome)}万</td>
+          <td class="num">${fmt(totalExpense)}万</td>
+          <td class="num">${fmt(totalFee)}万</td>
+          <td class="num" style="color:${totalBalColor};font-weight:600">${fmt(totalBalance)}万元</td>
+          <td class="num" style="color:${totalBalColor}">${totalBalRate}%</td>
+        </tr>`;
+        html += '</tbody></table></div>';
+      }
+    }
+    
+    if (!html) html = '<p>暂无数据</p>';
+    
+    modal.querySelector('.detail-modal-body').innerHTML = html;
+    
+    // 绑定注释保存功能
+    setTimeout(() => bindNoteSave(name, level), 100);
+  } catch (e) {
+    modal.querySelector('.detail-modal-body').innerHTML = '<p>加载失败: ' + e.message + '</p>';
+  }
+};
+
+// 生成团队详情HTML - 按月份分列的树形表格
+function generateTeamDetailHTML(name, row, momData, parentTotals, level, detailData) {
+  // 按公式计算各项金额
+  // 收入 = row.收入（后端已经转换为万元）
+  // 支出 = row.支出（后端已经转换为万元）
+  // 平台管理费 = row.平台管理费（后端已经转换为万元）
+  // 结余 = 收入 - 支出 - 平台管理费
+  const totalIncome = row.收入 || 0;
+  const totalExpense = (row.支出 || 0);
+  const totalFee = (row.平台管理费 || 0);
+  const totalBalance = totalIncome - totalExpense - totalFee; // 收入 - 支出 - 管理费
+  
+  const balColor = totalBalance >= 0 ? 'positive' : 'negative';
+  const balRate = totalIncome > 0 ? ((totalBalance / totalIncome * 100)).toFixed(1) : '0.0';
+  
+  // 计算3-12月累计值（基于月份数据字段）
+  const sum312Income = totalIncome; // 汇总数据不区分月份，取全年值
+  const sum312Expense = totalExpense;
+  const sum312Fee = totalFee;
+  const sum312Balance = sum312Income - sum312Expense - sum312Fee;
+  
+  // 生成月份列HTML - 后端返回的是汇总数据，不含按月份分列，简化处理
+  const genMonthCells = (field) => {
+    let html = '';
+    for (let m = 1; m <= 12; m++) {
+      html += `<td class="num-cell"><div class="cell-value">-</div></td>`;
+    }
+    return html;
+  };
+  
+  // 生成分析建议
+  const analysisSuggestions = generateAnalysisSuggestions(totalIncome, totalExpense, totalFee, totalBalance, balRate);
+  
+  // 获取保存的注释
+  const savedNote = localStorage.getItem('team_note_' + name + '_' + level) || '';
+  
+  return `
+    <!-- 基本信息卡片 - 移到上方，小字 -->
+    <div class="detail-summary">
+      <div class="detail-kpi-mini-grid">
+        <div class="detail-kpi-mini-card">
+          <div class="detail-kpi-mini-label">总收入</div>
+          <div class="detail-kpi-mini-value positive">${fmt(totalIncome)}<span class="unit">万</span></div>
+        </div>
+        <div class="detail-kpi-mini-card">
+          <div class="detail-kpi-mini-label">总支出</div>
+          <div class="detail-kpi-mini-value negative">${fmt(totalExpense)}<span class="unit">万</span></div>
+        </div>
+        <div class="detail-kpi-mini-card">
+          <div class="detail-kpi-mini-label">管理费</div>
+          <div class="detail-kpi-mini-value">${fmt(totalFee)}<span class="unit">万</span></div>
+        </div>
+        <div class="detail-kpi-mini-card">
+          <div class="detail-kpi-mini-label">结余</div>
+          <div class="detail-kpi-mini-value ${balColor}">${fmt(totalBalance)}<span class="unit">万</span></div>
+        </div>
+        <div class="detail-kpi-mini-card">
+          <div class="detail-kpi-mini-label">结余率</div>
+          <div class="detail-kpi-mini-value ${balColor}">${balRate}<span class="unit">%</span></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="detail-tree-table">
+      <table class="detail-monthly-table">
+        <thead>
+          <tr>
+            <th class="sticky-col">项目</th>
+            <th class="num-col">1月</th>
+            <th class="num-col">2月</th>
+            <th class="num-col">3月</th>
+            <th class="num-col">4月</th>
+            <th class="num-col">5月</th>
+            <th class="num-col">6月</th>
+            <th class="num-col">7月</th>
+            <th class="num-col">8月</th>
+            <th class="num-col">9月</th>
+            <th class="num-col">10月</th>
+            <th class="num-col">11月</th>
+            <th class="num-col">12月</th>
+            <th class="num-col highlight-col">3-12月</th>
+            <th class="num-col highlight-col">全年</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 收入部分 - 可收起 -->
+          <tr class="section-header income-header collapsible" data-section="income">
+            <td class="sticky-col">
+              <span class="section-toggle" onclick="toggleSection(this.parentElement.parentElement)">▼</span>
+              <span class="row-code">一</span><span class="row-name">收入</span>
+            </td>
+            ${genMonthCells('金额g', false)}
+            <td class="num-cell highlight-cell"><div class="cell-value">${fmt(sum312Income)}</div></td>
+            <td class="num-cell highlight-cell"><div class="cell-value">${fmt(totalIncome)}</div></td>
+          </tr>
+        </tbody>
+        <tbody class="collapsible-body" data-for="income">
+          ${(detailData?.income_items || []).map((item, idx) => {
+            const match = item.科目.match(/^(\d+)\.\s*(.*)$/);
+            const code = match ? (match[1] + '.' + (idx + 1)) : String(idx + 1);
+            const name = match ? match[2] : item.科目;
+            return `<tr class="data-row">
+            <td class="sticky-col"><span class="row-code">${code}</span><span class="row-name">${name}</span></td>
+            ${genMonthCells()}
+            <td class="num-cell highlight-cell"><div class="cell-value">${fmt(item.金额)}</div></td>
+            <td class="num-cell highlight-cell"><div class="cell-value">${fmt(item.金额)}</div></td>
+          </tr>`;
+          }).join('')}
+          ${(!detailData || !detailData.income_items || detailData.income_items.length === 0) ? '<tr class="data-row"><td class="sticky-col" colspan="16" style="text-align:center;color:#999;">暂无收入数据</td></tr>' : ''}
+        </tbody>
+        <tbody>
+          <!-- 支出部分 - 可收起 -->
+          <tr class="section-header expense-header collapsible" data-section="expense">
+            <td class="sticky-col">
+              <span class="section-toggle" onclick="toggleSection(this.parentElement.parentElement)">▼</span>
+              <span class="row-code">二</span><span class="row-name">支出</span>
+            </td>
+            ${genMonthCells('金额g', true)}
+            <td class="num-cell highlight-cell"><div class="cell-value">${fmt(sum312Expense)}</div></td>
+            <td class="num-cell highlight-cell"><div class="cell-value">${fmt(totalExpense)}</div></td>
+          </tr>
+        </tbody>
+        <tbody class="collapsible-body" data-for="expense">
+          ${(detailData?.expense_items || []).map((item, idx) => {
+            const match = item.科目.match(/^(\d+)\.\s*(.*)$/);
+            const code = match ? (match[1] + '.' + (idx + 1)) : String(idx + 1);
+            const name = match ? match[2] : item.科目;
+            return `<tr class="data-row">
+            <td class="sticky-col"><span class="row-code">${code}</span><span class="row-name">${name}</span></td>
+            ${genMonthCells()}
+            <td class="num-cell highlight-cell"><div class="cell-value">${fmt(item.金额)}</div></td>
+            <td class="num-cell highlight-cell"><div class="cell-value">${fmt(item.金额)}</div></td>
+          </tr>`;
+          }).join('')}
+          ${(!detailData || !detailData.expense_items || detailData.expense_items.length === 0) ? '<tr class="data-row"><td class="sticky-col" colspan="16" style="text-align:center;color:#999;">暂无支出数据</td></tr>' : ''}
+        </tbody>
+        <tbody>
+          <!-- 管理费部分 - 可收起 -->
+          <tr class="section-header fee-header collapsible" data-section="fee">
+            <td class="sticky-col">
+              <span class="section-toggle" onclick="toggleSection(this.parentElement.parentElement)">▼</span>
+              <span class="row-code">三</span><span class="row-name">管理费</span>
+            </td>
+            ${genMonthCells('平台管理费', true)}
+            <td class="num-cell highlight-cell"><div class="cell-value">${fmt(sum312Fee)}</div></td>
+            <td class="num-cell highlight-cell"><div class="cell-value">${fmt(totalFee)}</div></td>
+          </tr>
+        </tbody>
+        <tbody>
+          <!-- 结余部分（黄色背景） -->
+          <tr class="balance-row">
+            <td class="sticky-col balance-label"><span class="row-code"></span><span class="row-name">结余(万元)</span></td>
+            ${genMonthCells('结余', false)}
+            <td class="num-cell highlight-cell balance-cell"><div class="cell-value" style="color:${sum312Balance >= 0 ? '#34C759' : '#FF3B30'};font-weight:600">${fmt(sum312Balance)}</div></td>
+            <td class="num-cell highlight-cell balance-cell"><div class="cell-value" style="color:${totalBalance >= 0 ? '#34C759' : '#FF3B30'};font-weight:600">${fmt(totalBalance)}</div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- 分析建议区域 -->
+    <div class="detail-analysis-section">
+      <div class="detail-analysis-title"><i class="fa-solid fa-lightbulb"></i> 智能分析建议</div>
+      <div class="detail-analysis-list">
+        ${analysisSuggestions.map(s => `<div class="analysis-item ${s.type}"><i class="fa-solid ${s.icon}"></i><span>${s.text}</span></div>`).join('')}
+      </div>
+    </div>
+    
+    <!-- 注释编辑区域 -->
+    <div class="detail-note-section">
+      <div class="detail-note-title"><i class="fa-solid fa-edit"></i> 我的分析注释</div>
+      <textarea class="detail-note-input" id="teamNoteInput" placeholder="在此记录您的分析注释，笔记将自动保存到本地...">${savedNote}</textarea>
+      <div class="detail-note-hint"><i class="fa-solid fa-info-circle"></i> 注释已自动保存到浏览器本地存储</div>
+    </div>
+  `;
+}
+
+// 生成分析建议
+function generateAnalysisSuggestions(income, expense, fee, balance, balRate) {
+  const suggestions = [];
+  const balRateNum = parseFloat(balRate) || 0;
+  const incomeNum = parseFloat(income) || 0;
+  
+
+  // 结余分析
+  if (balance < 0) {
+    suggestions.push({
+      type: 'warning',
+      icon: 'fa-triangle-exclamation',
+      text: `该团队当前结余为负数（${balance.toFixed(2)}万元），建议重点关注成本控制和收入增长策略。`
+    });
+  } else if (balRateNum > 30) {
+    suggestions.push({
+      type: 'success',
+      icon: 'fa-check-circle',
+      text: `结余率表现优秀，达到${balRate}%，继续保持良好的成本管控。`
+    });
+  } else if (balRateNum > 0) {
+    suggestions.push({
+      type: 'info',
+      icon: 'fa-info-circle',
+      text: `结余率为${balRate}%，建议关注费用结构优化以提升盈利能力。`
+    });
+  } else {
+    suggestions.push({
+      type: 'warning',
+      icon: 'fa-chart-line',
+      text: `结余为0或接近0，建议分析收支结构，寻找增长点。`
+    });
+  }
+  
+  // 收入规模分析
+  if (incomeNum < 10) {
+    suggestions.push({
+      type: 'info',
+      icon: 'fa-rocket',
+      text: `收入规模较小（${incomeNum.toFixed(2)}万元），可考虑拓展业务渠道增加收入来源。`
+    });
+  } else if (incomeNum > 500) {
+    suggestions.push({
+      type: 'info',
+      icon: 'fa-star',
+      text: `收入规模较大（${incomeNum.toFixed(2)}万元），建议关注规模化运营效率。`
+    });
+  }
+  
+  // 管理费分析
+  if (fee > income * 0.1) {
+    suggestions.push({
+      type: 'warning',
+      icon: 'fa-coins',
+      text: `管理费占比较高，建议与平台协商优化费用结构。`
+    });
+  }
+  
+  return suggestions.slice(0, 3); // 最多返回3条建议
+}
+
+// 绑定注释保存功能
+function bindNoteSave(name, level) {
+  const noteInput = document.getElementById('teamNoteInput');
+  if (!noteInput) return;
+  
+  const saveNote = () => {
+    const note = noteInput.value;
+    localStorage.setItem('team_note_' + name + '_' + level, note);
+  };
+  
+  // 实时保存
+  noteInput.addEventListener('input', saveNote);
+  
+  // 失去焦点时保存
+  noteInput.addEventListener('blur', saveNote);
+}
+
+// 收起/展开树形结构区块
+window.toggleSection = function(headerRow) {
+  const section = headerRow.dataset.section;
+  const toggleIcon = headerRow.querySelector('.section-toggle');
+  const bodyTbody = headerRow.parentElement.nextElementSibling;
+  
+  // 检查是否是要找的collapsible-body
+  const targetBody = section === 'income' || section === 'expense' || section === 'fee' 
+    ? document.querySelector(`.collapsible-body[data-for="${section}"]`)
+    : null;
+  
+  if (!targetBody) return;
+  
+  const isCollapsed = headerRow.classList.contains('collapsed');
+  
+  if (isCollapsed) {
+    // 展开
+    headerRow.classList.remove('collapsed');
+    targetBody.style.display = '';
+    toggleIcon.textContent = '▼';
+  } else {
+    // 收起
+    headerRow.classList.add('collapsed');
+    targetBody.style.display = 'none';
+    toggleIcon.textContent = '▶';
+  }
+};
+
+// 关闭详情弹窗
+window.closeTeamDetail = function() {
+  const modal = document.getElementById('teamDetailModal');
+  if (modal) modal.style.display = 'none';
+};
+
+// 显示产品线详情 - 跳转到详情页面
+window.showProductDetail = function(name, board, product) {
+  // 获取URL参数
+  const params = new URLSearchParams();
+  params.set('name', name);
+  params.set('board', board);
+  params.set('product', product || '');
+  params.set('year', S.year);
+  params.set('months', S.monthsProduct ? S.monthsProduct.join(',') : '');
+  
+  // 跳转到详情页面
+  window.location.href = '/product_detail.html?' + params.toString();
+};
+
+// 产品线树形表格 - 缓存已加载的子数据
+window._productTreeCache = { products: {}, projects: {} };
+
+// 渲染单行函数
+function renderProductRow(row, level, prevData, momData, isParent) {
+  const name = row.业务板块 || row.产品 || row.项目 || '';
+  const prev = prevData[name] || {};
+  
+  // 计算结余：收入 - 支出 - 平台管理费
+  const balance = (row.收入 || 0) - (row.支出 || 0) - (row.平台管理费 || 0);
+  const prevBalance = (prev.收入 || 0) - (prev.支出 || 0) - (prev.平台管理费 || 0);
+  const momBalanceVal = momData ? ((momData.收入 || 0) - (momData.支出 || 0) - (momData.平台管理费 || 0)) : 0;
+  
+  const yoyIncome = (row.收入 || 0) - (prev.收入 || 0);
+  const yoyExpense = (row.支出 || 0) - (prev.支出 || 0);
+  const yoyFee = (row.平台管理费 || 0) - (prev.平台管理费 || 0);
+  const yoyBalance = balance - prevBalance;
+  const balanceColor = yoyBalance >= 0 ? 'color:#34C759' : 'color:#FF3B30';
+  const indentClass = level === 1 ? 'tree-indent-1' : level === 2 ? 'tree-indent-2' : '';
+  const rowClass = level === 0 ? 'tree-parent' : level === 1 ? 'tree-child' : 'tree-grandchild';
+  
+  // 获取环比数据
+  const momIncome = momData ? (momData.收入 || 0) : 0;
+  const momExpense = momData ? (momData.支出 || 0) : 0;
+  const momFee = momData ? (momData.平台管理费 || 0) : 0;
+  const momBalance = momBalanceVal;
+  
+  // 展开按钮逻辑
+  let toggleBtn = '<span class="tree-toggle empty">▶</span>';
+  if (level < 2) {
+    const hasChildren = level === 0 ? true : true; // 始终显示展开按钮
+    toggleBtn = `<span class="tree-toggle" data-board="${row.业务板块 || ''}" data-product="${row.产品 || ''}" data-level="${level}">▶</span>`;
+  }
+  
+  let html = `<tr class="${rowClass}" data-name="${name}" data-level="${level}">`;
+  html += `<td class="${indentClass}"><div class="tree-row"><span class="tree-toggle-area">${toggleBtn}</span><span class="tree-label" style="font-weight:${level === 0 ? 600 : 500}">${name}</span></div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(row.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momIncome)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyIncome)}</span></div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(row.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momExpense)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyExpense)}</span></div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(row.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momFee)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyFee)}</span></div></td>`;
+  html += `<td class="num-cell balance-cell"><div class="num-main" style="${balanceColor}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value ${momBalance >= 0 ? 'positive' : 'negative'}">${fmtYoy(momBalance)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${yoyBalance >= 0 ? 'positive' : 'negative'}">${fmtYoy(yoyBalance)}</span></div></td>`;
+  html += '</tr>';
+  return html;
+}
+
+// Product Tab - 树形表格加载
+async function loadTableProduct() {
+  try {
+    console.log('[TreeTable] 开始加载产品线数据，当前年份:', S.year, '月份:', S.monthsProduct);
+    
+    // 强制刷新：清空缓存
+    window._productTreeCache = { products: {}, projects: {} };
+    
+    // 1. 加载板块数据（一级）
+    console.log('正在加载板块层级数据...');
+    const r = await apiPost('/api/product/drill', { year: S.year, months: S.monthsProduct, level: 'board' });
+    const boardData = r.data || [];
+    console.log('板块数据加载完成，共', boardData.length, '条');
+    
+    const prevData = await getPrevYearDataProduct('board', null, null);
+    
+    document.getElementById('tableTitleProduct').textContent = '产品线明细';
+    document.getElementById('backBtnAreaProduct').innerHTML = '';
+    document.getElementById('sortBtnsProduct').innerHTML = '<button class="month-pill" onclick="doSortProductTree()"><i class="fa-solid fa-sort"></i> 结余排序</button>';
+    
+    // 获取环比数据
+    const momDataMap = await getProductMomData(boardData);
+    
+    let html = '<table><thead><tr>';
+    html += '<th>业务板块</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th>';
+    html += '</tr></thead><tbody>';
+    
+    // 渲染板块行
+    for (const row of boardData) {
+      html += renderProductRow(row, 0, prevData, momDataMap[row.业务板块]);
+    }
+    
+    // 合计行
+    if (boardData.length > 0) {
+      const totalIncome = boardData.reduce((sum, r) => sum + (r.收入 || 0), 0);
+      const totalExpense = boardData.reduce((sum, r) => sum + (r.支出 || 0), 0);
+      const totalFee = boardData.reduce((sum, r) => sum + (r.平台管理费 || 0), 0);
+      const totalBalance = totalIncome - totalExpense - totalFee; // 结余 = 收入 - 支出 - 管理费
+      const totalBalanceColor = totalBalance >= 0 ? '#34C759' : '#FF3B30';
+      html += '<tr style="background:#f8f9fa;font-weight:700;border-top:2px solid #dee2e6">';
+      html += '<td>合计</td>';
+      html += `<td class="num-cell"><div class="num-main">${fmt(totalIncome)}</div></td>`;
+      html += `<td class="num-cell"><div class="num-main">${fmt(totalExpense)}</div></td>`;
+      html += `<td class="num-cell"><div class="num-main">${fmt(totalFee)}</div></td>`;
+      html += `<td class="num-cell balance-cell"><div class="num-main" style="color:${totalBalanceColor}">${fmt(totalBalance)}</div></td>`;
+      html += '</tr>';
+    }
+    
+    html += '</tbody></table>';
+    document.getElementById('tableWrapProduct').innerHTML = html;
+    
+    // 绑定展开/收起事件
+    bindProductTreeEvents();
+  } catch (e) { console.error('Table Product error:', e); }
+}
+
+// 绑定产品线树形表格事件
+function bindProductTreeEvents() {
+  const wrap = document.getElementById('tableWrapProduct');
+  if (!wrap) return;
+  
+  wrap.onclick = async function(e) {
+    const toggle = e.target.closest('.tree-toggle:not(.empty)');
+    if (!toggle) return;
+    
+    e.stopPropagation();
+    const level = parseInt(toggle.dataset.level);
+    const board = toggle.dataset.board;
+    const product = toggle.dataset.product;
+    
+    const isExpanded = toggle.classList.contains('expanded');
+    
+    if (isExpanded) {
+      toggle.classList.remove('expanded');
+      const row = toggle.closest('tr');
+      let nextRow = row.nextElementSibling;
+      while (nextRow && parseInt(nextRow.dataset.level || 0) > level) {
+        nextRow.style.display = 'none';
+        nextRow.classList.remove('expanded');
+        nextRow = nextRow.nextElementSibling;
+      }
+    } else {
+      toggle.classList.add('expanded');
+      const row = toggle.closest('tr');
+      
+      if (level === 0) {
+        const cacheKey = board;
+        
+        if (!window._productTreeCache.products[cacheKey]) {
+          const loadingRow = document.createElement('tr');
+          loadingRow.className = 'tree-loading-row';
+          loadingRow.innerHTML = '<td colspan="5" class="tree-loading">加载中...</td>';
+          row.parentNode.insertBefore(loadingRow, row.nextSibling);
+          
+          const r = await apiPost('/api/product/drill', { year: S.year, months: S.monthsProduct, level: 'product', board: board });
+          window._productTreeCache.products[cacheKey] = r.data || [];
+          loadingRow.remove();
+        }
+        
+        const prevData = await getPrevYearDataProduct('product', board, null);
+        let insertBeforeRow = row.nextElementSibling;
+        while (insertBeforeRow && parseInt(insertBeforeRow.dataset.level || 0) > level) {
+          const next = insertBeforeRow.nextElementSibling;
+          insertBeforeRow.remove();
+          insertBeforeRow = next;
+        }
+        
+        const productData = window._productTreeCache.products[cacheKey];
+        const frag = document.createDocumentFragment();
+        for (const pRow of productData) {
+          const tr = document.createElement('tr');
+          tr.className = 'tree-child';
+          tr.dataset.level = '1';
+          tr.dataset.name = pRow.产品 || '';
+          tr.style.display = '';
+          // 计算结余：收入 - 支出 - 平台管理费
+          const balance = (pRow.收入 || 0) - (pRow.支出 || 0) - (pRow.平台管理费 || 0);
+          const prevBalance = (prevData[pRow.产品]?.收入 || 0) - (prevData[pRow.产品]?.支出 || 0) - (prevData[pRow.产品]?.平台管理费 || 0);
+          const yoyIncome = (pRow.收入 || 0) - (prevData[pRow.产品]?.收入 || 0);
+          const yoyExpense = (pRow.支出 || 0) - (prevData[pRow.产品]?.支出 || 0);
+          const yoyFee = (pRow.平台管理费 || 0) - (prevData[pRow.产品]?.平台管理费 || 0);
+          const yoyBalance = balance - prevBalance;
+          tr.innerHTML = `<td class="tree-indent-1"><div class="tree-row"><span class="tree-toggle-area"><span class="tree-toggle" data-board="${board}" data-product="${pRow.产品 || ''}" data-level="1">▶</span></span><span class="tree-label">${pRow.产品 || ''}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyIncome)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyExpense)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyFee)}</span></div></td><td class="num-cell balance-cell"><div class="num-main" style="${yoyBalance >= 0 ? 'color:#34C759' : 'color:#FF3B30'}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${yoyBalance >= 0 ? 'positive' : 'negative'}">${fmtYoy(yoyBalance)}</span></div></td>`;
+          frag.appendChild(tr);
+        }
+        row.parentNode.insertBefore(frag, insertBeforeRow);
+        
+      } else if (level === 1) {
+        const cacheKey = board + '|' + product;
+        
+        if (!window._productTreeCache.projects[cacheKey]) {
+          const loadingRow = document.createElement('tr');
+          loadingRow.className = 'tree-loading-row';
+          loadingRow.innerHTML = '<td colspan="5" class="tree-loading">加载中...</td>';
+          row.parentNode.insertBefore(loadingRow, row.nextSibling);
+          
+          const r = await apiPost('/api/product/drill', { year: S.year, months: S.monthsProduct, level: 'project', product: product });
+          window._productTreeCache.projects[cacheKey] = r.data || [];
+          loadingRow.remove();
+        }
+        
+        const prevData = await getPrevYearDataProduct('project', board, product);
+        let insertBeforeRow = row.nextElementSibling;
+        while (insertBeforeRow && parseInt(insertBeforeRow.dataset.level || 0) > level) {
+          const next = insertBeforeRow.nextElementSibling;
+          insertBeforeRow.remove();
+          insertBeforeRow = next;
+        }
+        
+        const projectData = window._productTreeCache.projects[cacheKey];
+        const frag = document.createDocumentFragment();
+        for (const pRow of projectData) {
+          const tr = document.createElement('tr');
+          tr.className = 'tree-grandchild';
+          tr.dataset.level = '2';
+          tr.dataset.name = pRow.项目 || '';
+          tr.style.display = '';
+          const yoyIncome = (pRow.收入 || 0) - (prevData[pRow.项目]?.收入 || 0);
+          const yoyExpense = (pRow.支出 || 0) - (prevData[pRow.项目]?.支出 || 0);
+          const yoyFee = (pRow.平台管理费 || 0) - (prevData[pRow.项目]?.平台管理费 || 0);
+          // 计算结余：收入 - 支出 - 平台管理费
+          const balance = (pRow.收入 || 0) - (pRow.支出 || 0) - (pRow.平台管理费 || 0);
+          const prevBalance = (prevData[pRow.项目]?.收入 || 0) - (prevData[pRow.项目]?.支出 || 0) - (prevData[pRow.项目]?.平台管理费 || 0);
+          const yoyBal = balance - prevBalance;
+          tr.innerHTML = `<td class="tree-indent-2"><div class="tree-row"><span class="tree-toggle-area"><span class="tree-toggle empty">▶</span></span><span class="tree-label">${pRow.项目 || ''}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyIncome)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyExpense)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyFee)}</span></div></td><td class="num-cell balance-cell"><div class="num-main" style="${yoyBal >= 0 ? 'color:#34C759' : 'color:#FF3B30'}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${yoyBal >= 0 ? 'positive' : 'negative'}">${fmtYoy(yoyBal)}</span></div></td>`;
+          frag.appendChild(tr);
+        }
+        row.parentNode.insertBefore(frag, insertBeforeRow);
+      }
+    }
+  };
+}
+
+// 产品线树形表格排序
+window.doSortProductTree = async function() {
+  console.log('[TreeTable] 执行产品线排序...');
+  // 获取板块数据并排序
+  const r = await apiPost('/api/product/drill', { year: S.year, months: S.monthsProduct, level: 'board' });
+  const data = r.data || [];
+  data.sort((a, b) => Math.abs(b.结余 || 0) - Math.abs(a.结余 || 0));
+  
+  const prevData = await getPrevYearDataProduct('board', null, null);
+  const momDataMap = await getProductMomData(data);
+  
+  let html = '<table><thead><tr>';
+  html += '<th>业务板块</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th>';
+  html += '</tr></thead><tbody>';
+  
+  for (const row of data) {
+    html += renderProductRow(row, 0, prevData, momDataMap[row.业务板块]);
+  }
+  
+  // 合计行
+  const totalIncome = data.reduce((sum, r) => sum + (r.收入 || 0), 0);
+  const totalExpense = data.reduce((sum, r) => sum + (r.支出 || 0), 0);
+  const totalFee = data.reduce((sum, r) => sum + (r.平台管理费 || 0), 0);
+  const totalBalance = totalIncome - totalExpense - totalFee; // 结余 = 收入 - 支出 - 管理费
+  const totalBalanceColor = totalBalance >= 0 ? '#34C759' : '#FF3B30';
+  html += '<tr style="background:#f8f9fa;font-weight:700;border-top:2px solid #dee2e6">';
+  html += '<td>合计</td>';
+  html += `<td class="num-cell"><div class="num-main">${fmt(totalIncome)}</div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(totalExpense)}</div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(totalFee)}</div></td>`;
+  html += `<td class="num-cell balance-cell"><div class="num-main" style="color:${totalBalanceColor}">${fmt(totalBalance)}</div></td>`;
+  html += '</tr>';
+  
+  html += '</tbody></table>';
+  document.getElementById('tableWrapProduct').innerHTML = html;
+  bindProductTreeEvents();
+};
+
+// 创业团队树形表格 - 缓存已加载的子数据
+window._teamTreeCache = { parents: {}, accounts: {} };
+
+// 渲染创业团队单行函数
+function renderTeamRow(row, level, prevData) {
+  const name = row['H团队线-上级'] || row['H团队线性质'] || '';
+  const nature = row['H团队线性质'] || '';
+  const prev = prevData[name] || {};
+  // 计算结余：收入 - 支出 - 平台管理费
+  const balance = (row.收入 || 0) - (row.支出 || 0) - (row.平台管理费 || 0);
+  const prevBalance = (prev.收入 || 0) - (prev.支出 || 0) - (prev.平台管理费 || 0);
+  
+  const yoyIncome = (row.收入 || 0) - (prev.收入 || 0);
+  const yoyExpense = (row.支出 || 0) - (prev.支出 || 0);
+  const yoyFee = (row.平台管理费 || 0) - (prev.平台管理费 || 0);
+  const yoyBalance = balance - prevBalance;
+  const balanceColor = yoyBalance >= 0 ? 'color:#34C759' : 'color:#FF3B30';
+  const indentClass = level === 1 ? 'tree-indent-1' : level === 2 ? 'tree-indent-2' : '';
+  const rowClass = level === 0 ? 'tree-parent' : level === 1 ? 'tree-child' : 'tree-grandchild';
+  
+  let toggleBtn = '<span class="tree-toggle empty">▶</span>';
+  if (level < 2) {
+    toggleBtn = `<span class="tree-toggle" data-nature="${nature}" data-parent="${name}" data-level="${level}">▶</span>`;
+  }
+  
+  // 获取环比数据
+  const momData = row._momData || {};
+  const momIncome = momData.收入 || 0;
+  const momExpense = momData.支出 || 0;
+  const momFee = momData.平台管理费 || 0;
+  const momBalance = momData ? ((momData.收入 || 0) - (momData.支出 || 0) - (momData.平台管理费 || 0)) : 0;
+  
+  let html = `<tr class="${rowClass}" data-name="${name}" data-level="${level}">`;
+  html += `<td class="${indentClass}"><div class="tree-row"><span class="tree-toggle-area">${toggleBtn}</span><span class="tree-label" style="font-weight:${level === 0 ? 600 : 500}">${name}</span></div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(row.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momIncome)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyIncome)}</span></div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(row.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momExpense)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyExpense)}</span></div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(row.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momFee)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyFee)}</span></div></td>`;
+  html += `<td class="num-cell balance-cell"><div class="num-main" style="${balanceColor}">${fmt(balance)}万元</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value ${momBalance >= 0 ? 'positive' : 'negative'}">${fmtYoy(momBalance)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${yoyBalance >= 0 ? 'positive' : 'negative'}">${fmtYoy(yoyBalance)}</span></div></td>`;
+  html += `<td class="num-cell" style="text-align:center"><button class="detail-btn" onclick="showTeamDetail('${name}', ${level}, '${nature}')"><i class="fa-solid fa-eye"></i></button></td>`;
+  html += '</tr>';
+  return html;
+}
+
+// Team Tab - 树形表格加载
+async function loadTableTeam() {
+  if (!S.monthsTeam || S.monthsTeam.length === 0) return;
+  try {
+    console.log('[TreeTable] 开始加载创业团队数据，当前年份:', S.year, '月份:', S.monthsTeam);
+    
+    // 强制刷新：清空缓存
+    window._teamTreeCache = { parents: {}, accounts: {} };
+    
+    // 1. 加载团队性质数据（一级）
+    console.log('正在加载团队性质层级数据...');
+    const r = await apiPost('/api/team/drill', { year: S.year, months: S.monthsTeam, level: 'nature' });
+    const natureData = r.data || [];
+    console.log('团队性质数据加载完成，共', natureData.length, '条');
+    
+    const prevData = await getPrevYearDataTeam('nature', null);
+    
+    // 获取环比数据
+    const momDataMap = await getTeamMomData(natureData);
+    
+    // 计算合计用于计算占比
+    const totalIncome = natureData.reduce((sum, r) => sum + (r.收入 || 0), 0);
+    const totalExpense = natureData.reduce((sum, r) => sum + (r.支出 || 0), 0);
+    
+    document.getElementById('tableTitleTeam').textContent = '创业团队 · H团队线-上级（万元）';
+    document.getElementById('backBtnAreaTeam').innerHTML = '';
+    document.getElementById('sortBtnsTeam').innerHTML = '<button class="month-pill" onclick="doSortTeamTree()"><i class="fa-solid fa-sort"></i> 结余排序</button>';
+    
+    let html = '<table><thead><tr>';
+    html += '<th>团队性质</th><th class="num-col">收入(万)</th><th class="num-col">支出(万)</th><th class="num-col">管理费(万)</th><th class="num-col">结余(万元)</th><th class="num-col">查看详情</th>';
+    html += '</tr></thead><tbody>';
+    
+    // 渲染团队性质行
+    for (const row of natureData) {
+      row._momData = momDataMap[row['H团队线-上级']] || {};
+      html += renderTeamRow(row, 0, prevData);
+    }
+    
+    // 合计行
+    if (natureData.length > 0) {
+      const totalFee = natureData.reduce((sum, r) => sum + (r.平台管理费 || 0), 0);
+      const totalBalance = totalIncome - totalExpense - totalFee; // 结余 = 收入 - 支出 - 管理费
+      const totalBalanceColor = totalBalance >= 0 ? '#34C759' : '#FF3B30';
+      html += '<tr style="background:#f8f9fa;font-weight:700;border-top:2px solid #dee2e6">';
+      html += '<td>合计</td>';
+      html += `<td class="num-cell"><div class="num-main">${fmt(totalIncome)}</div></td>`;
+      html += `<td class="num-cell"><div class="num-main">${fmt(totalExpense)}</div></td>`;
+      html += `<td class="num-cell"><div class="num-main">${fmt(totalFee)}</div></td>`;
+      html += `<td class="num-cell balance-cell"><div class="num-main" style="color:${totalBalanceColor}">${fmt(totalBalance)}万元</div></td>`;
+      html += '<td></td>';
+      html += '</tr>';
+    }
+    
+    html += '</tbody></table>';
+    document.getElementById('tableWrapTeam').innerHTML = html;
+    
+    // 绑定展开/收起事件
+    bindTeamTreeEvents();
+  } catch (e) { console.error('Table Team error:', e); }
+}
+
+// 绑定创业团队树形表格事件（使用事件委托避免重复绑定）
+function bindTeamTreeEvents() {
+  const wrap = document.getElementById('tableWrapTeam');
+  if (!wrap) return;
+  
+  // 只绑定一次事件，使用事件委托
+  if (wrap._teamTreeBound) return;
+  wrap._teamTreeBound = true;
+  
+  wrap.onclick = async function(e) {
+    const toggle = e.target.closest('.tree-toggle:not(.empty)');
+    if (!toggle) return;
+    
+    e.stopPropagation();
+    const level = parseInt(toggle.dataset.level);
+    const nature = toggle.dataset.nature;
+    const parent = toggle.dataset.parent;
+    
+    const isExpanded = toggle.classList.contains('expanded');
+    
+    if (isExpanded) {
+      // 收起
+      toggle.classList.remove('expanded');
+      toggle.textContent = '▶';
+      const row = toggle.closest('tr');
+      let nextRow = row.nextElementSibling;
+      while (nextRow && parseInt(nextRow.dataset.level || 0) > level) {
+        // 隐藏子行
+        nextRow.style.display = 'none';
+        // 清除子行的展开状态
+        const childToggle = nextRow.querySelector('.tree-toggle:not(.empty)');
+        if (childToggle) {
+          childToggle.classList.remove('expanded');
+          childToggle.textContent = '▶';
+        }
+        nextRow = nextRow.nextElementSibling;
+      }
+    } else {
+      // 展开
+      toggle.classList.add('expanded');
+      toggle.textContent = '▼';
+      
+      const row = toggle.closest('tr');
+      
+      if (level === 0) {
+        // 加载上级团队数据
+        const cacheKey = nature;
+        
+        if (!window._teamTreeCache.parents[cacheKey]) {
+          const loadingRow = document.createElement('tr');
+          loadingRow.className = 'tree-loading-row';
+          loadingRow.innerHTML = '<td colspan="6" class="tree-loading">加载中...</td>';
+          row.parentNode.insertBefore(loadingRow, row.nextSibling);
+          
+          const r = await apiPost('/api/team/drill', { year: S.year, months: S.monthsTeam, level: 'parent', nature: nature });
+          window._teamTreeCache.parents[cacheKey] = r.data || [];
+          loadingRow.remove();
+        }
+        
+        const prevData = await getPrevYearDataTeam('parent', nature);
+        
+        // 计算上级团队合计用于占比
+        const parentTotalIncome = window._teamTreeCache.parents[cacheKey].reduce((sum, r) => sum + (r.收入 || 0), 0);
+        const parentTotalExpense = window._teamTreeCache.parents[cacheKey].reduce((sum, r) => sum + (r.支出 || 0), 0);
+        
+        // 移除已存在的子行
+        let insertBeforeRow = row.nextElementSibling;
+        while (insertBeforeRow && parseInt(insertBeforeRow.dataset.level || 0) > level) {
+          const next = insertBeforeRow.nextElementSibling;
+          insertBeforeRow.remove();
+          insertBeforeRow = next;
+        }
+        
+        const parentData = window._teamTreeCache.parents[cacheKey];
+        const frag = document.createDocumentFragment();
+        for (const pRow of parentData) {
+          const tr = document.createElement('tr');
+          tr.className = 'tree-child';
+          tr.dataset.level = '1';
+          tr.dataset.name = pRow['H团队线-上级'] || '';
+          tr.style.display = '';
+          // 计算结余：收入 - 支出 - 平台管理费
+          const balance = (pRow.收入 || 0) - (pRow.支出 || 0) - (pRow.平台管理费 || 0);
+          const prevBalance = (prevData[pRow['H团队线-上级']]?.收入 || 0) - (prevData[pRow['H团队线-上级']]?.支出 || 0) - (prevData[pRow['H团队线-上级']]?.平台管理费 || 0);
+          const yoyBal = balance - prevBalance;
+          const parentName = pRow['H团队线-上级'] || '';
+          tr.innerHTML = `<td class="tree-indent-1"><div class="tree-row"><span class="tree-toggle-area"><span class="tree-toggle" data-nature="${nature}" data-parent="${parentName}" data-level="1">▶</span></span><span class="tree-label">${parentName}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy((pRow.收入 || 0) - (prevData[parentName]?.收入 || 0))}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy((pRow.支出 || 0) - (prevData[parentName]?.支出 || 0))}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy((pRow.平台管理费 || 0) - (prevData[parentName]?.平台管理费 || 0))}</span></div></td><td class="num-cell balance-cell"><div class="num-main" style="${yoyBal >= 0 ? 'color:#34C759' : 'color:#FF3B30'}">${fmt(balance)}万元</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${yoyBal >= 0 ? 'positive' : 'negative'}">${fmtYoy(yoyBal)}</span></div></td><td class="num-cell" style="text-align:center"><button class="detail-btn" onclick="showTeamDetail('${parentName}', 1, '${nature}')"><i class="fa-solid fa-eye"></i></button></td>`;
+          frag.appendChild(tr);
+        }
+        row.parentNode.insertBefore(frag, insertBeforeRow);
+        
+      } else if (level === 1) {
+        // 加载核算单元数据
+        const cacheKey = nature + '|' + parent;
+        
+        if (!window._teamTreeCache.accounts[cacheKey]) {
+          const loadingRow = document.createElement('tr');
+          loadingRow.className = 'tree-loading-row';
+          loadingRow.innerHTML = '<td colspan="6" class="tree-loading">加载中...</td>';
+          row.parentNode.insertBefore(loadingRow, row.nextSibling);
+        }
+        
+        const prevData = await getPrevYearDataTeam('account', parent);
+        
+        // 移除已存在的子行
+        let insertBeforeRow = row.nextElementSibling;
+        while (insertBeforeRow && parseInt(insertBeforeRow.dataset.level || 0) > level) {
+          const next = insertBeforeRow.nextElementSibling;
+          insertBeforeRow.remove();
+          insertBeforeRow = next;
+        }
+        
+        const accountData = window._teamTreeCache.accounts[cacheKey];
+        const frag = document.createDocumentFragment();
+        for (const pRow of accountData) {
+          const tr = document.createElement('tr');
+          tr.className = 'tree-grandchild';
+          tr.dataset.level = '2';
+          tr.dataset.name = pRow['H团队线-核算'] || '';
+          tr.style.display = '';
+          // 计算结余：收入 - 支出 - 平台管理费
+          const balance = (pRow.收入 || 0) - (pRow.支出 || 0) - (pRow.平台管理费 || 0);
+          const prevBalance = (prevData[pRow['H团队线-核算']]?.收入 || 0) - (prevData[pRow['H团队线-核算']]?.支出 || 0) - (prevData[pRow['H团队线-核算']]?.平台管理费 || 0);
+          const yoyBal = balance - prevBalance;
+          const accountName = pRow['H团队线-核算'] || '';
+          tr.innerHTML = `<td class="tree-indent-2"><div class="tree-row"><span class="tree-toggle-area"><span class="tree-toggle empty">▶</span></span><span class="tree-label">${accountName}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy((pRow.收入 || 0) - (prevData[accountName]?.收入 || 0))}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy((pRow.支出 || 0) - (prevData[accountName]?.支出 || 0))}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy((pRow.平台管理费 || 0) - (prevData[accountName]?.平台管理费 || 0))}</span></div></td><td class="num-cell balance-cell"><div class="num-main" style="${yoyBal >= 0 ? 'color:#34C759' : 'color:#FF3B30'}">${fmt(balance)}万元</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${yoyBal >= 0 ? 'positive' : 'negative'}">${fmtYoy(yoyBal)}</span></div></td><td class="num-cell" style="text-align:center"><button class="detail-btn" onclick="showTeamDetail('${accountName}', 2, '${nature}')"><i class="fa-solid fa-eye"></i></button></td>`;
+          frag.appendChild(tr);
+        }
+        row.parentNode.insertBefore(frag, insertBeforeRow);
+      }
+    }
+  };
+}
+
+// 创业团队树形表格排序
+window.doSortTeamTree = async function() {
+  console.log('[TreeTable] 执行创业团队排序...');
+  const r = await apiPost('/api/team/drill', { year: S.year, months: S.monthsTeam, level: 'nature' });
+  const data = r.data || [];
+  data.sort((a, b) => Math.abs(b.结余 || 0) - Math.abs(a.结余 || 0));
+  
+  const prevData = await getPrevYearDataTeam('nature', null);
+  
+  // 计算合计用于计算占比
+  const totalIncome = data.reduce((sum, r) => sum + (r.收入 || 0), 0);
+  const totalExpense = data.reduce((sum, r) => sum + (r.支出 || 0), 0);
+  
+  let html = '<table><thead><tr>';
+  html += '<th>H团队线-上级</th><th class="num-col">收入(万)</th><th class="num-col">支出(万)</th><th class="num-col">管理费(万)</th><th class="num-col">结余(万元)</th><th class="num-col">查看详情</th>';
+  html += '</tr></thead><tbody>';
+  
+  // 获取环比数据
+  const momDataMap = await getTeamMomData(data);
+  
+  for (const row of data) {
+    row._momData = momDataMap[row['H团队线-上级']] || {};
+    html += renderTeamRow(row, 0, prevData);
+  }
+  
+  const totalFee = data.reduce((sum, r) => sum + (r.平台管理费 || 0), 0);
+  const totalBalance = totalIncome - totalExpense - totalFee; // 结余 = 收入 - 支出 - 管理费
+  const totalBalanceColor = totalBalance >= 0 ? '#34C759' : '#FF3B30';
+  html += '<tr style="background:#f8f9fa;font-weight:700;border-top:2px solid #dee2e6">';
+  html += '<td>合计</td>';
+  html += `<td class="num-cell"><div class="num-main">${fmt(totalIncome)}</div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(totalExpense)}</div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(totalFee)}</div></td>`;
+  html += `<td class="num-cell balance-cell"><div class="num-main" style="color:${totalBalanceColor}">${fmt(totalBalance)}万元</div></td>`;
+  html += '<td></td>';
+  html += '</tr>';
+  
+  html += '</tbody></table>';
+  document.getElementById('tableWrapTeam').innerHTML = html;
+  bindTeamTreeEvents();
+};
+
+// === Special Panel - Team Tab ===
+async function loadSpecialPanelTeam(parentName) {
+  const panel = document.getElementById('specialPanelTeam');
+  const ms = S.monthsTeam.join(',');
+  let html = '<div style="margin-bottom:14px"><button class="share-btn" id="openShareBtnTeam"><i class="fa-solid fa-share-nodes"></i> 经营分享</button></div>';
+  
+  if (parentName === '物业管理') {
+    try {
+      const d = await apiGet('/api/property/comparison', { year: S.year, months: ms });
+      if (!d.error) {
+        html += '<div class="card special-panel"><div class="chart-title"><i class="fa-solid fa-building"></i> 物业管理 · 收付实现 vs 权责发生制</div>';
+        html += '<div class="comparison-card">';
+        html += '<div class="kpi-badge" style="flex-direction:column;align-items:flex-start">收付实现制<br><b style="font-size:16px">收入 ' + fmt(d.收付实现制.收入) + '万</b><br>结余 <b class="' + numCls(d.收付实现制.结余) + '">' + fmt(d.收付实现制.结余) + '万</b></div>';
+        html += '<div class="kpi-badge" style="flex-direction:column;align-items:flex-start">权责发生制<br><b style="font-size:16px">收入 ' + fmt(d.权责发生制.收入) + '万</b><br>结余 <b class="' + numCls(d.权责发生制.结余) + '">' + fmt(d.权责发生制.结余) + '万</b></div>';
+        html += '</div></div>';
+      }
+    } catch (e) { }
+  }
+  
+  if (parentName === '01.老干局') {
+    try {
+      const d = await apiGet('/api/laoganju/distribution', { year: S.year, months: ms });
+      if (!d.error && (d.by_product1 || d.by_project1)) {
+        html += '<div class="card special-panel"><div class="chart-title"><i class="fa-solid fa-chart-column"></i> 老干局 · 分布分析</div>';
+        html += '<div id="laoganjuChartTeam" style="height:300px"></div></div>';
+        setTimeout(() => {
+          const ch = echarts.init(document.getElementById('laoganjuChartTeam'));
+          const series = [];
+          if (d.by_product1) { series.push({ name: 'A产品线1', type: 'bar', data: d.by_product1.map(x => ({ value: x.损益, name: x.A产品线1 })) }); }
+          ch.setOption({
+            tooltip: { trigger: 'axis', formatter: function (p) { return p[0].name + '<br/>结余: ' + p[0].value + '万'; } },
+            xAxis: { type: 'category', data: (d.by_product1 || d.by_project1 || []).map((x, i) => d.by_product1 ? x.A产品线1 : x.B项目1), axisLabel: { fontSize: 11, rotate: 15 } },
+            yAxis: { type: 'value', name: '万元' }, series: series, color: ['#F6B43E', '#007AFF', '#34C759', '#FF6B6B']
+          });
+          window.addEventListener('resize', () => ch.resize());
+        }, 200);
+      }
+    } catch (e) { }
+  }
+  
+  if (parentName === '5.健康管理及日常医疗') {
+    html += '<div class="card special-panel"><div class="chart-title"><i class="fa-solid fa-heartbeat"></i> 成本分解 Agent</div>';
+    html += '<div style="height:600px;border-radius:12px;overflow:hidden;border:1px solid #e5e5e5"><iframe src="http://localhost:8001" style="width:100%;height:100%;border:none" title="成本分解Agent"></iframe></div>';
+    html += '<div style="margin-top:12px;padding:14px;background:rgba(0,122,255,.05);border-radius:12px"><div style="font-size:13px;font-weight:600;margin-bottom:8px"><i class="fa-solid fa-star" style="color:var(--accent)"></i> VIP健康管理（预留区域）</div>';
+    html += '<div class="empty-state" style="padding:20px"><i class="fa-solid fa-clock" style="font-size:24px"></i><br>VIP健康管理功能可通过顶部"VIP健康管理"Tab访问<br><span style="font-size:11px;color:var(--text3)">包含：健康管理产品、客户姓名、疗程开始日、疗程结束日、服务进度（支持管理员在线编辑保存）</span></div></div></div>';
+  }
+  
+  panel.innerHTML = html;
+  const shareBtn = document.getElementById('openShareBtnTeam');
+  if (shareBtn) shareBtn.addEventListener('click', () => openTeamShare(parentName));
+}
+
+// === Share Modal ===
+async function openTeamShare(parentName) {
+  const modal = document.getElementById('shareModal');
+  document.getElementById('shareTitle').textContent = parentName + ' · 经营分享';
+  document.getElementById('shareNotes').value = localStorage.getItem('notes_' + parentName) || '';
+  document.getElementById('shareContent').innerHTML = '<div class="loading"><div class="spinner"></div>加载中...</div>';
+  modal.classList.add('show');
+  try {
+    const d = await apiGet('/api/team/share', { year: S.year, parent: parentName });
+    if (!d || !d.rows) { document.getElementById('shareContent').innerHTML = '<div class="empty-state">暂无数据</div>'; return; }
+    let html = '<div style="margin-bottom:14px;font-size:13px;color:var(--text2)">总收入: <b>' + fmt(d.total_income) + '万</b> | 总支出: <b>' + fmt(d.total_expense) + '万</b></div>';
+    html += '<div class="table-wrap" style="max-height:48vh;overflow:auto"><table><thead><tr><th>科目</th>';
+    for (let m = 1; m <= 12; m++) html += '<th>' + m + '月</th>';
+    html += '<th>1-12月</th><th>3-12月</th><th>占比</th></tr></thead><tbody>';
+    for (const row of d.rows) {
+      const lvl = row.level;
+      const bold = lvl === 'major' ? 'font-weight:700;background:#fafafa;' : lvl === 'balance' ? 'font-weight:700;background:var(--accent-light);' : '';
+      html += '<tr style="' + bold + '"><td>' + row.科目 + '</td>';
+      for (let m = 1; m <= 12; m++) html += '<td>' + fmt(row[m + '月']) + '</td>';
+      html += '<td style="font-weight:600">' + fmt(row['1-12月']) + '</td>';
+      html += '<td>' + fmt(row['3-12月']) + '</td>';
+      html += '<td>' + (row.收入占比 != null ? row.收入占比 + '%' : row.支出占比 != null ? row.支出占比 + '%' : '-') + '</td>';
+      html += '</tr>';
+    }
+    html += '</tbody></table></div>';
+    if (d.suggestions && d.suggestions.length > 0) {
+      html += '<div style="margin-top:18px"><div style="font-size:14px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="fa-solid fa-lightbulb" style="color:var(--accent)"></i> 分析建议</div>';
+      for (const s of d.suggestions) html += '<div class="suggestion-item"><i class="fa-solid fa-circle-info" style="color:var(--accent);margin-right:6px"></i>' + s + '</div>';
+      html += '</div>';
+    }
+    document.getElementById('shareContent').innerHTML = html;
+  } catch (e) { document.getElementById('shareContent').innerHTML = '<div style="color:var(--red);padding:20px">加载失败: ' + e.message + '</div>'; }
+}
+document.getElementById('shareClose').addEventListener('click', () => {
+  const n = document.getElementById('shareTitle').textContent.replace(' · 经营分享', '');
+  localStorage.setItem('notes_' + n, document.getElementById('shareNotes').value);
+  document.getElementById('shareModal').classList.remove('show');
+});
+document.getElementById('shareModal').addEventListener('click', e => { if (e.target === e.currentTarget) document.getElementById('shareClose').click(); });
+
+// === Refresh Analysis ===
+async function refreshProductTab() { 
+  await Promise.all([loadKPIProduct(), loadChartsProduct(), loadTableProduct()]);
+}
+async function refreshTeamTab() {
+  await loadTableTeam();
+}
+
+// === Q&A ===
+const presets = ['哪些板块结余率低于5%？', '支出增长最快的产品？', '近3个月支出增长最快的产品？', '连续亏损的板块有哪些？', '收入波动异常的板块？', '物业板块详情', '管理费占比超过10%的板块？', '机构医疗各产品结余'];
+function initQA() {
+  const g = document.getElementById('presetGrid');
+  if (g.children.length > 0) return;
+  g.innerHTML = presets.map(p => '<button class="preset-btn"><i class="fa-solid fa-circle-question" style="color:var(--accent);margin-right:4px"></i>' + p + '</button>').join('');
+  g.querySelectorAll('.preset-btn').forEach(b => b.addEventListener('click', () => { document.getElementById('qaInput').value = b.textContent.replace(/^.*?(?=[^\s])/, ''); doQuery(b.textContent); }));
+  document.getElementById('qaBtn').addEventListener('click', () => doQuery(document.getElementById('qaInput').value));
+  document.getElementById('qaInput').addEventListener('keydown', e => { if (e.key === 'Enter') doQuery(e.target.value); });
+}
+
+async function doQuery(question) {
+  if (!question.trim()) return;
+  const area = document.getElementById('qaResult');
+  area.innerHTML = '<div class="loading"><div class="spinner"></div>分析中...</div>';
+  try {
+    const d = await apiPost('/api/ai/query', { question, year: S.year, months: S.monthsProduct.join(',') });
+    if (d.type === 'table' && d.data && d.data.length > 0) {
+      let html = '<table><thead><tr>';
+      (d.columns || []).forEach(c => html += '<th>' + c + '</th>');
+      html += '</tr></thead><tbody>';
+      // 定义名称列的关键词
+      const nameKeywords = ['产品', '板块', '项目', '核算单元', '科目', '团队', '名称'];
+      for (const row of d.data) {
+        html += '<tr>';
+        (d.columns || []).forEach((c, idx) => {
+          let val = row[c];
+          // 检测是否为名称列：列名包含关键词或值为字符串
+          const colNameLower = c.toLowerCase();
+          const isNameCol = nameKeywords.some(kw => colNameLower.includes(kw.toLowerCase())) || 
+                           (typeof val === 'string' && val.trim() !== '' && !/^-?\d+\.?\d*$/.test(val));
+          // 名称列不进行数字格式化
+          const isNumeric = typeof val === 'number' && !isNaN(val);
+          let display;
+          if (isNameCol) {
+            display = val != null ? String(val) : '-';
+          } else if (isNumeric) {
+            display = Math.abs(val) < 20 && val.toString().includes('.') ? val.toFixed(1) + '%' : fmt(val);
+          } else {
+            display = val != null ? String(val) : '-';
+          }
+          // 名称列使用drill-link样式
+          if (isNameCol) {
+            html += '<td><span class="drill-link" data-q="' + (val || '') + '">' + display + '</span></td>';
+          } else {
+            html += '<td>' + display + '</td>';
+          }
+        });
+        html += '</tr>';
+      }
+      html += '</tbody></table>';
+      area.innerHTML = html;
+      area.querySelectorAll('.drill-link').forEach(el => el.addEventListener('click', () => {
+        const q = el.dataset.q;
+        if (q) {
+          document.getElementById('qaInput').value = q + '详情';
+          doQuery(q + '详情');
+        }
+      }));
+    } else if (d.type === 'text') {
+      area.innerHTML = '<div style="font-size:14px;line-height:1.8;color:var(--text2);padding:8px">' + (d.answer || '未找到结果') + '</div>';
+    } else {
+      area.innerHTML = '<div class="empty-state">暂无匹配结果</div>';
+    }
+  } catch (e) { area.innerHTML = '<div style="color:var(--red);padding:20px">查询出错: ' + e.message + '</div>'; }
+}
+
+// === Budget ===
+let budgetLocalEdits = {};
+let S_budgetMonths = []; // 预算Tab选中的月份
+let S_budgetCumulative = true; // 默认累计模式
+function loadBudgetLocal() { try { budgetLocalEdits = JSON.parse(localStorage.getItem('budget_edits') || '{}'); } catch (e) { budgetLocalEdits = {}; } }
+function saveBudgetLocal() { localStorage.setItem('budget_edits', JSON.stringify(budgetLocalEdits)); }
+function renderMonthsBudget() {
+  const c = document.getElementById('monthPillsBudget');
+  if (!c) return;
+  const activeMs = new Set(S_budgetMonths);
+  let h = '';
+  for (let m = 1; m <= 12; m++) {
+    const cls = activeMs.has(m) ? 'active' : '';
+    h += '<button class="month-pill ' + cls + '" data-m="' + m + '">' + m + '月</button>';
+  }
+  c.innerHTML = h;
+  c.querySelectorAll('.month-pill').forEach(p => p.addEventListener('click', () => {
+    const m = parseInt(p.dataset.m);
+    if (activeMs.has(m)) {
+      S_budgetMonths.delete(m);
+    } else {
+      S_budgetMonths.add(m);
+    }
+    renderMonthsBudget();
+    loadBudget();
+  }));
+}
+function setBudgetMode(mode) {
+  if (mode === 'cumulative') {
+    S_budgetCumulative = true;
+    document.getElementById('budgetSingleBtn').classList.remove('active');
+    document.getElementById('budgetCumulativeBtn').classList.add('active');
+    // 累计模式：选择1到当前最大月
+    const maxM = Math.max(...S_budgetMonths) || S.lastMonth;
+    S_budgetMonths = new Set(Array.from({length: maxM}, (_, i) => i + 1));
+  } else {
+    S_budgetCumulative = false;
+    document.getElementById('budgetSingleBtn').classList.add('active');
+    document.getElementById('budgetCumulativeBtn').classList.remove('active');
+  }
+  renderMonthsBudget();
+  loadBudget();
+}
+function initBudget() {
+  loadBudgetLocal();
+  if (S.isAdmin) { document.getElementById('adminArea').classList.add('show'); document.getElementById('budgetLogin').style.display = 'none'; }
+  // 初始化预算Tab月份选择
+  S_budgetMonths = new Set(Array.from({length: S.lastMonth || 1}, (_, i) => i + 1));
+  renderMonthsBudget();
+  document.getElementById('loginBtn').addEventListener('click', () => {
+    if (document.getElementById('adminPwd').value === 'a1b2') { S.isAdmin = true; sessionStorage.setItem('isAdmin', '1'); document.getElementById('adminArea').classList.add('show'); document.getElementById('budgetLogin').style.display = 'none'; loadBudget(); }
+    else alert('密码错误');
+  });
+  document.getElementById('budgetFile').addEventListener('change', async e => {
+    const file = e.target.files[0]; if (!file) return;
+    const form = new FormData(); form.append('file', file);
+    try { const r = await fetch(API_BASE + '/api/budget/upload', { method: 'POST', body: form }); const d = await r.json(); if (d.status === 'ok') { budgetLocalEdits = {}; saveBudgetLocal(); loadBudget(); } else alert('上传失败'); } catch (ex) { alert('上传出错: ' + ex.message); }
+    e.target.value = '';
+  });
+  document.getElementById('exportBtn').addEventListener('click', () => { const a = document.createElement('a'); a.href = API_BASE + '/api/budget/export?year=' + S.year; a.download = '预算对比.xlsx'; a.click(); });
+  document.getElementById('syncBtn').addEventListener('click', async () => {
+    if (Object.keys(budgetLocalEdits).length === 0) { alert('无本地修改需要同步'); return; }
+    try { const r = await apiPost('/api/budget/update', { token: 'admin', updates: budgetLocalEdits }); if (r.status === 'ok') { budgetLocalEdits = {}; saveBudgetLocal(); loadBudget(); } else alert('同步失败'); } catch (e) { alert('同步出错: ' + e.message); }
+  });
+}
+async function loadBudget() {
+  const wrap = document.getElementById('budgetTableWrap');
+  wrap.innerHTML = '<div class="loading"><div class="spinner"></div>加载预算数据...</div>';
+  try {
+    const months = Array.from(S_budgetMonths).sort((a,b) => a-b).join(',');
+    const d = await apiGet('/api/budget/compare', { year: S.year, months: months, cumulative: S_budgetCumulative });
+    if (!d.comparison || d.comparison.length === 0) {
+      wrap.innerHTML = '<div class="empty-state"><i class="fa-solid fa-inbox"></i>暂无预算数据<br><span style="font-size:12px;margin-top:4px;display:block">管理员登录后上传预算Excel（列：月份、团队、预算收入、预算支出）</span></div>'; return;
+    }
+    let html = '<table><thead><tr><th>月份</th><th>团队</th><th>实际收入</th><th>预算收入</th><th>收入达成率</th><th>实际支出</th><th>预算支出</th><th>支出达成率</th></tr></thead><tbody>';
+    for (const row of d.comparison) {
+      const key = row.月份 + '_' + row.团队;
+      const isOver = (row.收入达成率 != null && row.收入达成率 < 80) || (row.支出达成率 != null && row.支出达成率 > 110);
+      const localBInc = budgetLocalEdits[key] ? budgetLocalEdits[key].预算收入 : row.预算收入;
+      const localBExp = budgetLocalEdits[key] ? budgetLocalEdits[key].预算支出 : row.预算支出;
+      const isEdited = budgetLocalEdits[key] != null;
+      html += '<tr class="' + (isOver ? 'over-budget' : '') + '">';
+      html += '<td>' + row.月份 + '月</td><td>' + row.团队 + '</td>';
+      html += '<td>' + fmt(row.实际收入) + '</td>';
+      html += '<td>' + (S.isAdmin ? '<span class="drill-link" data-key="' + key + '" data-field="预算收入" data-val="' + localBInc + '" title="双击编辑">' + fmt(localBInc) + (isEdited ? ' ✏️' : '') + '</span>' : fmt(localBInc)) + '</td>';
+      html += '<td class="' + numCls(row.收入达成率) + '">' + (row.收入达成率 != null ? row.收入达成率 + '%' : '-') + '</td>';
+      html += '<td>' + fmt(row.实际支出) + '</td>';
+      html += '<td>' + (S.isAdmin ? '<span class="drill-link" data-key="' + key + '" data-field="预算支出" data-val="' + localBExp + '" title="双击编辑">' + fmt(localBExp) + (isEdited ? ' ✏️' : '') + '</span>' : fmt(localBExp)) + '</td>';
+      html += '<td class="' + numCls(row.支出达成率) + '">' + (row.支出达成率 != null ? row.支出达成率 + '%' : '-') + '</td>';
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+    if (S.isAdmin) {
+      wrap.querySelectorAll('.drill-link[data-key]').forEach(el => el.addEventListener('dblclick', () => {
+        const key = el.dataset.key; const field = el.dataset.field;
+        const curVal = prompt('修改 ' + field + ':', budgetLocalEdits[key] ? budgetLocalEdits[key][field] : el.dataset.val);
+        if (curVal !== null && !isNaN(curVal)) {
+          if (!budgetLocalEdits[key]) budgetLocalEdits[key] = {};
+          budgetLocalEdits[key][field] = Number(curVal);
+          saveBudgetLocal(); loadBudget();
+        }
+      }));
+    }
+  } catch (e) { wrap.innerHTML = '<div style="color:var(--red);padding:20px">加载失败: ' + e.message + '</div>'; }
+}
+
+// === Init ===
+async function init() {
+
+  // 初始化两个Tab的月份选择器和图表
+  renderMonthsProduct();
+  renderMonthsTeam();
+  initChartsProduct();
+  initChartsTeam();
+  initQA();
+  initBudget();
+  
+  // 初始化两个Tab的状态
+  S.monthsProduct = S.monthsProduct || [];
+  S.monthsTeam = S.monthsTeam || [];
+  S.drillLevelProduct = S.drillLevelProduct || 'board';
+  S.drillLevelTeam = S.drillLevelTeam || 'nature';
+  
+  try {
+    const meta = await apiGet('/api/meta');
+    S.meta = meta;
+    if (meta.years && meta.years.length) S.year = Math.max(...meta.years);
+    const now = new Date();
+    S.lastMonth = now.getMonth() === 0 ? 12 : now.getMonth();
+    // 默认选择"累计"模式
+    if (S.monthsProduct.length === 0) { S.monthsProduct = Array.from({ length: S.lastMonth }, (_, i) => i + 1); S.isCumulativeProduct = true; }
+    if (S.monthsTeam.length === 0) { S.monthsTeam = Array.from({ length: S.lastMonth }, (_, i) => i + 1); S.isCumulativeTeam = true; }
+    renderMonthsProduct();
+    renderMonthsTeam();
+  } catch (e) {
+    // 默认选择"累计"模式
+    if (S.monthsProduct.length === 0) { S.monthsProduct = Array.from({ length: 3 }, (_, i) => i + 1); S.isCumulativeProduct = true; S.lastMonth = 3; }
+    if (S.monthsTeam.length === 0) { S.monthsTeam = Array.from({ length: 3 }, (_, i) => i + 1); S.isCumulativeTeam = true; }
+    renderMonthsProduct();
+    renderMonthsTeam();
+  }
+  
+  const h = location.hash.slice(1);
+  if (['product', 'team', 'qa', 'budget', 'vip'].includes(h)) switchTab(h);
+  else refreshProductTab(); // 默认加载产品线Tab
+
+  // 初始化创业团队备注编辑功能
+  initTeamNotes();
+}
+document.addEventListener('DOMContentLoaded', init);
+
+// === 创业团队备注编辑功能 ===
+const TEAM_NOTE_PASSWORD = 'a1b2';
+const TEAM_NOTE_KEY = 'team_page_note';
+
+function initTeamNotes() {
+  const area = document.getElementById('teamNotesArea');
+  const passwordInput = document.getElementById('teamNotePassword');
+  const confirmBtn = document.getElementById('teamNoteConfirmBtn');
+  const editArea = document.getElementById('teamEditArea');
+  const editableNote = document.getElementById('editableNote');
+  const status = document.getElementById('teamNoteStatus');
+
+  // 加载已保存的备注
+  const savedNote = localStorage.getItem(TEAM_NOTE_KEY);
+  if (savedNote) {
+    editableNote.textContent = savedNote;
+    area.classList.remove('locked');
+    area.classList.add('unlocked');
+    status.style.display = 'block';
+    editableNote.contentEditable = 'true';
+  }
+
+  // 密码验证
+  function checkPassword() {
+    const pwd = passwordInput.value.trim();
+    if (pwd === TEAM_NOTE_PASSWORD) {
+      area.classList.remove('locked');
+      area.classList.add('unlocked');
+      status.style.display = 'block';
+      editArea.style.display = 'none';
+      editableNote.contentEditable = 'true';
+      editableNote.focus();
+    } else if (pwd !== '') {
+      alert('密码错误！');
+    }
+  }
+
+  confirmBtn.addEventListener('click', checkPassword);
+  passwordInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') checkPassword();
+  });
+
+  // 备注保存
+  editableNote.addEventListener('input', function() {
+    localStorage.setItem(TEAM_NOTE_KEY, editableNote.textContent);
+  });
+}
+
+// === VIP Progress Management ===
+let vipData = [];
+let editingVipId = null;
+let deletingVipId = null;
+
+async function initVIP() {
+  // Load products for dropdown
+  try {
+    const res = await apiGet('/api/vip/products');
+    if (res.success && res.data) {
+      const opts = res.data.map(p => `<option value="${p}">${p}</option>`).join('');
+      document.getElementById('vipFormProduct').innerHTML = '<option value="">请选择产品</option>' + opts;
+      document.getElementById('vipProductFilter').innerHTML = '<option value="">全部产品</option>' + opts;
+    }
+  } catch (e) { console.error('Load products failed:', e); }
+  
+  // Admin check - 始终显示新增按钮
+  const isAdmin = sessionStorage.getItem('isAdmin') === '1';
+  
+  // Load data
+  await loadVipData();
+  await loadVipSummary();
+  
+  // Event listeners
+  document.getElementById('vipAddBtn').addEventListener('click', () => openVipModal());
+  document.getElementById('vipExportBtn').addEventListener('click', exportVipData);
+  document.getElementById('vipSearch').addEventListener('input', renderVipTable);
+  document.getElementById('vipProductFilter').addEventListener('change', renderVipTable);
+  
+  // Progress slider
+  document.getElementById('vipFormProgress').addEventListener('input', e => {
+    document.getElementById('vipFormProgressVal').textContent = e.target.value;
+  });
+  
+  // Modal events
+  document.getElementById('vipModalClose').addEventListener('click', closeVipModal);
+  document.getElementById('vipModalCancel').addEventListener('click', closeVipModal);
+  document.getElementById('vipModalSave').addEventListener('click', saveVipRecord);
+  
+  // Delete modal
+  document.getElementById('vipDelClose')?.addEventListener('click', closeVipDelModal);
+  document.getElementById('vipDelCancel')?.addEventListener('click', closeVipDelModal);
+  document.getElementById('vipDelConfirm')?.addEventListener('click', confirmVipDelete);
+}
+
+async function loadVipData() {
+  try {
+    const res = await apiGet('/api/vip/list');
+    vipData = res.success ? res.data : [];
+    renderVipTable();
+  } catch (e) { console.error('Load VIP data failed:', e); }
+}
+
+async function loadVipSummary() {
+  try {
+    const res = await apiGet('/api/vip/summary');
+    if (res.success && res.data) {
+      document.getElementById('vipTotal').textContent = res.data.total || 0;
+      document.getElementById('vipInProgress').textContent = res.data.in_progress || 0;
+      document.getElementById('vipCompleted').textContent = res.data.completed || 0;
+      document.getElementById('vipNotStarted').textContent = res.data.not_started || 0;
+    }
+  } catch (e) { console.error('Load VIP summary failed:', e); }
+}
+
+function renderVipTable() {
+  const tbody = document.getElementById('vipTableBody');
+  const search = document.getElementById('vipSearch').value.toLowerCase();
+  const productFilter = document.getElementById('vipProductFilter').value;
+  
+  let filtered = vipData;
+  if (search) filtered = filtered.filter(r => 
+    (r.customer_name || '').toLowerCase().includes(search) || 
+    (r.product || '').toLowerCase().includes(search)
+  );
+  if (productFilter) filtered = filtered.filter(r => r.product === productFilter);
+  
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fa-solid fa-inbox"></i><br>暂无记录<br><span style="font-size:11px">点击"新增记录"添加VIP健康管理</span></td></tr>';
+    return;
+  }
+  
+  const isAdmin = sessionStorage.getItem('isAdmin') === '1';
+  tbody.innerHTML = filtered.map(r => {
+    const progressColor = r.progress >= 100 ? 'var(--green)' : r.progress > 0 ? 'var(--blue)' : 'var(--text3)';
+    return `<tr>
+      <td>${r.id}</td>
+      <td>${r.product || '-'}</td>
+      <td><b>${r.customer_name || '-'}</b></td>
+      <td>${r.start_date || '-'}</td>
+      <td>${r.end_date || '-'}</td>
+      <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:6px;background:#e5e5e5;border-radius:3px"><div style="width:${r.progress}%;height:100%;background:${progressColor};border-radius:3px"></div></div><span style="font-size:11px;color:${progressColor};min-width:35px">${r.progress}%</span></div></td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.notes || ''}">${r.notes || '-'}</td>
+      <td><button class="admin-btn" style="padding:4px 10px;font-size:11px" onclick="openVipModal(${r.id})"><i class="fa-solid fa-pen"></i></button> <button class="admin-btn" style="padding:4px 10px;font-size:11px;color:var(--red)" onclick="openVipDelModal(${r.id})"><i class="fa-solid fa-trash"></i></button></td>
+    </tr>`;
+  }).join('');
+}
+
+function openVipModal(id) {
+  editingVipId = id;
+  const modal = document.getElementById('vipModal');
+  const title = document.getElementById('vipModalTitle');
+  
+  if (id) {
+    title.innerHTML = '<i class="fa-solid fa-heart-pulse" style="color:var(--accent)"></i> 编辑VIP健康管理记录';
+    const record = vipData.find(r => r.id === id);
+    if (record) {
+      document.getElementById('vipFormProduct').value = record.product || '';
+      document.getElementById('vipFormName').value = record.customer_name || '';
+      document.getElementById('vipFormStart').value = record.start_date || '';
+      document.getElementById('vipFormEnd').value = record.end_date || '';
+      document.getElementById('vipFormProgress').value = record.progress || 0;
+      document.getElementById('vipFormProgressVal').textContent = record.progress || 0;
+      document.getElementById('vipFormNotes').value = record.notes || '';
+    }
+  } else {
+    title.innerHTML = '<i class="fa-solid fa-heart-pulse" style="color:var(--accent)"></i> 新增VIP健康管理记录';
+    document.getElementById('vipFormProduct').value = '';
+    document.getElementById('vipFormName').value = '';
+    document.getElementById('vipFormStart').value = '';
+    document.getElementById('vipFormEnd').value = '';
+    document.getElementById('vipFormProgress').value = 0;
+    document.getElementById('vipFormProgressVal').textContent = '0';
+    document.getElementById('vipFormNotes').value = '';
+  }
+  modal.classList.add('show');
+}
+
+function closeVipModal() {
+  document.getElementById('vipModal').classList.remove('show');
+  editingVipId = null;
+}
+
+async function saveVipRecord() {
+  const product = document.getElementById('vipFormProduct').value.trim();
+  const customer_name = document.getElementById('vipFormName').value.trim();
+  const start_date = document.getElementById('vipFormStart').value;
+  const end_date = document.getElementById('vipFormEnd').value;
+  const progress = parseInt(document.getElementById('vipFormProgress').value) || 0;
+  const notes = document.getElementById('vipFormNotes').value.trim();
+  
+  if (!product || !customer_name || !start_date) {
+    alert('请填写必填项（产品、客户姓名、开始日期）');
+    return;
+  }
+  
+  try {
+    if (editingVipId) {
+      await apiPost('/api/vip/update/' + editingVipId, { product, customer_name, start_date, end_date, progress, notes });
+    } else {
+      await apiPost('/api/vip/create', { product, customer_name, start_date, end_date, progress, notes });
+    }
+    closeVipModal();
+    await loadVipData();
+    await loadVipSummary();
+  } catch (e) { alert('保存失败: ' + e.message); }
+}
+
+function openVipDelModal(id) {
+  deletingVipId = id;
+  document.getElementById('vipDelModal').classList.add('show');
+}
+
+function closeVipDelModal() {
+  document.getElementById('vipDelModal').classList.remove('show');
+  deletingVipId = null;
+}
+
+async function confirmVipDelete() {
+  if (!deletingVipId) return;
+  try {
+    await apiPost('/api/vip/delete/' + deletingVipId, {});
+    closeVipDelModal();
+    await loadVipData();
+    await loadVipSummary();
+  } catch (e) { alert('删除失败: ' + e.message); }
+}
+
+function exportVipData() {
+  const headers = ['ID', '产品', '客户姓名', '开始日期', '结束日期', '进度(%)', '备注'];
+  const rows = vipData.map(r => [r.id, r.product, r.customer_name, r.start_date, r.end_date, r.progress, r.notes]);
+  const csv = [headers, ...rows].map(r => r.map(v => '"' + (v || '') + '"').join(',')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'VIP疗程进度_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

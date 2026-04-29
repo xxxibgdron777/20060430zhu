@@ -1,0 +1,27 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 安装依赖
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 复制代码（不包含 pycache 和 xlsx.old 文件）
+COPY backend/main.py .
+COPY backend/data_loader.py .
+COPY backend/calculators.py .
+COPY backend/agent.py .
+COPY backend/api_extensions.py .
+COPY backend/special_logic.py .
+COPY backend/vip_progress.py .
+COPY backend/admin_api.py .
+COPY backend/cloudbase-config.json .
+
+# 复制数据文件
+COPY 管理报表.xlsx .
+
+# 暴露端口
+EXPOSE 80
+
+# 启动命令
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]

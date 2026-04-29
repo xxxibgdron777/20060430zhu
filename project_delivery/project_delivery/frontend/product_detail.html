@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>产品线详情 - 财务综述 Agent</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root {
+  --bg: #F2F2F7;
+  --white: #FFFFFF;
+  --gray-secondary: #E5E5EA;
+  --text: #1d1d1f;
+  --text2: #6e6e73;
+  --text3: #aeaeb2;
+  --green: #34C759;
+  --red: #FF3B30;
+  --accent: #FF9500;
+  --accent-light: #FFF8E7;
+  --blue: #007AFF;
+  --purple: #AF52DE;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,.06);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+/* 顶部导航 */
+.nav {
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-secondary);
+  padding: 12px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-brand {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-brand i { color: var(--accent); }
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--bg);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--blue);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.back-btn:hover { background: var(--gray-secondary); }
+/* 页面标题 */
+.page-header {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.page-title i { color: var(--accent); }
+.page-meta {
+  font-size: 14px;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.page-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.badge-primary { background: var(--accent-light); color: var(--accent); }
+.badge-success { background: rgba(52,199,89,0.15); color: var(--green); }
+.badge-danger { background: rgba(255,59,48,0.15); color: var(--red); }
+/* KPI卡片网格 */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.kpi-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+.kpi-header {
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.kpi-value.positive { color: var(--green); }
+.kpi-value.negative { color: var(--red); }
+.kpi-unit {
+  font-size: 14px;
+  color: var(--text2);
+  font-weight: normal;
+}
+.kpi-trend {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+.kpi-trend.up { color: var(--green); }
+.kpi-trend.down { color: var(--red); }
+.kpi-trend.neutral { color: var(--text3); }
+/* 卡片容器 */
+.card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+}
+.card-title i { color: var(--accent); }
+/* 表格样式 */
+.table-wrap {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+thead {
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+}
+th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text2);
+  border-bottom: 1px solid var(--gray-secondary);
+  white-space: nowrap;
+}
+td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--gray-secondary);
+}
+tbody tr:hover { background: rgba(0,122,255,0.04); }
+tbody tr:last-child td { border-bottom: none; }
+.num-col { text-align: right; }
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+.tree-indent { padding-left: 30px; }
+.tree-indent-1 { padding-left: 50px; }
+.tree-label {
+  font-weight: 500;
+}
+.balance.positive { color: var(--green); font-weight: 600; }
+.balance.negative { color: var(--red); font-weight: 600; }
+.total-row {
+  background: var(--bg);
+  font-weight: 700;
+  border-top: 2px solid var(--gray-secondary);
+}
+/* 图表容器 */
+.chart-container {
+  height: 300px;
+  margin-top: 16px;
+}
+/* 加载状态 */
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text2);
+}
+.loading i {
+  font-size: 32px;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.spinner {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--gray-secondary);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+/* 指标对比 */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+.metric-card {
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  text-align: center;
+}
+.metric-label {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+.metric-value {
+  font-size: 24px;
+  font-weight: 700;
+}
+.metric-value.positive { color: var(--green); }
+.metric-value.negative { color: var(--red); }
+.metric-change {
+  font-size: 11px;
+  margin-top: 4px;
+  color: var(--text3);
+}
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text2);
+}
+.empty-state i {
+  font-size: 48px;
+  color: var(--text3);
+  margin-bottom: 16px;
+}
+/* 响应式 */
+@media (max-width: 768px) {
+  .container { padding: 12px; }
+  .page-header { padding: 16px; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .kpi-value { font-size: 22px; }
+  th, td { padding: 10px 12px; }
+}
+/* 面包屑导航 */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+.breadcrumb a {
+  color: var(--blue);
+  text-decoration: none;
+}
+.breadcrumb a:hover { text-decoration: underline; }
+.breadcrumb i { font-size: 10px; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand"><i class="fa-solid fa-chart-pie"></i> 财务综述 Agent</div>
+    <button class="back-btn" onclick="goBack()">
+      <i class="fa-solid fa-arrow-left"></i> 返回列表
+    </button>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header" id="pageHeader">
+    <div class="breadcrumb">
+      <a href="/"><i class="fa-solid fa-house"></i> 首页</a>
+      <i class="fa-solid fa-chevron-right"></i>
+      <span>产品线详情</span>
+    </div>
+    <h1 class="page-title" id="pageTitle">
+      <i class="fa-solid fa-chart-line"></i>
+      <span>加载中...</span>
+    </h1>
+    <div class="page-meta" id="pageMeta"></div>
+  </div>
+
+  <!-- KPI卡片区 -->
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- 经营指标 -->
+  <div class="card" id="metricsCard">
+    <h2 class="card-title"><i class="fa-solid fa-gauge-simple"></i> 经营指标</h2>
+    <div class="metrics-grid" id="metricsGrid"></div>
+  </div>
+
+  <!-- 月度明细 -->
+  <div class="card" id="detailCard">
+    <h2 class="card-title"><i class="fa-solid fa-table-list"></i> 月度明细</h2>
+    <div class="table-wrap" id="detailTable"></div>
+  </div>
+
+  <!-- 趋势图表 -->
+  <div class="card" id="chartCard">
+    <h2 class="card-title"><i class="fa-solid fa-chart-area"></i> 趋势分析</h2>
+    <div class="chart-container" id="chartContainer"></div>
+  </div>
+</div>
+
+<script src="/static/echarts.min.js"></script>
+<script>
+// 全局变量
+let currentData = {
+  name: '',
+  board: '',
+  product: '',
+  year: new Date().getFullYear(),
+  months: [],
+  detail: null,
+  monthlyData: []
+};
+
+// API 工具函数
+async function apiGet(url, params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(url + (qs ? '?' + qs : ''));
+  return res.json();
+}
+async function apiPost(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+// 格式化数字
+function fmt(val) {
+  if (val == null || val === '' || isNaN(val)) return '0';
+  return Math.round(val).toLocaleString('zh-CN');
+}
+
+// 格式化同比/环比
+function fmtYoy(val) {
+  if (val == null || val === '' || isNaN(val)) return '-';
+  const rounded = Math.round(val);
+  const sign = rounded >= 0 ? '+' : '';
+  return sign + rounded + '万';
+}
+
+// 返回上一页
+function goBack() {
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    window.location.href = '/';
+  }
+}
+
+// 获取URL参数
+function getUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    name: params.get('name') || '',
+    board: params.get('board') || '',
+    product: params.get('product') || '',
+    year: parseInt(params.get('year')) || new Date().getFullYear(),
+    months: (params.get('months') || '').split(',').filter(m => m).map(m => parseInt(m))
+  };
+}
+
+// 加载详情数据
+async function loadDetail() {
+  const params = getUrlParams();
+  currentData = { ...currentData, ...params };
+  
+  // 更新页面标题
+  document.getElementById('pageTitle').querySelector('span').textContent = params.name;
+  document.getElementById('pageMeta').innerHTML = `
+    <span><i class="fa-solid fa-calendar"></i> ${params.year}年</span>
+    <span><i class="fa-solid fa-calendar-days"></i> ${params.months.join('月、')}月</span>
+    ${params.board ? `<span class="badge badge-primary">${params.board}</span>` : ''}
+  `;
+  
+  try {
+    // 加载当前数据
+    let level = 'board';
+    let filter = { board: params.board };
+    
+    if (params.product && params.product !== params.name) {
+      level = 'product';
+      filter = { board: params.board, product: params.product };
+    } else if (params.name !== params.board) {
+      level = 'product';
+      filter = { board: params.board, product: params.name };
+    }
+    
+    const r = await apiPost('/api/product/drill', {
+      year: params.year,
+      months: params.months,
+      level: level,
+      ...filter
+    });
+    
+    const data = r.data || [];
+    let row = data.find(d => 
+      (d.业务板块 === params.name) || 
+      (d.产品 === params.name) || 
+      (d.项目 === params.name)
+    );
+    
+    // 如果没找到，提升层级再试
+    if (!row && data.length > 0) {
+      row = data[0];
+    }
+    
+    if (row) {
+      currentData.detail = row;
+      renderKPIs(row);
+      renderMetrics(row);
+      renderDetailTable();
+    }
+    
+    // 加载月度趋势数据
+    await loadMonthlyTrend();
+    
+  } catch (e) {
+    console.error('加载详情失败:', e);
+    document.getElementById('kpiGrid').innerHTML = `
+      <div class="empty-state">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <p>加载失败，请重试</p>
+      </div>
+    `;
+  }
+}
+
+// 渲染KPI卡片
+function renderKPIs(row) {
+  const params = getUrlParams();
+  const grid = document.getElementById('kpiGrid');
+  
+  // 获取环比数据
+  let momData = {};
+  if (params.months.length > 1) {
+    apiPost('/api/product/drill', {
+      year: params.year,
+      months: params.months.slice(0, -1),
+      level: 'board'
+    }).then(r => {
+      const data = r.data || [];
+      momData = data.find(d => 
+        (d.业务板块 === params.name) || 
+        (d.产品 === params.name) || 
+        (d.项目 === params.name)
+      ) || {};
+      updateKPITrends(momData);
+    });
+  }
+  
+  grid.innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-header"><i class="fa-solid fa-arrow-up-right-dots"></i> 收入</div>
+      <div class="kpi-value">${fmt(row.收入)}<span class="kpi-unit">万</span></div>
+      <div class="kpi-trend neutral" id="kpiIncomeTrend">
+        <i class="fa-solid fa-minus"></i> 环比 -
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-header"><i class="fa-solid fa-arrow-down-right-dots"></i> 支出</div>
+      <div class="kpi-value">${fmt(row.支出)}<span class="kpi-unit">万</span></div>
+      <div class="kpi-trend neutral" id="kpiExpenseTrend">
+        <i class="fa-solid fa-minus"></i> 环比 -
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-header"><i class="fa-solid fa-hand-holding-dollar"></i> 平台管理费</div>
+      <div class="kpi-value">${fmt(row.平台管理费)}<span class="kpi-unit">万</span></div>
+      <div class="kpi-trend neutral">
+        <i class="fa-solid fa-minus"></i> -
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-header"><i class="fa-solid fa-piggy-bank"></i> 结余</div>
+      <div class="kpi-value ${(row.结余 || 0) >= 0 ? 'positive' : 'negative'}">${fmt(row.结余)}<span class="kpi-unit">万</span></div>
+      <div class="kpi-trend neutral" id="kpiBalanceTrend">
+        <i class="fa-solid fa-minus"></i> 环比 -
+      </div>
+    </div>
+  `;
+}
+
+function updateKPITrends(momData) {
+  if (!momData || Object.keys(momData).length === 0) return;
+  
+  const row = currentData.detail;
+  
+  // 收入环比
+  const momIncome = (row.收入 || 0) - (momData.收入 || 0);
+  document.getElementById('kpiIncomeTrend').innerHTML = `
+    <i class="fa-solid fa-arrow-trend-${momIncome >= 0 ? 'up' : 'down'}"></i> 环比 ${fmtYoy(momIncome)}
+  `;
+  document.getElementById('kpiIncomeTrend').className = `kpi-trend ${momIncome >= 0 ? 'up' : 'down'}`;
+  
+  // 支出环比
+  const momExpense = (row.支出 || 0) - (momData.支出 || 0);
+  document.getElementById('kpiExpenseTrend').innerHTML = `
+    <i class="fa-solid fa-arrow-trend-${momExpense >= 0 ? 'up' : 'down'}"></i> 环比 ${fmtYoy(momExpense)}
+  `;
+  // 支出增加是负面信号
+  document.getElementById('kpiExpenseTrend').className = `kpi-trend ${momExpense <= 0 ? 'up' : 'down'}`;
+  
+  // 结余环比
+  const momBalance = (row.结余 || 0) - (momData.结余 || 0);
+  document.getElementById('kpiBalanceTrend').innerHTML = `
+    <i class="fa-solid fa-arrow-trend-${momBalance >= 0 ? 'up' : 'down'}"></i> 环比 ${fmtYoy(momBalance)}
+  `;
+  document.getElementById('kpiBalanceTrend').className = `kpi-trend ${momBalance >= 0 ? 'up' : 'down'}`;
+}
+
+// 渲染经营指标
+function renderMetrics(row) {
+  const grid = document.getElementById('metricsGrid');
+  const income = row.收入 || 0;
+  const balance = row.结余 || 0;
+  const expense = row.支出 || 0;
+  const fee = row.平台管理费 || 0;
+  
+  const balanceRate = income > 0 ? (balance / income * 100).toFixed(1) : '0.0';
+  const expenseRate = income > 0 ? (expense / income * 100).toFixed(1) : '0.0';
+  const feeRate = income > 0 ? (fee / income * 100).toFixed(1) : '0.0';
+  const costRate = income > 0 ? ((expense + fee) / income * 100).toFixed(1) : '0.0';
+  
+  grid.innerHTML = `
+    <div class="metric-card">
+      <div class="metric-label">结余率</div>
+      <div class="metric-value ${balance >= 0 ? 'positive' : 'negative'}">${balanceRate}%</div>
+      <div class="metric-change">收入${income > 0 ? (balance / income * 100).toFixed(1) : 0}%转化为结余</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">费用率</div>
+      <div class="metric-value negative">${expenseRate}%</div>
+      <div class="metric-change">占总收入${expenseRate}%</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">管理费占比</div>
+      <div class="metric-value">${feeRate}%</div>
+      <div class="metric-change">占总收入${feeRate}%</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">总成本率</div>
+      <div class="metric-value negative">${costRate}%</div>
+      <div class="metric-change">成本+管理费合计</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">净结余率</div>
+      <div class="metric-value ${(balance - fee) / income * 100 >= 0 ? 'positive' : 'negative'}">${income > 0 ? ((balance - fee) / income * 100).toFixed(1) : '0.0'}%</div>
+      <div class="metric-change">扣除管理费后</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">支出/收入比</div>
+      <div class="metric-value negative">${income > 0 ? (expense / income * 100).toFixed(1) : '0.0'}%</div>
+      <div class="metric-change">支出占收入比例</div>
+    </div>
+  `;
+}
+
+// 渲染月度明细表
+function renderDetailTable() {
+  const params = getUrlParams();
+  const table = document.getElementById('detailTable');
+  
+  // 使用API获取月度明细
+  apiPost('/api/product/drill', {
+    year: params.year,
+    months: params.months,
+    level: 'board'
+  }).then(r => {
+    const data = r.data || [];
+    const row = data.find(d => 
+      (d.业务板块 === params.name) || 
+      (d.产品 === params.name) || 
+      (d.项目 === params.name)
+    );
+    
+    if (!row) {
+      table.innerHTML = '<div class="empty-state"><i class="fa-solid fa-inbox"></i><p>暂无明细数据</p></div>';
+      return;
+    }
+    
+    // 计算环比
+    const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+    let html = '<table><thead><tr>';
+    html += '<th>月份</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th><th class="num-col">结余率</th>';
+    html += '</tr></thead><tbody>';
+    
+    // 如果有月度明细数据
+    if (row._monthlyData && row._monthlyData.length > 0) {
+      for (const mRow of row._monthlyData) {
+        const bal = mRow.结余 || 0;
+        const inc = mRow.收入 || 0;
+        const balRate = inc > 0 ? (bal / inc * 100).toFixed(1) : '0.0';
+        html += `<tr>
+          <td>${mRow.月份 ? monthNames[mRow.月份 - 1] : '-'}</td>
+          <td class="num">${fmt(mRow.收入)}万</td>
+          <td class="num">${fmt(mRow.支出)}万</td>
+          <td class="num">${fmt(mRow.平台管理费)}万</td>
+          <td class="num balance ${bal >= 0 ? 'positive' : 'negative'}">${fmt(bal)}万</td>
+          <td class="num">${balRate}%</td>
+        </tr>`;
+      }
+    } else {
+      // 显示汇总数据
+      const bal = row.结余 || 0;
+      const inc = row.收入 || 0;
+      const balRate = inc > 0 ? (bal / inc * 100).toFixed(1) : '0.0';
+      html += `<tr>
+        <td>${params.months.join('月、')}月 合计</td>
+        <td class="num">${fmt(row.收入)}万</td>
+        <td class="num">${fmt(row.支出)}万</td>
+        <td class="num">${fmt(row.平台管理费)}万</td>
+        <td class="num balance ${bal >= 0 ? 'positive' : 'negative'}">${fmt(bal)}万</td>
+        <td class="num">${balRate}%</td>
+      </tr>`;
+    }
+    
+    html += '</tbody></table>';
+    table.innerHTML = html;
+  });
+}
+
+// 加载月度趋势图
+async function loadMonthlyTrend() {
+  const params = getUrlParams();
+  const container = document.getElementById('chartContainer');
+  
+  try {
+    // 获取12个月的累计数据用于趋势图
+    const months = Array.from({length: 12}, (_, i) => i + 1);
+    const r = await apiPost('/api/product/drill', {
+      year: params.year,
+      months: months,
+      level: 'board'
+    });
+    
+    const data = r.data || [];
+    const targetRow = data.find(d => 
+      (d.业务板块 === params.name) || 
+      (d.产品 === params.name) || 
+      (d.项目 === params.name)
+    );
+    
+    if (!targetRow || !targetRow._monthlyData || targetRow._monthlyData.length === 0) {
+      container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-chart-line"></i><p>暂无趋势数据</p></div>';
+      return;
+    }
+    
+    const monthlyData = targetRow._monthlyData;
+    const months1 = monthlyData.map(d => (d.月份 || '') + '月');
+    const incomeData = monthlyData.map(d => d.收入 || 0);
+    const expenseData = monthlyData.map(d => d.支出 || 0);
+    const balanceData = monthlyData.map(d => d.结余 || 0);
+    
+    // 初始化 ECharts
+    const chart = echarts.init(container);
+    const option = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'cross' }
+      },
+      legend: {
+        data: ['收入', '支出', '结余'],
+        bottom: 0
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '15%',
+        top: '10%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: months1,
+        boundaryGap: false
+      },
+      yAxis: {
+        type: 'value',
+        name: '金额(万)',
+        axisLabel: { formatter: '{value}' }
+      },
+      series: [
+        {
+          name: '收入',
+          type: 'line',
+          data: incomeData,
+          smooth: true,
+          itemStyle: { color: '#007AFF' },
+          areaStyle: { color: 'rgba(0,122,255,0.1)' }
+        },
+        {
+          name: '支出',
+          type: 'line',
+          data: expenseData,
+          smooth: true,
+          itemStyle: { color: '#FF3B30' },
+          areaStyle: { color: 'rgba(255,59,48,0.1)' }
+        },
+        {
+          name: '结余',
+          type: 'line',
+          data: balanceData,
+          smooth: true,
+          itemStyle: { color: '#34C759' },
+          areaStyle: { color: 'rgba(52,199,89,0.1)' }
+        }
+      ]
+    };
+    
+    chart.setOption(option);
+    
+    // 响应式
+    window.addEventListener('resize', () => chart.resize());
+    
+  } catch (e) {
+    console.error('加载趋势图失败:', e);
+    container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-chart-line"></i><p>加载失败</p></div>';
+  }
+}
+
+// 页面加载时获取数据
+document.addEventListener('DOMContentLoaded', loadDetail);
+</script>
+</body>
+</html>
