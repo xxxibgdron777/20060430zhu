@@ -591,7 +591,7 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
             "rows": [], "summary": {}, "analysis": [f"未找到 '{parent_name}' 的数据"]
         }
 
-    # ---- 按 (收支1, 月) 分组计算 ----
+    # ---- 按 (收支1, 月) 分组计算（汇总行） ----
     def _build_pivot(df_subset):
         if df_subset.empty:
             empty_df = pd.DataFrame(index=pd.Index([], name="收支1"), columns=list(months) + ["全年"])
@@ -602,7 +602,6 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
             inc, exp, fee = _team_calc(group, inc_col="收支1", exp_col="收支1")
             records.append({"收支1": subj, "月": month, "收入": inc, "支出": exp, "管理费": fee})
         if not records:
-            # 返回空 DataFrame 而不是空 dict
             empty_df = pd.DataFrame(index=pd.Index([], name="收支1"), columns=list(months) + ["全年"])
             return empty_df, empty_df.copy(), empty_df.copy()
         dg = pd.DataFrame(records)
@@ -638,8 +637,47 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
 
     all_subjects = set(list(piv_i.index) + list(piv_e.index) + list(piv_f.index))
     income_subjects = sorted([s for s in all_subjects if _classify(s) == "income"])
-    expense_subjects = sorted([s for s in all_subjects if _classify(s) == "expense"])
-    fee_subjects = sorted([s for s in all_subjects if _classify(s) == "fee"])
+    # 费用科目：在piv_f中有非零值的项（不论收支1名称）
+    fee_subjects = sorted([s for s in piv_f.index if piv_f.loc[s, "全年"] != 0]) if not piv_f.empty else []
+    expense_subjects = sorted([s for s in all_subjects if _classify(s) == "expense" and s not in fee_subjects])
+
+    # ---- 按类型聚合部门特殊明细 ----
+    # 一次性构建：按收支类型（income/expense/fee）聚合部门特殊
+    def _build_type_pivot(df, type_subjects, piv_type):
+        """按类型聚合部门特殊明细，跨多个收支1科目"""
+        if df.empty or "部门特殊" not in df.columns or not type_subjects:
+            return None  # 空DataFrame
+        sub_df = df[df["收支1"].isin(type_subjects)]
+        if sub_df.empty:
+            return None
+        records = []
+        grouped = sub_df.groupby(["部门特殊", "月"])
+        for (dept, month), group in grouped:
+            inc, exp, fee_amt = _team_calc(group, inc_col="收支1", exp_col="收支1")
+            if piv_type == "i":
+                val = inc
+            elif piv_type == "e":
+                val = exp
+            else:
+                val = fee_amt
+            records.append({"部门特殊": dept, "月": month, "金额": val})
+        if not records:
+            return None
+        dg = pd.DataFrame(records)
+        piv = dg.pivot_table(index="部门特殊", columns="月", values="金额", fill_value=0, aggfunc="sum")
+        for m in months:
+            if m not in piv.columns:
+                piv[m] = 0
+        piv = piv.reindex(columns=months, fill_value=0)
+        piv["全年"] = piv[months].sum(axis=1)
+        # 只保留非零行
+        piv = piv[piv["全年"] != 0]
+        return piv
+
+    # 构建三种类型的聚合透视
+    dept_inc_piv = _build_type_pivot(filtered, income_subjects, "i")
+    dept_exp_piv = _build_type_pivot(filtered, expense_subjects + fee_subjects, "e")
+    dept_fee_piv = _build_type_pivot(filtered, fee_subjects, "f")
 
     def _get_subject_total(piv, subj, col="全年"):
         if subj in piv.index and col in piv.columns:
@@ -692,29 +730,54 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
             "indent": indent,
         }
 
-    # 收入总行
+    # 辅助函数：渲染按类型聚合的部门特殊子行
+    def _render_type_dept_rows(dept_piv, rtype, ratio_base):
+        """从按类型聚合的dept_piv读取部门特殊行，相同字段已聚合"""
+        if dept_piv is None or dept_piv.empty:
+            return
+        for dept_name in dept_piv.index:
+            dept_name_str = str(dept_name).strip()
+            if not dept_name_str:
+                continue
+            total_val = float(dept_piv.loc[dept_name, "全年"]) if "全年" in dept_piv.columns else 0.0
+            if total_val == 0:
+                continue
+            vals = {}
+            for m in months:
+                try:
+                    vals[m] = float(dept_piv.loc[dept_name, m])
+                except (KeyError, ValueError):
+                    vals[m] = 0.0
+            ratio = f"{(total_val / ratio_base * 100):.1f}%" if (ratio_base and ratio_base != 0) else None
+            rows.append({
+                "name": dept_name_str,
+                "level": "sub",
+                "type": rtype,
+                "values": {m: to_wan(vals[m]) for m in months},
+                "total": to_wan(total_val),
+                "yoy_pct": None,
+                "yoy_prev": 0,
+                "ratio": ratio,
+                "indent": True,
+            })
+
+    # 收入：总行 + 聚合的部门特殊明细
     if income_subjects:
         rows.append(_make_row("一、收入", "total", "income", income_subjects, piv_i, prev_piv_i, total_income))
-        for subj in income_subjects:
-            if subj == "一、收入":
-                continue
-            rows.append(_make_row(subj, "sub", "income", [subj], piv_i, prev_piv_i, total_income, indent=True))
+        _render_type_dept_rows(dept_inc_piv, "income", total_income)
 
-    # 支出总行
-    if expense_subjects:
-        rows.append(_make_row("二、支出", "total", "expense", expense_subjects, piv_e, prev_piv_e, total_expense))
-        for subj in expense_subjects:
-            if subj == "二、支出":
-                continue
-            rows.append(_make_row(subj, "sub", "expense", [subj], piv_e, prev_piv_e, total_expense, indent=True))
+    # 支出：总行（含fee科目的支出部分）
+    all_expense_subs = list(dict.fromkeys(expense_subjects + fee_subjects))
+    if all_expense_subs:
+        total_expense = float(sum(_get_subject_total(piv_e, s) for s in all_expense_subs if s in piv_e.index))
+        rows.append(_make_row("二、支出", "total", "expense", all_expense_subs, piv_e, prev_piv_e, total_expense))
+        _render_type_dept_rows(dept_exp_piv, "expense", total_expense)
 
-    # 管理费总行
-    if fee_subjects:
+    # 管理费：总行 + 聚合的部门特殊明细
+    if fee_subjects and dept_fee_piv is not None and not dept_fee_piv.empty:
+        total_fee = float(sum(_get_subject_total(piv_f, s) for s in fee_subjects))
         rows.append(_make_row("三、管理费", "total", "fee", fee_subjects, piv_f, prev_piv_f, total_income))
-        for subj in fee_subjects:
-            if subj == "三、管理费":
-                continue
-            rows.append(_make_row(subj, "sub", "fee", [subj], piv_f, prev_piv_f, total_income, indent=True))
+        _render_type_dept_rows(dept_fee_piv, "fee", total_income)
 
     # 结余行
     balance_yoy = _get_yoy(total_balance, prev_total_balance)

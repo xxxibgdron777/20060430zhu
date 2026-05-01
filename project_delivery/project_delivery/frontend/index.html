@@ -621,8 +621,6 @@ document.getElementById('globalPwd').addEventListener('keypress', function(e) {
       <button class="tab-btn" data-tab="team"><i class="fa-solid fa-users-line"></i> 创业团队经营分析</button>
 
       <button class="tab-btn" data-tab="qa"><i class="fa-solid fa-magnifying-glass-chart"></i> 智能问答</button>
-      <button class="tab-btn" data-tab="budget"><i class="fa-solid fa-scale-balanced"></i> 预算对比</button>
-      <button class="tab-btn" data-tab="vip"><i class="fa-solid fa-heart-pulse"></i> VIP健康管理</button>
     </div>
   </div>
 </nav>
@@ -705,8 +703,8 @@ document.getElementById('globalPwd').addEventListener('keypress', function(e) {
   </div>
 </div>
 
-<!-- Tab3: 预算对比 -->
-<div id="tab-budget" class="tab-panel">
+<!-- Tab3: 预算对比（暂时隐藏） -->
+<div id="tab-budget" class="tab-panel" style="display:none">
   <div class="content">
     <div class="budget-header">
       <h3 style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px"><i class="fa-solid fa-scale-balanced" style="color:var(--accent)"></i> 预算 vs 实际对比</h3>
@@ -734,8 +732,8 @@ document.getElementById('globalPwd').addEventListener('keypress', function(e) {
   </div>
 </div>
 
-<!-- Tab4: VIP健康管理 -->
-<div id="tab-vip" class="tab-panel">
+<!-- Tab4: VIP健康管理（暂时隐藏） -->
+<div id="tab-vip" class="tab-panel" style="display:none">
   <div class="content">
     <div class="budget-header">
       <h3 style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px"><i class="fa-solid fa-heart-pulse" style="color:var(--accent)"></i> VIP健康管理</h3>
@@ -907,11 +905,9 @@ function switchTab(name) {
   if (name === 'product') refreshProductTab();
   if (name === 'team') refreshTeamTab();
   if (name === 'qa') initQA();
-  if (name === 'budget') loadBudget();
-  if (name === 'vip') initVIP();
 }
 document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
-window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (['product', 'team', 'qa', 'budget', 'vip'].includes(h)) switchTab(h); });
+window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (['product', 'team', 'qa'].includes(h)) switchTab(h); });
 
 // === Month Selector - Product Tab ===
 function renderMonthsProduct() {
@@ -2863,7 +2859,7 @@ async function init() {
   }
   
   const h = location.hash.slice(1);
-  if (['product', 'team', 'qa', 'budget', 'vip'].includes(h)) switchTab(h);
+  if (['product', 'team', 'qa'].includes(h)) switchTab(h);
   else refreshProductTab(); // 默认加载产品线Tab
 
   // 初始化创业团队备注编辑功能
