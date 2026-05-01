@@ -563,19 +563,27 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
     months_3_12 = [m for m in months if m >= 3]
 
     # ---- 今年数据 ----
-    filtered = team_df[
-        (team_df["年"] == year) &
-        (team_df["月"].isin(months)) &
-        (team_df["H团队线-上级"] == parent_name)
-    ].copy()
+    # 支持通过 H团队线-上级 / H团队线性质 / H团队线-核算 三种方式匹配
+    def _filter_team(df, yr):
+        cols_to_try = ["H团队线-上级", "H团队线性质", "H团队线-核算"]
+        filtered = pd.DataFrame()
+        for col in cols_to_try:
+            if col in df.columns:
+                subset = df[
+                    (df["年"] == yr) &
+                    (df["月"].isin(months)) &
+                    (df[col] == parent_name)
+                ]
+                if not subset.empty:
+                    filtered = subset.copy()
+                    break
+        return filtered
+
+    filtered = _filter_team(team_df, year)
 
     # ---- 去年同期 ----
     prev_year = year - 1
-    prev_filtered = team_df[
-        (team_df["年"] == prev_year) &
-        (team_df["月"].isin(months)) &
-        (team_df["H团队线-上级"] == parent_name)
-    ].copy()
+    prev_filtered = _filter_team(team_df, prev_year)
 
     if filtered.empty:
         return {
@@ -585,6 +593,9 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
 
     # ---- 按 (收支1, 月) 分组计算 ----
     def _build_pivot(df_subset):
+        if df_subset.empty:
+            empty_df = pd.DataFrame(index=pd.Index([], name="收支1"), columns=list(months) + ["全年"])
+            return empty_df, empty_df.copy(), empty_df.copy()
         records = []
         grouped = df_subset.groupby(["收支1", "月"])
         for (subj, month), group in grouped:
@@ -1041,55 +1052,9 @@ def analyze_trends(product_df: pd.DataFrame, year: int) -> list:
     return alerts
 
 
-# ==================== 特殊计算 ====================
 
-def get_property_comparison(team_df: pd.DataFrame, year: int, months: list, 
-                              parent_name: str = "物业管理") -> Optional[dict]:
-    """
-    物业管理：收付实现制 vs 权责发生制
-    - 收付实现收入 = 实收 + 收往年欠费
-    - 权责发生收入 = 实收 + 本年欠费
-    """
-    filtered = team_df[
-        (team_df["年"] == year)
-        & (team_df["月"].isin(months))
-        & (team_df["H团队线-上级"] == parent_name)
-    ]
-    
-    if filtered.empty:
-        return None
-    
-    _, expense, fee = _team_calc(filtered)
-    amt_col = _team_amt_col(filtered)
 
-    # 收付实现制
-    cash = filtered[filtered["资金流向"].isin(["实收", "收往年欠费"])]
-    cash_income = float(cash[amt_col].sum())
-    cash_balance = cash_income - expense - fee
-    
-    # 权责发生制
-    accrual = filtered[filtered["资金流向"].isin(["实收", "本年欠费"])]
-    accrual_income = float(accrual[amt_col].sum())
-    accrual_balance = accrual_income - expense - fee
-    
-    return {
-        "收付实现制": {
-            "收入": to_wan(cash_income),
-            "支出": to_wan(expense),
-            "平台管理费": to_wan(fee),
-            "结余": to_wan(cash_balance)
-        },
-        "权责发生制": {
-            "收入": to_wan(accrual_income),
-            "支出": to_wan(expense),
-            "平台管理费": to_wan(fee),
-            "结余": to_wan(accrual_balance)
-        },
-        "差异": {
-            "收入差异": to_wan(accrual_income - cash_income),
-            "结余差异": to_wan(accrual_balance - cash_balance),
-        }
-    }
+
 
 
 # ==================== 创业团队经营分析压缩表（简化版：table + analysis） ====================
@@ -1300,47 +1265,3 @@ def get_team_pivot(team_df: pd.DataFrame, parent_name: str, year: int,
 
     return {"table": df_table, "analysis": analysis}
 
-
-def get_laoganju_distribution(team_df: pd.DataFrame, year: int, months: list,
-                               parent_name: str = "01.老干局") -> Optional[dict]:
-    """
-    老干局：按 A产品线1 和 B项目1 分组
-    """
-    filtered = team_df[
-        (team_df["年"] == year)
-        & (team_df["月"].isin(months))
-        & (team_df["H团队线-上级"] == parent_name)
-    ]
-    
-    if filtered.empty:
-        return None
-    
-    result = {}
-    
-    if "A产品线1" in filtered.columns:
-        by_p1 = []
-        for name, group in filtered.groupby("A产品线1"):
-            inc, exp, fee = _team_calc(group)
-            by_p1.append({
-                "A产品线1": str(name),
-                "收入": to_wan(inc),
-                "支出": to_wan(exp),
-                "平台管理费": to_wan(fee),
-                "结余": to_wan(inc - exp - fee),
-            })
-        result["by_product1"] = by_p1
-    
-    if "B项目1" in filtered.columns:
-        by_b1 = []
-        for name, group in filtered.groupby("B项目1"):
-            inc, exp, fee = _team_calc(group)
-            by_b1.append({
-                "B项目1": str(name),
-                "收入": to_wan(inc),
-                "支出": to_wan(exp),
-                "平台管理费": to_wan(fee),
-                "结余": to_wan(inc - exp - fee),
-            })
-        result["by_project1"] = by_b1
-    
-    return result if result else None

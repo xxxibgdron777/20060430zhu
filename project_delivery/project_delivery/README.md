@@ -120,8 +120,6 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 - `GET /api/ai/suggestions` - AI 分析建议
 
 ### 特殊接口
-- `GET /api/property/comparison` - 物业管理对比（收付实现 vs 权责发生）
-- `GET /api/laoganju/distribution` - 老干局分布
 - `GET /api/team/share` - 团队经营分享
 
 ### 预算接口

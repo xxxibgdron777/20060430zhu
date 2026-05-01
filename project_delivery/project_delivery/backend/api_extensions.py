@@ -12,7 +12,6 @@ from calculators import (
     aggregate_board, aggregate_product, aggregate_project,
     aggregate_team_nature, aggregate_team_parent, aggregate_team_account,
     get_support_team_balance, get_kpi, get_monthly_trend, get_pie_data,
-    get_property_comparison, get_laoganju_distribution,
     analyze_trends, _team_calc,
 )
 from agent import FinancialAgent, VolcEngineAgent

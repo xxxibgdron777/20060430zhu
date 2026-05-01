@@ -22,8 +22,8 @@ from calculators import (
     aggregate_board, aggregate_product, aggregate_project,
     aggregate_team_nature, aggregate_team_parent, aggregate_team_account,
     get_support_team_balance, get_kpi, get_monthly_trend, get_pie_data,
-    get_property_comparison, get_laoganju_distribution,
     analyze_trends, _team_calc, _team_amt_col,
+    get_team_compressed_table,
 )
 from agent import FinancialAgent
 from api_extensions import enhanced_query, get_ai_suggestions, get_budget_comparison, get_team_share_detail
@@ -70,7 +70,7 @@ app.add_middleware(
 app.include_router(admin_router)
 
 # 挂载静态文件目录（frontend目录）
-frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
 app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 
 
@@ -688,32 +688,23 @@ def api_save_team_annotation(
     return {"success": True}
 
 
-# ==================== 特殊团队 ====================
+# ==================== 创业团队经营明细透视（pivot_flat）====================
 
-
-# ==================== 特殊团队 ====================
-
-@app.get("/api/property/comparison")
-def api_property_comparison(year: int, months: str = Query(...)):
+@app.post("/api/team/pivot_flat")
+def api_team_pivot_flat(
+    year: int = Body(...),
+    months: List[int] = Body(...),
+    team_name: str = Body(...),
+):
+    """
+    获取创业团队经营明细透视表（按收支科目分月）
+    返回收入、支出、管理费三级结构+结余+同比+占比
+    """
     _refresh_if_needed()
-    ml = parse_months(months)
-    if team_df is None:
+    if team_df is None or team_df.empty:
         raise HTTPException(500, "团队数据未加载")
-    result = get_property_comparison(team_df, year, ml)
-    if result is None:
-        return {"error": "未找到物业管理团队数据"}
-    return _ensure_native(result)
 
-
-@app.get("/api/laoganju/distribution")
-def api_laoganju(year: int, months: str = Query(...)):
-    _refresh_if_needed()
-    ml = parse_months(months)
-    if team_df is None:
-        raise HTTPException(500, "团队数据未加载")
-    result = get_laoganju_distribution(team_df, year, ml)
-    if result is None:
-        return {"error": "未找到老干局数据"}
+    result = get_team_compressed_table(team_df, team_name, year, months)
     return _ensure_native(result)
 
 
@@ -1313,7 +1304,7 @@ def api_vip_products():
 
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
-    html_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "index.html")
+    html_path = os.path.join(os.path.dirname(__file__), "frontend", "index.html")
     try:
         with open(html_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
@@ -1324,7 +1315,7 @@ def serve_frontend():
 @app.get("/admins", response_class=HTMLResponse)
 def serve_admin():
     """管理后台页面"""
-    html_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "admins.html")
+    html_path = os.path.join(os.path.dirname(__file__), "frontend", "admins.html")
     try:
         with open(html_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
