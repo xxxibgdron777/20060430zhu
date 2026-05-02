@@ -54,6 +54,14 @@ def enhanced_query(product_df, team_df, question: str, year: int, months: List[i
     - use_ai=True: 使用火山引擎豆包大模型（VolcEngineAgent）
     - use_ai=False: 使用规则匹配（FinancialAgent）
     """
+    # 关键词别名映射（将非标准名称映射为数据中实际名称）
+    alias_map = {
+        "机构医疗": "医养板块",
+        "银发经济": "",
+    }
+    for alias, target in alias_map.items():
+        if alias in question and target:
+            question = question.replace(alias, target)
     if use_ai:
         # 优先使用豆包 AI
         agent = VolcEngineAgent(product_df, team_df)

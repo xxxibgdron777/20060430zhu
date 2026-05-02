@@ -190,7 +190,7 @@ def aggregate_board(df_filtered: pd.DataFrame) -> pd.DataFrame:
         支出=("支出", "sum"),
         平台管理费=("平台管理费", "sum"),
     ).reset_index()
-    g["结余"] = g["收入"] - g["支出"]  # 结余不含管理费
+    g["结余"] = g["收入"] - g["支出"] - g["平台管理费"]
     return g
 
 
@@ -205,7 +205,7 @@ def aggregate_product(df_filtered: pd.DataFrame, board: Optional[str] = None) ->
         支出=("支出", "sum"),
         平台管理费=("平台管理费", "sum"),
     ).reset_index()
-    g["结余"] = g["收入"] - g["支出"]  # 结余不含管理费
+    g["结余"] = g["收入"] - g["支出"] - g["平台管理费"]
     return g
 
 
@@ -220,7 +220,7 @@ def aggregate_project(df_filtered: pd.DataFrame, product: Optional[str] = None) 
         支出=("支出", "sum"),
         平台管理费=("平台管理费", "sum"),
     ).reset_index()
-    g["结余"] = g["收入"] - g["支出"]  # 结余不含管理费
+    g["结余"] = g["收入"] - g["支出"] - g["平台管理费"]
     return g
 
 
@@ -228,43 +228,29 @@ def aggregate_project(df_filtered: pd.DataFrame, product: Optional[str] = None) 
 
 
 def _team_amt_col(df: pd.DataFrame) -> str:
-    """获取团队数据的金额列名，优先用'总计'（创业团队），否则用'金额g'（产品线）"""
-    col = getattr(df, "_team_amt_col", None) or ("总计" if "总计" in df.columns else "金额g")
-    return col
+    """获取团队数据的金额列名，统一使用'金额g'"""
+    return "金额g"
 
 
 def _team_calc(sub_df: pd.DataFrame, inc_col: str = "收支", exp_col: str = "收支") -> Tuple[float, float, float]:
     """
     从数据计算 收入/支出/平台管理费
-    inc_col/exp_col: 分类列（产品用"收支"，创业团队用"收支1"）
-    金额列：自动检测"总计"或"金额g"
+    分类列：收支（值为"一、收入"/"二、支出"/"三、管理费"）
+    金额列：金额g
     """
     if sub_df.empty:
         return 0.0, 0.0, 0.0
 
-    amt_col = _team_amt_col(sub_df)
+    amt_col = "金额g"
     
-    # 创业团队用"收支1"列，值为"1.x"开头（收入）或"2.x"开头（支出）
-    # 产品线用字符串匹配"一、收入"/"二、支出"
-    if inc_col == "收支1":
-        # 创业团队：1.x 开头是收入（排除管理费），2.x 开头是支出
-        income_cond = (sub_df[inc_col].str.startswith('1.', na=False)) & (sub_df["资金流向"] != "管理费")
-        expense_cond = (sub_df[exp_col].str.startswith('2.', na=False)) & (sub_df["资金流向"] != "管理费")
-        fee_cond = (sub_df["资金流向"] == "管理费") & (sub_df[inc_col].str.startswith('2.', na=False))
-    elif "一、收入" in sub_df.columns:
-        # 二进制列判断
-        income_cond = (sub_df["一、收入"].fillna(0) != 0) & (sub_df["资金流向"] != "管理费")
-        expense_cond = (sub_df["二、支出"].fillna(0) != 0) & (sub_df["资金流向"] != "管理费")
-        fee_cond = sub_df["资金流向"] == "管理费"
-    else:
-        # 产品线字符串匹配
-        income_cond = (sub_df[inc_col] == "一、收入") & (sub_df["资金流向"] != "管理费")
-        expense_cond = (sub_df[exp_col] == "二、支出") & (sub_df["资金流向"] != "管理费")
-        fee_cond = sub_df["资金流向"] == "管理费"
+    # 使用"收支"列，值为"一、收入"/"二、支出"/"三、管理费"
+    income_cond = (sub_df[inc_col] == "一、收入")
+    expense_cond = (sub_df[exp_col] == "二、支出")
+    fee_cond = (sub_df[inc_col] == "三、管理费")
 
     income = float(sub_df.loc[income_cond, amt_col].sum())
     expense = float(-sub_df.loc[expense_cond, amt_col].sum())  # 负→正
-    fee = float(-sub_df.loc[fee_cond, amt_col].sum())  # 红字支出取负→正
+    fee = float(-sub_df.loc[fee_cond, amt_col].sum())  # 负→正
 
     return income, expense, fee
 
@@ -277,7 +263,7 @@ def aggregate_team_nature(df_filtered: pd.DataFrame) -> pd.DataFrame:
     groups = df_filtered.groupby("H团队线性质")
     records = []
     for name, group in groups:
-        inc, exp, fee = _team_calc(group, inc_col="收支1", exp_col="收支1")
+        inc, exp, fee = _team_calc(group)
         records.append({
             "H团队线性质": str(name),
             "H团队线-上级": "",  # 一级不需要这个字段，由前端展开时填充
@@ -297,7 +283,7 @@ def aggregate_team_parent(df_filtered: pd.DataFrame, nature: Optional[str] = Non
     groups = df_filtered.groupby(["H团队线性质", "H团队线-上级"])
     records = []
     for (nat, parent), group in groups:
-        inc, exp, fee = _team_calc(group, inc_col="收支1", exp_col="收支1")
+        inc, exp, fee = _team_calc(group)
         records.append({
             "H团队线性质": str(nat),
             "H团队线-上级": str(parent),
@@ -317,7 +303,7 @@ def aggregate_team_account(df_filtered: pd.DataFrame, parent: Optional[str] = No
     groups = df_filtered.groupby(["H团队线性质", "H团队线-上级", "H团队线-核算"])
     records = []
     for (nat, par, acc), group in groups:
-        inc, exp, fee = _team_calc(group, inc_col="收支1", exp_col="收支1")
+        inc, exp, fee = _team_calc(group)
         records.append({
             "H团队线性质": str(nat),
             "H团队线-上级": str(par),
@@ -599,7 +585,7 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
         records = []
         grouped = df_subset.groupby(["收支1", "月"])
         for (subj, month), group in grouped:
-            inc, exp, fee = _team_calc(group, inc_col="收支1", exp_col="收支1")
+            inc, exp, fee = _team_calc(group)
             records.append({"收支1": subj, "月": month, "收入": inc, "支出": exp, "管理费": fee})
         if not records:
             empty_df = pd.DataFrame(index=pd.Index([], name="收支1"), columns=list(months) + ["全年"])
@@ -653,7 +639,7 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
         records = []
         grouped = sub_df.groupby(["部门特殊", "月"])
         for (dept, month), group in grouped:
-            inc, exp, fee_amt = _team_calc(group, inc_col="收支1", exp_col="收支1")
+            inc, exp, fee_amt = _team_calc(group)
             if piv_type == "i":
                 val = inc
             elif piv_type == "e":
@@ -1159,7 +1145,7 @@ def get_team_pivot(team_df: pd.DataFrame, parent_name: str, year: int,
     # ---- 2. 按 (收支1, 月) 分组，调用 _team_calc ----
     records = []
     for (subj, m), group in df.groupby(["收支1", "月"]):
-        inc, exp, fee = _team_calc(group, inc_col="收支1", exp_col="收支1")
+        inc, exp, fee = _team_calc(group)
         records.append({"收支1": subj, "月": m, "收入": inc, "支出": exp, "管理费": fee})
 
     if not records:

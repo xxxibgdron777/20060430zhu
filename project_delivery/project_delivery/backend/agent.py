@@ -665,7 +665,11 @@ class FinancialAgent:
         if m:
             return self._query_volatility(m.group(1))
         
-        # 6. 板块关键词
+        # 6. 板块关键词（含别名映射）
+        board_alias = {"机构医疗": "医养板块", "医疗": "医养板块"}
+        for alias, board_name in board_alias.items():
+            if alias in question and board_name in self.product_df["业务板块"].dropna().unique().tolist():
+                return self._query_board_detail(board_name)
         for board in self.product_df["业务板块"].dropna().unique():
             if str(board) in question:
                 return self._query_board_detail(board)

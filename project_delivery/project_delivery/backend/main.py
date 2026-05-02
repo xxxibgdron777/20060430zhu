@@ -69,8 +69,13 @@ app.add_middleware(
 # 注册管理后台 API
 app.include_router(admin_router)
 
-# 挂载静态文件目录（frontend目录）
-frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
+# 挂载静态文件目录（frontend目录，自动兼容 Docker 和本地开发）
+_this_dir = os.path.dirname(os.path.abspath(__file__))
+_frontend_candidates = [
+    os.path.join(os.path.dirname(_this_dir), "frontend"),  # 本地开发: 上级目录的frontend
+    os.path.join(_this_dir, "frontend"),                    # Docker: 同级目录的frontend
+]
+frontend_path = next((p for p in _frontend_candidates if os.path.isdir(p)), _frontend_candidates[0])
 app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 
 
@@ -431,7 +436,7 @@ def team_drill(
         r = {}
         for k in data.columns:
             val = row.get(k)
-            if k in ["收入", "支出", "平台管理费", "损益"]:
+            if k in ["收入", "支出", "平台管理费", "损益", "结余"]:
                 r[k] = to_wan(val) if pd.notna(val) else 0
             else:
                 r[k] = str(val) if pd.notna(val) else ""
@@ -1199,6 +1204,23 @@ def api_ai_query(
     if not ml:
         ml = [1, 2, 3]
     return enhanced_query(product_df, team_df, question, year, ml, use_ai)
+
+
+@app.post("/api/generate_report")
+def api_generate_report(
+    year: int = Body(2026),
+    month: int = Body(3),
+):
+    """生成指定年月北京银发经济月报，返回HTML内容"""
+    _refresh_if_needed()
+    try:
+        from monthly_beijing_report import generate_monthly_beijing_report
+        filepath = generate_monthly_beijing_report(year, month)
+        with open(filepath, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        return {"success": True, "html": html_content, "url": f"/reports/{os.path.basename(filepath)}"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 @app.get("/api/ai/suggestions")

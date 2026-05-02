@@ -22,12 +22,10 @@ def load_product_df():
     for col in ["收入", "支出", "平台管理费", "损益"]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-    # 修复：对字符串列填充空字符串，避免 groupby 产生 NaN 键
+    # 对字符串列填充空字符串，避免 groupby 产生 NaN 键（不过滤任何行）
     for col in ["业务板块", "产品", "项目"]:
         if col in df.columns:
             df[col] = df[col].fillna("").astype(str).str.strip()
-            # 过滤掉空字符串的行（可选，根据业务需求）
-            df = df[df[col] != ""]
     print(f"[data_loader] 产品Sheet: {len(df)} 行")
     return df
 

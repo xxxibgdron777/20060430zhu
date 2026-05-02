@@ -397,12 +397,12 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .pivot-summary-card .ps-label { font-size:12px; color:#666; margin-bottom:4px; }
 .pivot-summary-card .ps-value { font-size:20px; font-weight:700; }
 .pivot-summary-card .ps-unit { font-size:13px; font-weight:400; margin-left:2px; color:inherit; opacity:0.7; }
-.pivot-table-wrap { overflow:auto; max-height:55vh; border:1px solid #eee; border-radius:8px; }
-.pivot-detail-table { width:100%; border-collapse:collapse; font-size:13px; min-width:600px; }
+.pivot-table-wrap { overflow-x:auto; overflow-y:auto; max-height:55vh; border:1px solid #eee; border-radius:8px; }
+.pivot-detail-table { width:100%; border-collapse:separate; border-spacing:0; font-size:13px; min-width:600px; }
 .pivot-detail-table th { background:#f0f2f5; padding:10px 10px; text-align:right; border-bottom:2px solid #d0d5dd; font-weight:600; color:#333; white-space:nowrap; position:sticky; top:0; z-index:2; }
-.pivot-detail-table th.pivot-sticky-col { text-align:left; min-width:140px; left:0; z-index:3; }
+.pivot-detail-table th.pivot-sticky-col { text-align:left; min-width:140px; left:0; z-index:3; border-right:1px solid #d0d5dd; }
 .pivot-detail-table td { padding:8px 10px; border-bottom:1px solid #f0f0f0; text-align:right; font-variant-numeric:tabular-nums; }
-.pivot-detail-table td.pivot-sticky-col { text-align:left; position:sticky; left:0; background:#fff; z-index:1; }
+.pivot-detail-table td.pivot-sticky-col { text-align:left; position:sticky; left:0; background:inherit; z-index:1; border-right:1px solid #e0e0e0; }
 .pivot-detail-table tr:hover td { background:#f8f9ff; }
 .pivot-detail-table tr:hover td.pivot-sticky-col { background:#f8f9ff; }
 .pivot-detail-table .pivot-num-col { min-width:65px; }
@@ -699,6 +699,13 @@ document.getElementById('globalPwd').addEventListener('keypress', function(e) {
       <button class="qa-btn" id="qaBtn"><i class="fa-solid fa-paper-plane"></i> 提问</button>
     </div>
     <div class="preset-grid" id="presetGrid"></div>
+    <!-- 月报列表 -->
+    <div class="card" id="reportListCard" style="margin-bottom:12px;display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:14px;font-weight:600"><i class="fa-solid fa-newspaper"></i> 北京地区银发经济月报</span>
+      </div>
+      <div id="reportListWrap" style="max-height:300px;overflow-y:auto"></div>
+    </div>
     <div class="card" id="qaResult"><div class="empty-state"><div class="spinner"></div><br>选择预设问题或输入查询开始分析</div></div>
   </div>
 </div>
@@ -868,6 +875,9 @@ let S = {
   isAdmin: sessionStorage.getItem('isAdmin') === '1',
   meta: null, lastMonth: 3,
 };
+
+// 板块显示顺序
+const BOARD_ORDER = ['物业板块', '医养板块', '餐饮板块', '美好生活', '支持团队'];
 
 // === Helpers ===
 const API_BASE = '';
@@ -1536,20 +1546,16 @@ async function getPrevYearDataTeam(level, filter) {
   const prevYear = S.year - 1;
   try {
     const body = { year: prevYear, months: S.monthsTeam, level: level };
-    if (level === 'parent') body.nature = filter;
-    if (level === 'account') body.parent = filter;
+    if (level === 'parent' && filter) body.nature = filter;
     const r = await apiPost('/api/team/drill', body);
     if (r.data) {
       const map = {};
       for (const row of r.data) {
-        // 根据层级使用正确的字段作为key
         let key;
         if (level === 'nature') {
           key = row['H团队线性质'] || '';
         } else if (level === 'parent') {
           key = row['H团队线-上级'] || '';
-        } else if (level === 'account') {
-          key = row['H团队线-核算'] || '';
         } else {
           key = row['H团队线性质'] || '';
         }
@@ -2135,8 +2141,18 @@ async function loadTableProduct() {
     html += '<th>业务板块</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th>';
     html += '</tr></thead><tbody>';
     
-    // 渲染板块行
-    for (const row of boardData) {
+    // 渲染板块行（按指定顺序排列，缺失板块补0）
+    const boardMap = {};
+    for (const row of boardData) boardMap[row.业务板块] = row;
+    const sortedBoards = [];
+    for (const name of BOARD_ORDER) {
+      if (boardMap[name]) {
+        sortedBoards.push(boardMap[name]);
+      } else {
+        sortedBoards.push({ 业务板块: name, 收入: 0, 支出: 0, 平台管理费: 0, 结余: 0 });
+      }
+    }
+    for (const row of sortedBoards) {
       html += renderProductRow(row, 0, prevData, momDataMap[row.业务板块]);
     }
     
@@ -2362,195 +2378,156 @@ function renderTeamRow(row, level, prevData) {
   return html;
 }
 
-// Team Tab - 树形表格加载
+// Team Tab - 树形表格加载（两级结构：H团队线性质 → H团队线-上级）
 async function loadTableTeam() {
   if (!S.monthsTeam || S.monthsTeam.length === 0) return;
   try {
     console.log('[MatrixTable] 开始加载创业团队矩阵数据，当前年份:', S.year, '月份:', S.monthsTeam);
 
-    // 加载矩阵数据
-    const r = await apiPost('/api/team/drill', { year: S.year, months: S.monthsTeam, level: 'nature', matrix: true });
-    const matrixData = r.data || [];
-    console.log('矩阵数据加载完成，共', matrixData.length, '条');
+    // 一次性加载两级数据
+    const [natureRes, parentRes] = await Promise.all([
+      apiPost('/api/team/drill', { year: S.year, months: S.monthsTeam, level: 'nature' }),
+      apiPost('/api/team/drill', { year: S.year, months: S.monthsTeam, level: 'parent' }),
+    ]);
+    const natureData = natureRes.data || [];
+    const parentData = parentRes.data || [];
+    console.log('一级数据:', natureData.length, '条, 二级数据:', parentData.length, '条');
 
-    // 渲染表格
+    // 按 nature 分组 parent
+    const parentByNature = {};
+    for (const p of parentData) {
+      const n = p['H团队线性质'] || '';
+      if (!parentByNature[n]) parentByNature[n] = [];
+      parentByNature[n].push(p);
+    }
+
+    // 计算上年数据
+    const prevNature = await getPrevYearDataTeam('nature');
+    const prevParent = await getPrevYearDataTeam('parent');
+
     const wrap = document.getElementById('tableWrapTeam');
     const title = document.getElementById('tableTitleTeam');
     title.innerHTML = '<i class="fa-solid fa-table-cells-large"></i> 创业团队经营透视 <span style="font-size:14px;font-weight:400;color:#888;margin-left:8px">按 H团队线性质分组</span>';
 
     let html = '<table class="tree-table"><thead><tr>';
     html += '<th style="text-align:left;min-width:180px">H团队线性质</th>';
-    html += '<th class="num-cell-th">一、收入<sup style="color:#888;font-size:11px">(元)</sup></th>';
-    html += '<th class="num-cell-th">二、支出<sup style="color:#888;font-size:11px">(元)</sup></th>';
-    html += '<th class="num-cell-th">三、管理费<sup style="color:#888;font-size:11px">(元)</sup></th>';
-    html += '<th class="num-cell-th">结余<sup style="color:#888;font-size:11px">(元)</sup></th>';
+    html += '<th class="num-cell-th">一、收入<sup style="color:#888;font-size:11px">(万元)</sup></th>';
+    html += '<th class="num-cell-th">二、支出<sup style="color:#888;font-size:11px">(万元)</sup></th>';
+    html += '<th class="num-cell-th">三、管理费<sup style="color:#888;font-size:11px">(万元)</sup></th>';
+    html += '<th class="num-cell-th">结余<sup style="color:#888;font-size:11px">(万元)</sup></th>';
     html += '<th style="text-align:center;width:70px">明细</th>';
     html += '</tr></thead><tbody>';
 
-    const incKey = '\u6536\u5165';
-    const expKey = '\u652f\u51fa';
-    const feeKey = '\u5e73\u53f0\u7ba1\u7406\u8d39';
+    for (const natureRow of natureData) {
+      const natureName = natureRow['H团队线性质'] || '';
+      const inc = natureRow['收入'] || 0;
+      const exp = natureRow['支出'] || 0;
+      const fee = natureRow['平台管理费'] || 0;
+      const bal = inc - exp - fee;
+      const balCls = bal >= 0 ? 'positive' : 'negative';
 
-    for (const row of matrixData) {
-      const team = row['H\u56e2\u961f\u7ebf\u6027\u8d28'] || '';
-      const income = row[incKey] || 0;
-      const expense = row[expKey] || 0;
-      const fee = row[feeKey] || 0;
-      const balance = (income - expense - fee);
-      const balClass = balance >= 0 ? 'positive' : 'negative';
+      // Nature 行
+      const children = parentByNature[natureName] || [];
+      const hasMultiChildren = children.length > 1;
 
       html += '<tr class="tree-parent">';
-      html += '<td><div class="tree-row"><span class="tree-label" style="font-weight:600">' + team + '</span></div></td>';
-      html += '<td class="num-cell"><div class="num-main" style="color:#1E88E5">' + fmt(income) + '</div></td>';
-      html += '<td class="num-cell"><div class="num-main" style="color:#FF3B30">' + fmt(expense) + '</div></td>';
+      html += '<td><div class="tree-row">';
+      if (children.length > 0) {
+        html += '<span class="tree-toggle expanded" data-nature="' + natureName + '" data-level="0">' + (hasMultiChildren ? '▼' : '▶') + '</span>';
+      } else {
+        html += '<span class="tree-toggle empty">▶</span>';
+      }
+      html += '<span class="tree-label" style="font-weight:600">' + natureName + '</span></div></td>';
+      html += '<td class="num-cell"><div class="num-main" style="color:#1E88E5">' + fmt(inc) + '</div></td>';
+      html += '<td class="num-cell"><div class="num-main" style="color:#FF3B30">' + fmt(exp) + '</div></td>';
       html += '<td class="num-cell"><div class="num-main" style="color:#FF9800">' + fmt(fee) + '</div></td>';
-      html += '<td class="num-cell balance-cell"><div class="num-main ' + balClass + '">' + fmt(balance) + '</div></td>';
-      html += '<td class="num-cell" style="text-align:center"><button class="detail-btn" onclick="showTeamDetailMatrix(\x27' + encodeURIComponent(team) + '\x27)"><i class="fa-solid fa-eye"></i></button></td>';
+      html += '<td class="num-cell balance-cell"><div class="num-main ' + balCls + '">' + fmt(bal) + '</div></td>';
+      html += '<td class="num-cell" style="text-align:center"><button class="detail-btn" onclick="showTeamDetailMatrix(\x27' + encodeURIComponent(natureName) + '\x27)"><i class="fa-solid fa-eye"></i></button></td>';
       html += '</tr>';
+
+      // Parent 子行（只有当有多于1个孩子时才显示parent层级）
+      if (children.length > 0) {
+        for (const pRow of children) {
+          const pName = pRow['H团队线-上级'] || '';
+          const pInc = pRow['收入'] || 0;
+          const pExp = pRow['支出'] || 0;
+          const pFee = pRow['平台管理费'] || 0;
+          const pBal = pInc - pExp - pFee;
+          const pBalCls = pBal >= 0 ? 'positive' : 'negative';
+          const prevInc = (prevParent[pName] && prevParent[pName]['收入']) || 0;
+          const prevExp = (prevParent[pName] && prevParent[pName]['支出']) || 0;
+          const prevFee = (prevParent[pName] && prevParent[pName]['平台管理费']) || 0;
+          const prevPBal = prevInc - prevExp - prevFee;
+
+          html += '<tr class="' + (hasMultiChildren ? 'tree-child' : 'tree-parent') + '" data-level="1" data-nature="' + natureName + '" style="display:' + (hasMultiChildren ? '' : 'none') + '">';
+          html += '<td class="' + (hasMultiChildren ? 'tree-indent-1' : '') + '"><div class="tree-row">';
+          if (hasMultiChildren) {
+            html += '<span class="tree-toggle empty">▶</span>';
+          } else {
+            html += '<span class="tree-toggle expanded" data-nature="' + natureName + '" data-parent="' + pName + '" data-level="1">▼</span>';
+          }
+          html += '<span class="tree-label" style="font-weight:500">' + pName + '</span></div></td>';
+          html += '<td class="num-cell"><div class="num-main">' + fmt(pInc) + '</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">' + fmtYoy(pInc - prevInc) + '</span></div></td>';
+          html += '<td class="num-cell"><div class="num-main">' + fmt(pExp) + '</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">' + fmtYoy(pExp - prevExp) + '</span></div></td>';
+          html += '<td class="num-cell"><div class="num-main">' + fmt(pFee) + '</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">' + fmtYoy(pFee - prevFee) + '</span></div></td>';
+          html += '<td class="num-cell balance-cell"><div class="num-main ' + pBalCls + '">' + fmt(pBal) + '</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ' + (pBal - prevPBal >= 0 ? 'positive' : 'negative') + '">' + fmtYoy(pBal - prevPBal) + '</span></div></td>';
+          html += '<td class="num-cell" style="text-align:center"><button class="detail-btn" onclick="showTeamDetail(\x27' + encodeURIComponent(pName) + '\x27, 1, \x27' + encodeURIComponent(natureName) + '\x27)"><i class="fa-solid fa-eye"></i></button></td>';
+          html += '</tr>';
+        }
+      }
     }
 
     html += '</tbody></table>';
     wrap.innerHTML = html;
+    bindTeamTreeEvents();
 
-    // 更新标题区域
     document.getElementById('backBtnAreaTeam').innerHTML = '';
     document.getElementById('sortBtnsTeam').innerHTML = '';
 
   } catch(e) {
     console.error('[MatrixTable] 错误:', e);
-    document.getElementById('tableWrapTeam').innerHTML = '<div style="color:red;padding:20px">加载失败: ' + e.message + '</div>';
+    document.getElementById('tableWrapTeam').innerHTML = '<div style="color:red;padding:20px">\u52a0\u8f7d\u5931\u8d25: ' + e.message + '</div>';
   }
 }
 
-// 绑定创业团队树形表格事件（使用事件委托避免重复绑定）
+// 绑定创业团队树形表格事件（两级结构：收起/展开 nature 的 parent 子行）
 function bindTeamTreeEvents() {
   const wrap = document.getElementById('tableWrapTeam');
   if (!wrap) return;
-  
-  // 只绑定一次事件，使用事件委托
   if (wrap._teamTreeBound) return;
   wrap._teamTreeBound = true;
-  
-  wrap.onclick = async function(e) {
+
+  wrap.onclick = function(e) {
     const toggle = e.target.closest('.tree-toggle:not(.empty)');
     if (!toggle) return;
-    
     e.stopPropagation();
     const level = parseInt(toggle.dataset.level);
-    const nature = toggle.dataset.nature;
-    const parent = toggle.dataset.parent;
-    
     const isExpanded = toggle.classList.contains('expanded');
-    
+
     if (isExpanded) {
-      // 收起
       toggle.classList.remove('expanded');
       toggle.textContent = '▶';
       const row = toggle.closest('tr');
       let nextRow = row.nextElementSibling;
       while (nextRow && parseInt(nextRow.dataset.level || 0) > level) {
-        // 隐藏子行
         nextRow.style.display = 'none';
-        // 清除子行的展开状态
-        const childToggle = nextRow.querySelector('.tree-toggle:not(.empty)');
-        if (childToggle) {
-          childToggle.classList.remove('expanded');
-          childToggle.textContent = '▶';
+        if (level === 0) {
+          // 同时收起子行的子行
+          const subToggle = nextRow.querySelector('.tree-toggle.expanded');
+          if (subToggle) { subToggle.classList.remove('expanded'); subToggle.textContent = '▶'; }
         }
         nextRow = nextRow.nextElementSibling;
       }
     } else {
-      // 展开
       toggle.classList.add('expanded');
       toggle.textContent = '▼';
-      
       const row = toggle.closest('tr');
-      
-      if (level === 0) {
-        // 加载上级团队数据
-        const cacheKey = nature;
-        
-        if (!window._teamTreeCache.parents[cacheKey]) {
-          const loadingRow = document.createElement('tr');
-          loadingRow.className = 'tree-loading-row';
-          loadingRow.innerHTML = '<td colspan="6" class="tree-loading">加载中...</td>';
-          row.parentNode.insertBefore(loadingRow, row.nextSibling);
-          
-          const r = await apiPost('/api/team/drill', { year: S.year, months: S.monthsTeam, level: 'parent', nature: nature });
-          window._teamTreeCache.parents[cacheKey] = r.data || [];
-          loadingRow.remove();
+      let nextRow = row.nextElementSibling;
+      while (nextRow && parseInt(nextRow.dataset.level || 0) > level) {
+        if (nextRow.dataset.level == (level + 1).toString()) {
+          nextRow.style.display = '';
         }
-        
-        const prevData = await getPrevYearDataTeam('parent', nature);
-        
-        // 计算上级团队合计用于占比
-        const parentTotalIncome = window._teamTreeCache.parents[cacheKey].reduce((sum, r) => sum + (r.收入 || 0), 0);
-        const parentTotalExpense = window._teamTreeCache.parents[cacheKey].reduce((sum, r) => sum + (r.支出 || 0), 0);
-        
-        // 移除已存在的子行
-        let insertBeforeRow = row.nextElementSibling;
-        while (insertBeforeRow && parseInt(insertBeforeRow.dataset.level || 0) > level) {
-          const next = insertBeforeRow.nextElementSibling;
-          insertBeforeRow.remove();
-          insertBeforeRow = next;
-        }
-        
-        const parentData = window._teamTreeCache.parents[cacheKey];
-        const frag = document.createDocumentFragment();
-        for (const pRow of parentData) {
-          const tr = document.createElement('tr');
-          tr.className = 'tree-child';
-          tr.dataset.level = '1';
-          tr.dataset.name = pRow['H团队线-上级'] || '';
-          tr.style.display = '';
-          // 计算结余：收入 - 支出 - 平台管理费
-          const balance = (pRow.收入 || 0) - (pRow.支出 || 0) - (pRow.平台管理费 || 0);
-          const prevBalance = (prevData[pRow['H团队线-上级']]?.收入 || 0) - (prevData[pRow['H团队线-上级']]?.支出 || 0) - (prevData[pRow['H团队线-上级']]?.平台管理费 || 0);
-          const yoyBal = balance - prevBalance;
-          const parentName = pRow['H团队线-上级'] || '';
-          tr.innerHTML = `<td class="tree-indent-1"><div class="tree-row"><span class="tree-toggle-area"><span class="tree-toggle" data-nature="${nature}" data-parent="${parentName}" data-level="1">▶</span></span><span class="tree-label">${parentName}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy((pRow.收入 || 0) - (prevData[parentName]?.收入 || 0))}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy((pRow.支出 || 0) - (prevData[parentName]?.支出 || 0))}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy((pRow.平台管理费 || 0) - (prevData[parentName]?.平台管理费 || 0))}</span></div></td><td class="num-cell balance-cell"><div class="num-main" style="${yoyBal >= 0 ? 'color:#34C759' : 'color:#FF3B30'}">${fmt(balance)}万元</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${yoyBal >= 0 ? 'positive' : 'negative'}">${fmtYoy(yoyBal)}</span></div></td><td class="num-cell" style="text-align:center"><button class="detail-btn" onclick="showTeamDetail('${parentName}', 1, '${nature}')"><i class="fa-solid fa-eye"></i></button></td>`;
-          frag.appendChild(tr);
-        }
-        row.parentNode.insertBefore(frag, insertBeforeRow);
-        
-      } else if (level === 1) {
-        // 加载核算单元数据
-        const cacheKey = nature + '|' + parent;
-        
-        if (!window._teamTreeCache.accounts[cacheKey]) {
-          const loadingRow = document.createElement('tr');
-          loadingRow.className = 'tree-loading-row';
-          loadingRow.innerHTML = '<td colspan="6" class="tree-loading">加载中...</td>';
-          row.parentNode.insertBefore(loadingRow, row.nextSibling);
-        }
-        
-        const prevData = await getPrevYearDataTeam('account', parent);
-        
-        // 移除已存在的子行
-        let insertBeforeRow = row.nextElementSibling;
-        while (insertBeforeRow && parseInt(insertBeforeRow.dataset.level || 0) > level) {
-          const next = insertBeforeRow.nextElementSibling;
-          insertBeforeRow.remove();
-          insertBeforeRow = next;
-        }
-        
-        const accountData = window._teamTreeCache.accounts[cacheKey];
-        const frag = document.createDocumentFragment();
-        for (const pRow of accountData) {
-          const tr = document.createElement('tr');
-          tr.className = 'tree-grandchild';
-          tr.dataset.level = '2';
-          tr.dataset.name = pRow['H团队线-核算'] || '';
-          tr.style.display = '';
-          // 计算结余：收入 - 支出 - 平台管理费
-          const balance = (pRow.收入 || 0) - (pRow.支出 || 0) - (pRow.平台管理费 || 0);
-          const prevBalance = (prevData[pRow['H团队线-核算']]?.收入 || 0) - (prevData[pRow['H团队线-核算']]?.支出 || 0) - (prevData[pRow['H团队线-核算']]?.平台管理费 || 0);
-          const yoyBal = balance - prevBalance;
-          const accountName = pRow['H团队线-核算'] || '';
-          tr.innerHTML = `<td class="tree-indent-2"><div class="tree-row"><span class="tree-toggle-area"><span class="tree-toggle empty">▶</span></span><span class="tree-label">${accountName}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy((pRow.收入 || 0) - (prevData[accountName]?.收入 || 0))}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy((pRow.支出 || 0) - (prevData[accountName]?.支出 || 0))}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy((pRow.平台管理费 || 0) - (prevData[accountName]?.平台管理费 || 0))}</span></div></td><td class="num-cell balance-cell"><div class="num-main" style="${yoyBal >= 0 ? 'color:#34C759' : 'color:#FF3B30'}">${fmt(balance)}万元</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${yoyBal >= 0 ? 'positive' : 'negative'}">${fmtYoy(yoyBal)}</span></div></td><td class="num-cell" style="text-align:center"><button class="detail-btn" onclick="showTeamDetail('${accountName}', 2, '${nature}')"><i class="fa-solid fa-eye"></i></button></td>`;
-          frag.appendChild(tr);
-        }
-        row.parentNode.insertBefore(frag, insertBeforeRow);
+        nextRow = nextRow.nextElementSibling;
       }
     }
   };
@@ -2657,6 +2634,62 @@ function initQA() {
   g.querySelectorAll('.preset-btn').forEach(b => b.addEventListener('click', () => { document.getElementById('qaInput').value = b.textContent.replace(/^.*?(?=[^\s])/, ''); doQuery(b.textContent); }));
   document.getElementById('qaBtn').addEventListener('click', () => doQuery(document.getElementById('qaInput').value));
   document.getElementById('qaInput').addEventListener('keydown', e => { if (e.key === 'Enter') doQuery(e.target.value); });
+  loadReportList();
+}
+
+async function loadReportList() {
+  try {
+    const meta = S.meta || await apiGet('/api/meta');
+    S.meta = meta;
+    // 获取趋势数据以确定有数据的月份
+    const trend = await apiGet('/api/trend');
+    const reportCard = document.getElementById('reportListCard');
+    const wrap = document.getElementById('reportListWrap');
+    if (!reportCard || !wrap) return;
+    // 只显示2026年3月起有数据的月份
+    const reports = [];
+    for (const yr of (meta.years || []).sort().reverse()) {
+      const yearMonths = trend[String(yr)];
+      if (!yearMonths) continue;
+      for (const mObj of yearMonths) {
+        const m = mObj.month;
+        if (yr < 2026 || (yr === 2026 && m < 3)) continue;
+        // 检查该月是否有财务数据（板键值为数字且大于0）
+        const boardVals = ['物业板块', '医养板块', '餐饮板块', '美好生活', '支持团队']
+          .filter(k => typeof mObj[k] === 'number' && mObj[k] > 0);
+        if (boardVals.length === 0) continue;
+        reports.push({ year: yr, month: m });
+      }
+    }
+    if (reports.length === 0) { reportCard.style.display = 'none'; return; }
+    wrap.innerHTML = reports.map(r => {
+      const label = r.year + '\u5e74' + String(r.month).padStart(2, '0') + '\u6708\u5317\u4eac\u5730\u533a\u94f6\u53d1\u7ecf\u6d4e\u6708\u62a5';
+      return '<div class="report-item" style="padding:8px 12px;cursor:pointer;border-radius:8px;transition:background 0.2s;display:flex;align-items:center;gap:8px" onclick="queryMonthlyReport(' + r.year + ',' + r.month + ')" onmouseover="this.style.backgroundColor=\'#f5f7fa\'" onmouseout="this.style.backgroundColor=\'\'">'
+        + '<i class="fa-solid fa-file-lines" style="color:var(--accent);font-size:14px"></i>'
+        + '<span style="font-size:13px">' + label + '</span>'
+        + '</div>';
+    }).join('');
+    reportCard.style.display = 'block';
+  } catch (e) {
+    console.error('加载月报列表失败', e);
+  }
+}
+
+async function queryMonthlyReport(year, month) {
+  const area = document.getElementById('qaResult');
+  area.innerHTML = '<div class="loading"><div class="spinner"></div>\u751f\u6210\u6708\u62a5\u4e2d...</div>';
+  try {
+    const d = await apiPost('/api/generate_report', { year, month });
+    if (d.success && d.html) {
+      area.innerHTML = '<div style="width:100%;overflow:auto;border-radius:10px">'
+        + d.html
+        + '</div>';
+    } else {
+      area.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation" style="color:var(--red);font-size:24px;margin-bottom:8px"></i><br>\u6708\u62a5\u751f\u6210\u5931\u8d25<br><span style="font-size:12px;color:var(--text2)">' + (d.error || '\u672a\u77e5\u9519\u8bef') + '</span></div>';
+    }
+  } catch (e) {
+    area.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation" style="color:var(--red);font-size:24px;margin-bottom:8px"></i><br>\u6708\u62a5\u751f\u6210\u5931\u8d25</div>';
+  }
 }
 
 async function doQuery(question) {
