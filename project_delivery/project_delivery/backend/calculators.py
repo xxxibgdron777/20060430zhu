@@ -128,7 +128,7 @@ def calc_yoy(current: float, previous: float) -> dict:
         'pct_formatted': format_pct(pct),
         'abs_change': abs_change,
         'abs_change_wan': to_wan(abs_change),
-        'abs_change_formatted': f'{previous / 10000:.0f}万',  # 去年同期值
+        'abs_change_formatted': f'{to_wan(abs_change):,}万',  # 绝对变化值（万元）
     }
 
 
@@ -144,7 +144,7 @@ def calc_mom(current: float, previous: float) -> dict:
         'pct_formatted': format_pct(pct),
         'abs_change': abs_change,
         'abs_change_wan': to_wan(abs_change),
-        'abs_change_formatted': f'{previous / 10000:.0f}万',  # 上期值
+        'abs_change_formatted': f'{to_wan(abs_change):,}万',  # 绝对变化值（万元）
     }
 
 
@@ -412,31 +412,31 @@ def get_kpi(product_df: pd.DataFrame, year: int, months: list) -> dict:
             "income_pct": calc_pct(curr_income, yoy_income),
             "income_pct_formatted": format_pct(calc_pct(curr_income, yoy_income)),
             "income_prev": to_wan(yoy_income),
-            "income_prev_formatted": f"{yoy_income / 10000:.0f}万",
+            "income_prev_formatted": f"{to_wan(yoy_income):,}",
             "expense_pct": calc_pct(curr_expense, yoy_expense),
             "expense_pct_formatted": format_pct(calc_pct(curr_expense, yoy_expense)),
             "expense_prev": to_wan(yoy_expense),
             "balance_pct": calc_pct(curr_balance, yoy_balance),
             "balance_pct_formatted": format_pct(calc_pct(curr_balance, yoy_balance)),
             "balance_prev": to_wan(yoy_balance),
-            "balance_rate_pct": calc_pct(curr_rate, yoy_rate),
-            "balance_rate_pct_formatted": format_pct(calc_pct(curr_rate, yoy_rate)),
+            "balance_rate_diff": round(curr_rate - yoy_rate, 1) if curr_rate is not None and yoy_rate is not None else None,
+            "balance_rate_diff_formatted": f"{'+' if curr_rate is not None and yoy_rate is not None and curr_rate - yoy_rate >= 0 else ''}{round(curr_rate - yoy_rate, 1) if curr_rate is not None and yoy_rate is not None else '-'}pp" if curr_rate is not None and yoy_rate is not None else '-',
             "balance_rate_prev": round(yoy_rate, 1) if yoy_rate is not None else None,
         },
         "mom": {
             "income_pct": calc_pct(curr_income, prev_income),
             "income_pct_formatted": format_pct(calc_pct(curr_income, prev_income)),
             "income_prev": to_wan(prev_income),
-            "income_prev_formatted": f"{prev_income / 10000:.0f}万",
+            "income_prev_formatted": f"{to_wan(prev_income):,}",
             "expense_pct": calc_pct(curr_expense, prev_expense),
             "expense_pct_formatted": format_pct(calc_pct(curr_expense, prev_expense)),
             "expense_prev": to_wan(prev_expense),
             "balance_pct": calc_pct(curr_balance, prev_balance),
             "balance_pct_formatted": format_pct(calc_pct(curr_balance, prev_balance)),
             "balance_prev": to_wan(prev_balance),
-            "balance_prev_formatted": f"{prev_balance / 10000:.0f}万",
-            "balance_rate_pct": calc_pct(curr_rate, prev_rate),
-            "balance_rate_pct_formatted": format_pct(calc_pct(curr_rate, prev_rate)),
+            "balance_prev_formatted": f"{to_wan(prev_balance):,}",
+            "balance_rate_diff": round(curr_rate - prev_rate, 1) if curr_rate is not None and prev_rate is not None else None,
+            "balance_rate_diff_formatted": f"{'+' if curr_rate is not None and prev_rate is not None and curr_rate - prev_rate >= 0 else ''}{round(curr_rate - prev_rate, 1) if curr_rate is not None and prev_rate is not None else '-'}pp" if curr_rate is not None and prev_rate is not None else '-',
             "balance_rate_prev": round(prev_rate, 1) if prev_rate is not None else None,
         },
         "mom_label": mom_label,
@@ -501,7 +501,7 @@ def _apply_pct_sign(val) -> str:
 
 def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int, months: list = None) -> dict:
     """
-    创业团队经营分析压缩表（增强版：含同比线上线下数据）
+    创业团队经营分析压缩表（增强版：含环比数据）
 
     参数:
         team_df: 创业团队原始数据
@@ -515,15 +515,15 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
             "year": int,            # 年份
             "months": list,         # 月份列表
             "cols": list,           # 表头月份列
-            "rows": [               # 表格行（带同比数据）
+            "rows": [               # 表格行（带环比数据）
                 {
                     "name": str,           # 科目名称
                     "level": str,          # "total" | "sub" | "balance"
                     "type": str,           # "income" | "expense" | "fee" | "balance"
                     "values": {},          # {month: amount_in_wan}
                     "total": int,          # 全年合计（万元）
-                    "yoy_pct": float|None, # 同比%
-                    "yoy_prev": int|None,  # 去年同期（万元）
+                    "yoy_pct": float|None, # 环比%
+                    "yoy_prev": int|None,  # 上期（万元）
                     "ratio": str|None,     # 占比字符串，如 "35.2%"
                     "indent": bool,        # 是否缩进（子科目缩进）
                 }
@@ -534,9 +534,9 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
                 "fee": int,             # 管理费（万元）
                 "balance": int,         # 结余（万元）
                 "fee_ratio": str,       # 管理费占比
-                "income_yoy": float|None,
-                "expense_yoy": float|None,
-                "balance_yoy": float|None,
+                "income_yoy": float|None,  # 环比%
+                "expense_yoy": float|None,  # 环比%
+                "balance_yoy": float|None, # 环比%
                 "income_prev": int,
                 "expense_prev": int,
                 "balance_prev": int,
@@ -550,14 +550,16 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
 
     # ---- 今年数据 ----
     # 支持通过 H团队线-上级 / H团队线性质 / H团队线-核算 三种方式匹配
-    def _filter_team(df, yr):
+    def _filter_team(df, yr, ml=None):
+        if ml is None:
+            ml = months
         cols_to_try = ["H团队线-上级", "H团队线性质", "H团队线-核算"]
         filtered = pd.DataFrame()
         for col in cols_to_try:
             if col in df.columns:
                 subset = df[
                     (df["年"] == yr) &
-                    (df["月"].isin(months)) &
+                    (df["月"].isin(ml)) &
                     (df[col] == parent_name)
                 ]
                 if not subset.empty:
@@ -567,9 +569,19 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
 
     filtered = _filter_team(team_df, year)
 
-    # ---- 去年同期 ----
-    prev_year = year - 1
-    prev_filtered = _filter_team(team_df, prev_year)
+    # ---- 上期（环比）----
+    # 计算前N个月（N = len(months)），跨年自动处理
+    count = len(months)
+    first_month = months[0]
+    prev_start = first_month - count
+    if prev_start < 1:
+        prev_year = year - 1
+        prev_start += 12
+        prev_months = list(range(prev_start, 13))
+    else:
+        prev_year = year
+        prev_months = list(range(prev_start, first_month))
+    prev_filtered = _filter_team(team_df, prev_year, prev_months) if prev_months else pd.DataFrame()
 
     if filtered.empty:
         return {
@@ -681,7 +693,7 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
     total_fee = float(sum(_get_subject_total(piv_f, s) for s in fee_subjects))
     total_balance = total_income - total_expense - total_fee
 
-    # 去年同期全年
+    # 上期全年
     prev_total_income = float(sum(_get_subject_total(prev_piv_i, s) for s in income_subjects))
     prev_total_expense = float(sum(_get_subject_total(prev_piv_e, s) for s in expense_subjects))
     prev_total_fee = float(sum(_get_subject_total(prev_piv_f, s) for s in fee_subjects))
@@ -794,12 +806,12 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
         inc_yoy = _get_yoy(total_income, prev_total_income)
         if inc_yoy is not None:
             if inc_yoy > 10:
-                analysis.append(f"📈 收入同比大幅增长 {inc_yoy}%，去年同期 {to_wan(prev_total_income)}万。")
+                analysis.append(f"📈 收入环比大幅增长 {inc_yoy}%，上期 {to_wan(prev_total_income)}万。")
             elif inc_yoy < -10:
-                analysis.append(f"📉 收入同比下降 {inc_yoy}%，需分析原因。")
+                analysis.append(f"📉 收入环比下降 {inc_yoy}%，需分析原因。")
 
     if total_balance < 0 and prev_total_balance > 0:
-        analysis.append(f"⚠️ 结余由盈转亏，去年同期 {to_wan(prev_total_balance)}万，今年 {to_wan(total_balance)}万。")
+        analysis.append(f"⚠️ 结余由盈转亏，上期 {to_wan(prev_total_balance)}万，本期 {to_wan(total_balance)}万。")
     elif total_balance > 0 and prev_total_balance < 0:
         analysis.append(f"🎉 结余由亏转盈，扭亏 {to_wan(total_balance - prev_total_balance)}万。")
 
@@ -919,7 +931,7 @@ def get_kpi(product_df: pd.DataFrame, year: int, months: list) -> dict:
             "income_pct": calc_pct(curr_income, yoy_income),
             "income_pct_formatted": format_pct(calc_pct(curr_income, yoy_income)),
             "income_prev": to_wan(yoy_income),
-            "income_prev_formatted": f"{to_wan(yoy_income):,}",  # 纯数字，前端加"万"
+            "income_prev_formatted": f"{to_wan(yoy_income):,}",
             
             "expense_pct": calc_pct(curr_expense, yoy_expense),
             "expense_pct_formatted": format_pct(calc_pct(curr_expense, yoy_expense)),
@@ -929,8 +941,9 @@ def get_kpi(product_df: pd.DataFrame, year: int, months: list) -> dict:
             "balance_pct_formatted": format_pct(calc_pct(curr_balance, yoy_balance)),
             "balance_prev": to_wan(yoy_balance),
             
-            "balance_rate_pct": calc_pct(curr_rate, yoy_rate),
-            "balance_rate_pct_formatted": format_pct(calc_pct(curr_rate, yoy_rate)),
+            # 结余率同比变化：展示百分点差值（如 +5pp），而非百分比变化率
+            "balance_rate_diff": round(curr_rate - yoy_rate, 1) if curr_rate is not None and yoy_rate is not None else None,
+            "balance_rate_diff_formatted": f"{'+' if curr_rate is not None and yoy_rate is not None and curr_rate - yoy_rate >= 0 else ''}{round(curr_rate - yoy_rate, 1) if curr_rate is not None and yoy_rate is not None else '-'}pp" if curr_rate is not None and yoy_rate is not None else '-',
             "balance_rate_prev": round(yoy_rate, 1) if yoy_rate is not None else None,
         },
         
@@ -938,7 +951,7 @@ def get_kpi(product_df: pd.DataFrame, year: int, months: list) -> dict:
             "income_pct": calc_pct(curr_income, prev_income),
             "income_pct_formatted": format_pct(calc_pct(curr_income, prev_income)),
             "income_prev": to_wan(prev_income),
-            "income_prev_formatted": f"{to_wan(prev_income):,}",  # 纯数字，前端加"万"
+            "income_prev_formatted": f"{to_wan(prev_income):,}",
             
             "expense_pct": calc_pct(curr_expense, prev_expense),
             "expense_pct_formatted": format_pct(calc_pct(curr_expense, prev_expense)),
@@ -947,10 +960,11 @@ def get_kpi(product_df: pd.DataFrame, year: int, months: list) -> dict:
             "balance_pct": calc_pct(curr_balance, prev_balance),
             "balance_pct_formatted": format_pct(calc_pct(curr_balance, prev_balance)),
             "balance_prev": to_wan(prev_balance),
-            "balance_prev_formatted": f"{to_wan(prev_balance):,}",  # 纯数字，前端加"万"
+            "balance_prev_formatted": f"{to_wan(prev_balance):,}",
             
-            "balance_rate_pct": calc_pct(curr_rate, prev_rate),
-            "balance_rate_pct_formatted": format_pct(calc_pct(curr_rate, prev_rate)),
+            # 结余率环比变化：展示百分点差值（如 +5pp），而非百分比变化率
+            "balance_rate_diff": round(curr_rate - prev_rate, 1) if curr_rate is not None and prev_rate is not None else None,
+            "balance_rate_diff_formatted": f"{'+' if curr_rate is not None and prev_rate is not None and curr_rate - prev_rate >= 0 else ''}{round(curr_rate - prev_rate, 1) if curr_rate is not None and prev_rate is not None else '-'}pp" if curr_rate is not None and prev_rate is not None else '-',
             "balance_rate_prev": round(prev_rate, 1) if prev_rate is not None else None,
         },
         
@@ -1032,8 +1046,11 @@ def get_monthly_trend(product_df: pd.DataFrame) -> dict:
                 else:
                     yoy = None
                 
-                # 环比（与上月相比）
-                prev_mom_val = curr_year.get(month - 1, {}).get(board, 0) if month > 1 else 0
+                # 环比（与上月相比，1月与去年12月比）
+                if month > 1:
+                    prev_mom_val = curr_year.get(month - 1, {}).get(board, 0) or 0
+                else:
+                    prev_mom_val = prev_year.get(12, {}).get(board, 0) or 0
                 if prev_mom_val and prev_mom_val != 0:
                     mom = ((curr_val - prev_mom_val) / abs(prev_mom_val)) * 100
                 else:

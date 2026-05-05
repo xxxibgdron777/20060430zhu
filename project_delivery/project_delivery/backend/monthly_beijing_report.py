@@ -4,6 +4,7 @@
 """
 import os
 import datetime
+from urllib.parse import quote
 
 
 def generate_monthly_beijing_report(year: int, month: int, output_dir: str = None):
@@ -245,9 +246,10 @@ def _build_html(title_str: str, gen_time: str, sections: list, total_news: int):
     for sec in sections:
         items_html = ""
         for item in sec["items"]:
+            search_url = f'https://www.baidu.com/s?wd={quote(item["title"])}'
             items_html += f'''
             <div class="news-item">
-                <a class="title" href="{item["url"]}" target="_blank" rel="noopener">{item["title"]}</a>
+                <a class="title" href="{search_url}" target="_blank" rel="noopener" title="搜索原文">{item["title"]}</a>
                 <div class="meta">
                     <span class="source">{item["source"]}</span>
                     <span>{item["date"]}</span>
@@ -347,9 +349,9 @@ body {
 .news-item:last-child { border-bottom: none; }
 .news-item .title {
     font-size: 17px; font-weight: 600; color: #1E88E5; margin-bottom: 6px;
-    text-decoration: none; display: block;
+    text-decoration: none; display: block; cursor: pointer;
 }
-.news-item .title:hover { text-decoration: underline; }
+.news-item .title:hover { text-decoration: underline; color: #1565C0; }
 .news-item .meta {
     font-size: 13px; color: #94A3B8; margin-bottom: 8px; display: flex; gap: 12px;
 }

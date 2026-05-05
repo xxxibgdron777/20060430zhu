@@ -75,8 +75,9 @@ _frontend_candidates = [
     os.path.join(os.path.dirname(_this_dir), "frontend"),  # 本地开发: 上级目录的frontend
     os.path.join(_this_dir, "frontend"),                    # Docker: 同级目录的frontend
 ]
-frontend_path = next((p for p in _frontend_candidates if os.path.isdir(p)), _frontend_candidates[0])
-app.mount("/static", StaticFiles(directory=frontend_path), name="static")
+frontend_path = next((p for p in _frontend_candidates if os.path.isdir(p)), None)
+if frontend_path:
+    app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 
 
 def _ensure_native(obj):
@@ -184,7 +185,8 @@ def api_kpi(
                 "expense_prev": to_wan(yoy_exp),
                 "balance_pct": calc_pct(curr_bal, yoy_bal),
                 "balance_prev": to_wan(yoy_bal),
-                "balance_rate_pct": calc_pct(curr_rate, yoy_rate),
+                # 结余率同比变化：展示百分点差值
+                "balance_rate_diff": round(curr_rate - yoy_rate, 1) if curr_rate is not None and yoy_rate is not None else None,
                 "balance_rate_prev": yoy_rate,
             },
             "mom": {
@@ -194,7 +196,8 @@ def api_kpi(
                 "expense_prev": to_wan(prev_exp),
                 "balance_pct": calc_pct(curr_bal, prev_bal),
                 "balance_prev": to_wan(prev_bal),
-                "balance_rate_pct": calc_pct(curr_rate, prev_rate),
+                # 结余率环比变化：展示百分点差值
+                "balance_rate_diff": round(curr_rate - prev_rate, 1) if curr_rate is not None and prev_rate is not None else None,
                 "balance_rate_prev": prev_rate,
             },
             "mom_label": mom_label,
@@ -269,23 +272,28 @@ def product_drill(
             else:
                 r[k] = str(val) if pd.notna(val) else ""
         
-        # 添加同比损益（板块级）
+        # 添加同比损益（含平台管理费，与显示的结余口径一致）
         if level == "board":
             df_prev = filter_product(product_df, year - 1, months)
             if "业务板块" in r:
-                prev_b = df_prev[df_prev["业务板块"] == r["业务板块"]]
-                prev_bal = prev_b["收入"].sum() - prev_b["支出"].sum()  # 不含管理费
-                curr_bal_yuan = (r.get("收入", 0) - r.get("支出", 0)) * 10000
-                r["同比损益"] = format_pct(calc_pct(curr_bal_yuan, prev_bal))
+                board_name = r["业务板块"]
+                # 使用原始数据直接计算，避免万元换算的精度丢失
+                curr_b = df_f[df_f["业务板块"] == board_name]
+                prev_b = df_prev[df_prev["业务板块"] == board_name]
+                curr_bal = curr_b["收入"].sum() - curr_b["支出"].sum() - curr_b["平台管理费"].sum()
+                prev_bal = prev_b["收入"].sum() - prev_b["支出"].sum() - prev_b["平台管理费"].sum()
+                r["同比损益"] = format_pct(calc_pct(curr_bal, prev_bal))
         # 产品级同比
         elif level == "product":
             df_prev = filter_product(product_df, year - 1, months)
             if board and "产品" in r:
-                prev_b = df_prev[(df_prev["业务板块"] == board) & (df_prev["产品"] == r["产品"])]
+                prod_name = r["产品"]
+                curr_b = df_f[(df_f["业务板块"] == board) & (df_f["产品"] == prod_name)]
+                prev_b = df_prev[(df_prev["业务板块"] == board) & (df_prev["产品"] == prod_name)]
                 if not prev_b.empty:
-                    prev_bal = prev_b["收入"].sum() - prev_b["支出"].sum()
-                    curr_bal_yuan = (r.get("收入", 0) - r.get("支出", 0)) * 10000
-                    r["同比损益"] = format_pct(calc_pct(curr_bal_yuan, prev_bal))
+                    curr_bal = curr_b["收入"].sum() - curr_b["支出"].sum() - curr_b["平台管理费"].sum()
+                    prev_bal = prev_b["收入"].sum() - prev_b["支出"].sum() - prev_b["平台管理费"].sum()
+                    r["同比损益"] = format_pct(calc_pct(curr_bal, prev_bal))
         records.append(r)
     
     return _ensure_native({"data": records})
@@ -1192,18 +1200,16 @@ def api_ai_query(
     question: str = Body(...),
     year: int = Body(2026),
     months: str = Body("1,2,3"),
-    use_ai: bool = Body(True),
 ):
     """
-    增强版智能问答接口
-    - use_ai=True: 使用火山引擎豆包大模型（需要设置 ARK_API_KEY 环境变量）
-    - use_ai=False: 使用规则匹配
+    增强版智能问答接口（规则匹配 + 数据源直接分析）
+    不再调用 AI 大模型
     """
     _refresh_if_needed()
     ml = parse_months(months)
     if not ml:
         ml = [1, 2, 3]
-    return enhanced_query(product_df, team_df, question, year, ml, use_ai)
+    return enhanced_query(product_df, team_df, question, year, ml)
 
 
 @app.post("/api/generate_report")
@@ -1211,11 +1217,11 @@ def api_generate_report(
     year: int = Body(2026),
     month: int = Body(3),
 ):
-    """生成指定年月北京银发经济月报，返回HTML内容"""
+    """生成延伸阅读简报，返回HTML内容"""
     _refresh_if_needed()
     try:
-        from monthly_beijing_report import generate_monthly_beijing_report
-        filepath = generate_monthly_beijing_report(year, month)
+        from silver_headlines import generate_silver_headlines
+        filepath = generate_silver_headlines(year, month)
         with open(filepath, "r", encoding="utf-8") as f:
             html_content = f.read()
         return {"success": True, "html": html_content, "url": f"/reports/{os.path.basename(filepath)}"}

@@ -24,32 +24,30 @@ class VolcEngineAgent:
     基于 VolcEngine Ark API 提供真实的 AI 问答能力
     """
     
-    # TODO: 请替换为您的实际 API Key
-    ARK_API_KEY = "ark-fc1bf444-8ff9-4b9d-a6a4-130df27d6436-bfe3e"
-    
     def __init__(self, product_df: pd.DataFrame, team_df: pd.DataFrame = None):
         self.product_df = product_df
         self.team_df = team_df
         self.current_year = 2026
         self.current_months = [3]
         self._client = None
-        self._api_key = self.ARK_API_KEY
-        self.model = "doubao-seed-2-0-pro-260215"
+        self._api_key = os.environ.get("DEEPSEEK_API_KEY", "")
+        self.model = "deepseek-chat"
+        self.base_url = "https://api.deepseek.com/v1"
     
     def _get_client(self):
         """懒加载获取 API 客户端"""
-        if self._client is None and self._api_key and self._api_key != "your-api-key-here":
+        if self._client is None and self._api_key:
             try:
-                from volcenginesdkarkruntime import Ark
-                self._client = Ark(
-                    base_url='https://ark.cn-beijing.volces.com/api/v3',
+                from openai import OpenAI
+                self._client = OpenAI(
+                    base_url=self.base_url,
                     api_key=self._api_key,
                 )
             except ImportError:
-                print("[VolcEngineAgent] 请安装 volcengine-python-sdk: pip install volcengine-python-sdk")
+                print("[DeepSeekAgent] 请安装 openai: pip install openai")
                 return None
             except Exception as e:
-                print(f"[VolcEngineAgent] 初始化失败: {e}")
+                print(f"[DeepSeekAgent] 初始化失败: {e}")
                 return None
         return self._client
     
@@ -136,22 +134,22 @@ class VolcEngineAgent:
     
     def query(self, question: str) -> Dict[str, Any]:
         """
-        使用豆包大模型处理用户查询
+        使用 DeepSeek 大模型处理用户查询
         """
-        print(f"[VolcEngineAgent] >>> 收到用户问题: {question}")
-        print(f"[VolcEngineAgent]     当前上下文: year={self.current_year}, months={self.current_months}")
+        print(f"[DeepSeekAgent] >>> 收到用户问题: {question}")
+        print(f"[DeepSeekAgent]     当前上下文: year={self.current_year}, months={self.current_months}")
         
         client = self._get_client()
         
         # 如果没有 API key 或客户端初始化失败，降级到规则匹配
         if not client or not self._api_key:
-            print("[VolcEngineAgent]     警告: 未找到 API Key 或客户端初始化失败，降级到规则匹配")
+            print("[DeepSeekAgent]     警告: 未找到 API Key 或客户端初始化失败，降级到规则匹配")
             return self._fallback_query(question)
         
         try:
             # 构建数据摘要
             data_summary = self._build_data_summary()
-            print(f"[VolcEngineAgent]     数据摘要长度: {len(data_summary)} 字符")
+            print(f"[DeepSeekAgent]     数据摘要长度: {len(data_summary)} 字符")
             
             # 构建系统提示
             system_prompt = """你是一个专业的财务分析助手，负责回答关于企业财务数据的问题。
@@ -172,67 +170,61 @@ class VolcEngineAgent:
 - 团队经营分析
 """
             
-            # 调用豆包 API
-            print(f"[VolcEngineAgent]     正在调用豆包 API... model={self.model}")
-            response = client.responses.create(
+            # 调用 DeepSeek API
+            print(f"[DeepSeekAgent]     正在调用 DeepSeek API... model={self.model}")
+            response = client.chat.completions.create(
                 model=self.model,
-                input=[
+                messages=[
                     {
                         "role": "system",
                         "content": system_prompt
                     },
                     {
                         "role": "user",
-                        "content": [
-                            {
-                                "type": "input_text",
-                                "text": f"参考数据：\n{data_summary}\n\n用户问题：{question}"
-                            }
-                        ]
+                        "content": f"参考数据：\n{data_summary}\n\n用户问题：{question}"
                     }
                 ],
-                plugins=[],
+                temperature=0.3,
+                max_tokens=2048,
             )
             
-            print(f"[VolcEngineAgent]     API 响应类型: {type(response)}")
-            print(f"[VolcEngineAgent]     API 响应内容: {response}")
+            print(f"[DeepSeekAgent]     API 响应类型: {type(response)}")
+            print(f"[DeepSeekAgent]     API 响应内容: {response}")
             
             # 解析响应
             answer_text = ""
-            if response and hasattr(response, 'output') and response.output:
-                print(f"[VolcEngineAgent]     解析 output 字段...")
-                for item in response.output:
-                    if hasattr(item, 'content') and item.content:
-                        for content_item in item.content:
-                            if hasattr(content_item, 'type') and content_item.type == 'output_text':
-                                answer_text = content_item.text
-                                print(f"[VolcEngineAgent]     提取到 answer_text: {answer_text[:100]}...")
-                                break
+            if response and hasattr(response, 'choices') and response.choices:
+                for choice in response.choices:
+                    if hasattr(choice, 'message') and choice.message:
+                        answer_text = getattr(choice.message, 'content', '')
+                        if answer_text:
+                            print(f"[DeepSeekAgent]     提取到 answer_text: {answer_text[:100]}...")
+                            break
             
             if not answer_text and hasattr(response, 'output_text'):
                 answer_text = str(response.output_text)
-                print(f"[VolcEngineAgent]     从 output_text 获取: {answer_text[:100]}...")
+                print(f"[DeepSeekAgent]     从 output_text 获取: {answer_text[:100]}...")
             
             if not answer_text:
-                print("[VolcEngineAgent]     警告: 未能从响应中提取文本")
+                print("[DeepSeekAgent]     警告: 未能从响应中提取文本")
                 answer_text = "抱歉，AI 暂时无法生成回答，请稍后再试。"
             
             result = {
-                "type": "ai_text",
+                "type": "text",
                 "question": question,
                 "answer": answer_text,
-                "source": "volcengine",
+                "source": "deepseek",
                 "model": self.model
             }
-            print(f"[VolcEngineAgent] <<< 返回结果: {result}")
+            print(f"[DeepSeekAgent] <<< 返回结果: {result}")
             return result
             
         except Exception as e:
-            print(f"[VolcEngineAgent] !!! API 调用异常: {type(e).__name__}: {e}")
+            print(f"[DeepSeekAgent] !!! API 调用异常: {type(e).__name__}: {e}")
             import traceback
-            print(f"[VolcEngineAgent]     详细错误: {traceback.format_exc()}")
+            print(f"[DeepSeekAgent]     详细错误: {traceback.format_exc()}")
             # 降级到规则匹配
-            print("[VolcEngineAgent]     降级到规则匹配...")
+            print("[DeepSeekAgent]     降级到规则匹配...")
             return self._fallback_query(question)
     
     def _fallback_query(self, question: str) -> Dict[str, Any]:
@@ -572,20 +564,90 @@ class VolcEngineAgent:
         }
     
     def _default_response(self) -> Dict[str, Any]:
-        """默认回复"""
+        """数据驱动的默认回复：展示数据概览和洞察"""
         suggestions = [
             "哪些板块结余率低于5%？",
             "收入最高的产品有哪些？",
             "物业板块各产品明细",
             "管理费占比超过10%的板块",
-            "近3个月支出增长最快的产品"
         ]
+        
+        # 构建动态数据概览
+        overview = self._build_data_overview()
         
         return {
             "type": "text",
-            "answer": "我理解您想进行财务分析，请问您想了解什么？\n\n您可以尝试以下问题：\n" + "\n".join([f"• {s}" for s in suggestions]),
+            "answer": overview,
             "suggestions": suggestions
         }
+    
+    def _build_data_overview(self) -> str:
+        """基于数据源构建概览洞察文本"""
+        if self.product_df is None or self.product_df.empty:
+            return "暂无产品数据。"
+        
+        df_f = self.product_df[
+            (self.product_df["年"] == self.current_year) & 
+            (self.product_df["月"].isin(self.current_months))
+        ]
+        
+        if df_f.empty:
+            return f"暂无 {self.current_year} 年数据。"
+        
+        total_income = df_f["收入"].sum()
+        total_expense = df_f["支出"].sum()
+        total_fee = df_f["平台管理费"].sum()
+        total_balance = total_income - total_expense - total_fee
+        balance_rate = (total_balance / total_income * 100) if total_income else 0
+        
+        # 各板块数据
+        boards = aggregate_board(df_f)
+        boards["结余率"] = (boards["结余"] / boards["收入"].replace(0, float("nan"))) * 100
+        boards["管理费占比"] = (boards["平台管理费"] / boards["收入"].replace(0, float("nan"))) * 100
+        
+        lines = []
+        period = f"{self.current_year}年{'、'.join(map(str, self.current_months))}月"
+        
+        # 总体概览
+        lines.append(f"📊 **{period} 数据概览**")
+        lines.append(f"总收入 {to_wan(total_income):.0f}万 | 总支出 {to_wan(total_expense):.0f}万 | 结余率 {balance_rate:.1f}%")
+        lines.append("")
+        
+        # 发现的问题
+        findings = []
+        
+        # 低结余率板块
+        low_rate = boards[boards["结余率"] < 10]
+        if not low_rate.empty:
+            names = "、".join(low_rate["业务板块"].astype(str).tolist())
+            findings.append(f"⚠️ **{len(low_rate)}个板块结余率偏低**（{names}），建议关注成本管控")
+        
+        # 亏损板块
+        loss = boards[boards["结余"] < 0]
+        if not loss.empty:
+            names = "、".join(loss["业务板块"].astype(str).tolist())
+            findings.append(f"🔴 **{len(loss)}个板块处于亏损**（{names}）")
+        
+        # 高管理费
+        high_fee = boards[boards["管理费占比"] > 10]
+        if not high_fee.empty:
+            names = "、".join(high_fee["业务板块"].astype(str).tolist())
+            findings.append(f"💡 **{len(high_fee)}个板块管理费占比超10%**（{names}）")
+        
+        # 收入前3板块
+        top3_income = boards.nlargest(3, "收入")
+        top_names = []
+        for _, r in top3_income.iterrows():
+            top_names.append(f"{r['业务板块']}({to_wan(r['收入']):.0f}万)")
+        findings.append(f"📈 收入前三：{'、'.join(top_names)}")
+        
+        if findings:
+            lines.append("**📋 数据洞察：**")
+            for f in findings:
+                lines.append(f)
+            lines.append("")
+        
+        return "\n".join(lines)
     
     def get_summary(self) -> str:
         """获取数据概览"""
@@ -942,20 +1004,82 @@ class FinancialAgent:
         }
     
     def _default_response(self) -> Dict[str, Any]:
-        """默认回复"""
+        """数据驱动的默认回复：展示数据概览和洞察"""
         suggestions = [
             "哪些板块结余率低于5%？",
             "收入最高的产品有哪些？",
             "物业板块各产品明细",
             "管理费占比超过10%的板块",
-            "近3个月支出增长最快的产品"
         ]
+        
+        overview = self._build_data_overview()
         
         return {
             "type": "text",
-            "answer": "我理解您想进行财务分析，请问您想了解什么？\n\n您可以尝试以下问题：\n" + "\n".join([f"• {s}" for s in suggestions]),
+            "answer": overview,
             "suggestions": suggestions
         }
+    
+    def _build_data_overview(self) -> str:
+        """基于数据源构建概览洞察文本"""
+        if self.product_df is None or self.product_df.empty:
+            return "暂无产品数据。"
+        
+        df_f = self.product_df[
+            (self.product_df["年"] == self.current_year) & 
+            (self.product_df["月"].isin(self.current_months))
+        ]
+        
+        if df_f.empty:
+            return f"暂无 {self.current_year} 年数据。"
+        
+        total_income = df_f["收入"].sum()
+        total_expense = df_f["支出"].sum()
+        total_fee = df_f["平台管理费"].sum()
+        total_balance = total_income - total_expense - total_fee
+        balance_rate = (total_balance / total_income * 100) if total_income else 0
+        
+        boards = aggregate_board(df_f)
+        boards["结余率"] = (boards["结余"] / boards["收入"].replace(0, float("nan"))) * 100
+        boards["管理费占比"] = (boards["平台管理费"] / boards["收入"].replace(0, float("nan"))) * 100
+        
+        lines = []
+        period = f"{self.current_year}年{'、'.join(map(str, self.current_months))}月"
+        
+        lines.append(f"📊 **{period} 数据概览**")
+        lines.append(f"总收入 {to_wan(total_income):.0f}万 | 总支出 {to_wan(total_expense):.0f}万 | 结余率 {balance_rate:.1f}%")
+        lines.append("")
+        
+        findings = []
+        
+        low_rate = boards[boards["结余率"] < 10]
+        if not low_rate.empty:
+            names = "、".join(low_rate["业务板块"].astype(str).tolist())
+            findings.append(f"⚠️ **{len(low_rate)}个板块结余率偏低**（{names}），建议关注成本管控")
+        
+        loss = boards[boards["结余"] < 0]
+        if not loss.empty:
+            names = "、".join(loss["业务板块"].astype(str).tolist())
+            findings.append(f"🔴 **{len(loss)}个板块处于亏损**（{names}）")
+        
+        high_fee = boards[boards["管理费占比"] > 10]
+        if not high_fee.empty:
+            names = "、".join(high_fee["业务板块"].astype(str).tolist())
+            findings.append(f"💡 **{len(high_fee)}个板块管理费占比超10%**（{names}）")
+        
+        top3_income = boards.nlargest(3, "收入")
+        top_names = []
+        for _, r in top3_income.iterrows():
+            top_names.append(f"{r['业务板块']}({to_wan(r['收入']):.0f}万)")
+        findings.append(f"📈 收入前三：{'、'.join(top_names)}")
+        
+        if findings:
+            lines.append("**📋 数据洞察：**")
+            for f in findings:
+                lines.append(f)
+            lines.append("")
+        
+        return "\n".join(lines)
     
     def get_summary(self) -> str:
         """获取数据概览"""

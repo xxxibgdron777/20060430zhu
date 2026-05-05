@@ -25,6 +25,8 @@
   --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
   --shadow-lg: 0 6px 20px rgba(0,0,0,0.10);
   --shadow-xl: 0 24px 64px rgba(0,0,0,0.18);
+  --shadow-premium: 0 0 0 1px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.04), 0 12px 36px rgba(0,0,0,0.12), 0 32px 80px rgba(0,0,0,0.14);
+  --shadow-premium-sm: 0 0 0 1px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06), 0 8px 28px rgba(0,0,0,0.12), 0 16px 48px rgba(0,0,0,0.08);
   --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   --content-max: 1480px;
 }
@@ -71,27 +73,19 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 .mode-btn { padding: 7px 16px; border: none; background: transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text2); transition: all 0.2s; min-height: 36px; }
 .mode-btn.active { background: var(--card); color: var(--text); box-shadow: var(--shadow-sm); }
 .mode-btn:hover:not(.active) { color: var(--text); }
-/* -- KPI Cards — Apple-inspired metrics -- */
+/* -- KPI Cards -- */
 .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-.kpi-card { background: var(--card); border-radius: var(--radius); padding: 22px 24px 18px; box-shadow: var(--shadow-sm); transition: all 0.25s; position: relative; overflow: hidden; border: none; cursor: default; }
-.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--primary); }
-.kpi-card:nth-child(2)::before { background: var(--accent); }
-.kpi-card:nth-child(3)::before { background: var(--green); }
-.kpi-card:nth-child(4)::before { background: var(--purple); }
-.kpi-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
-.kpi-card .kpi-header { font-size: 12px; font-weight: 500; color: var(--text3); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-.kpi-value { font-size: 34px; font-weight: 700; line-height: 1.1; margin-bottom: 8px; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+.kpi-card { background: var(--card); border-radius: var(--radius); padding: 18px 24px 14px; box-shadow: none; transition: all 0.25s; position: relative; overflow: hidden; border: none; cursor: default; }
+.kpi-card:hover { box-shadow: var(--shadow-premium-sm); transform: translateY(-3px); }
+.kpi-card .kpi-header { font-size: 12px; font-weight: 500; color: var(--text3); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.kpi-value { font-size: 34px; font-weight: 700; line-height: 1.0; margin-bottom: 6px; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
 .kpi-value .unit { font-size: 14px; font-weight: 500; color: var(--text3); margin-left: 3px; }
-.kpi-row { font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 3px; margin-top: 4px; flex-wrap: wrap; }
-.kpi-row .arrow { font-size: 10px; }
-.kpi-row .pct { font-weight: 600; }
-.kpi-row .prev { font-size: 11px; color: var(--text3); }
-.kpi-row.positive { color: var(--green); }
-.kpi-row.negative { color: var(--red); }
-.kpi-row.kpi-cumulative { color: var(--text2); font-size: 11px; }
-.kpi-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
-.kpi-label { font-size: 11px; color: var(--text3); margin-bottom: 2px; }
-.kpi-extra { font-size: 11px; color: var(--text3); margin-top: 6px; }
+.kpi-card .kpi-sub { font-size: 10px; margin-top: 3px; line-height: 1.44; }
+.kpi-card .kpi-sub .trend { font-weight: 600; }
+.kpi-card .kpi-sub .trend.up { color: #34C759; }
+.kpi-card .kpi-sub .trend.down { color: #FF3B30; }
+.kpi-card .kpi-sub .ref { color: #6C757D; }
+.kpi-card .kpi-sub i { font-size: 8px; margin-right: 2px; }
 /* -- Table Card -- */
 .table-card { background: var(--card); border-radius: var(--radius-lg); padding: 4px 0; box-shadow: var(--shadow-sm); margin-bottom: 20px; border: none; transition: box-shadow 0.2s; overflow: hidden; }
 .table-card:hover { box-shadow: var(--shadow); }
@@ -100,10 +94,12 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 .sort-bar .month-pill.active { background: var(--primary); color: #1E2A3A; box-shadow: 0 2px 8px rgba(255,149,0,0.25); }
 .sort-bar .month-pill:hover:not(.active) { background: #EEEEEE; }
 .table-wrap { width: 100%; overflow: hidden; margin-bottom: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+/* -- Frozen header scroll containers -- */
+#tableWrapProduct, #tableWrapTeam { overflow: auto; max-height: 70vh; }
 /* -- Data Table -- */
 table.detail-table, table.data-table, .table-wrap table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: clamp(11px, 1.1vw, 14px); table-layout: fixed; }
-table.detail-table th, table.data-table th, .table-wrap table thead th { position: sticky; top: 0; background: var(--card); color: var(--text); font-weight: 600; font-size: clamp(10px, 1vw, 13px); text-transform: none; letter-spacing: 0; padding: 14px 8px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; z-index: 2; }
-table.detail-table th:first-child, table.data-table th:first-child, .table-wrap table thead th:first-child { text-align: left; padding-left: 8px; position: sticky; left: 0; z-index: 5; background: var(--card); border-right: 1px solid var(--border); width: 28%; }
+table.detail-table th, table.data-table th, .table-wrap table thead th { position: sticky; top: 0; background: var(--card); color: var(--text); font-weight: 600; font-size: clamp(10px, 1vw, 13px); text-transform: none; letter-spacing: 0; padding: 14px 8px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; z-index: 6; }
+table.detail-table th:first-child, table.data-table th:first-child, .table-wrap table thead th:first-child { text-align: left; padding-left: 8px; position: sticky; left: 0; top: 0; z-index: 7; background: var(--card); border-right: 1px solid var(--border); width: 28%; }
 .table-wrap table thead th:nth-child(2),
 .table-wrap table thead th:nth-child(3),
 .table-wrap table thead th:nth-child(4) { width: 16%; }
@@ -127,7 +123,7 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .tree-loading { text-align: center; padding: 24px; color: var(--text3); font-size: 14px; }
 /* -- Frozen first column (tree table + all tables) -- */
 .table-wrap .tree-table { border-collapse: separate; }
-.table-wrap .tree-table thead th:first-child { position: sticky; left: 0; z-index: 5; background: var(--card); border-right: 1px solid var(--border); }
+.table-wrap .tree-table thead th:first-child { position: sticky; left: 0; top: 0; z-index: 10; background: var(--card); border-right: 1px solid var(--border); }
 .table-wrap .tree-table tbody td:first-child { position: sticky; left: 0; z-index: 1; background: var(--card); border-right: 1px solid var(--divider); }
 .table-wrap .tree-table tbody tr:hover td:first-child { background: rgba(0,0,0,0.03); }
 .table-wrap .tree-table .tree-parent td:first-child { background: rgba(0,0,0,0.01); font-weight: 600; }
@@ -137,6 +133,139 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .table-wrap .tree-table .tree-parent:hover td { background: rgba(0,0,0,0.04); }
 .table-wrap .tree-table .tree-parent td:first-child { background: rgba(0,0,0,0.01); font-weight: 600; }
 .table-wrap .tree-table .tree-parent:hover td:first-child { background: rgba(0,0,0,0.04); }
+/* -- Product Tab - 一级行立体浅色填充 -- */
+#tab-product .tree-table .tree-parent td {
+  background: linear-gradient(180deg, #fafafa 0%, #f2f2f2 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.04);
+  border-bottom: 1px solid #e0e0e0;
+  font-weight: 600;
+  color: #333;
+  padding: 13px 8px;
+  transition: background 0.15s;
+}
+#tab-product .tree-table .tree-parent:hover td {
+  background: linear-gradient(180deg, #f0f0f0 0%, #e8e8e8 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), inset 0 -1px 0 rgba(0,0,0,0.06);
+}
+#tab-product .tree-table .tree-parent td:first-child {
+  background: linear-gradient(90deg, #f5f5f5 0%, #fafafa 100%);
+  font-weight: 700;
+  border-right: 1.5px solid #e0e0e0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.04), 1px 0 3px rgba(0,0,0,0.02);
+}
+#tab-product .tree-table .tree-parent:hover td:first-child {
+  background: linear-gradient(90deg, #ececec 0%, #f0f0f0 100%);
+}
+/* -- Product Tab Num Cell: 主数据黑色加粗, 辅助数据灰色 -- */
+#tab-product .tree-table .num-cell .num-main {
+  color: #1D1D1F;
+  font-weight: 700;
+}
+#tab-product .tree-table .num-cell .yoy-row,
+#tab-product .tree-table .num-cell .yoy-label {
+  color: #999;
+  font-style: normal;
+}
+/* -- Team Tab - Stereoscopic Premium Style (立体高级感) -- */
+#tab-team .table-card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 16px;
+  background: #ffffff;
+}
+#tab-team .table-wrap {
+  border: 1px solid #e2e2e2;
+  border-radius: 12px;
+  background: #f8f8f8;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
+  margin: 8px;
+}
+#tab-team .tree-table thead th {
+  background: linear-gradient(180deg, #f5f5f5 0%, #ebebeb 100%);
+  font-weight: 600;
+  padding: 14px 8px;
+  border-bottom: 2px solid #d4d4d4;
+  color: #3a3a3a;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.7);
+  font-size: clamp(10px, 1vw, 13px);
+  letter-spacing: 0.3px;
+}
+#tab-team .tree-table thead th:first-child {
+  background: linear-gradient(180deg, #f2f2f2 0%, #e8e8e8 100%);
+  border-right: 2px solid #d4d4d4;
+}
+#tab-team .tree-table tbody td {
+  background: #f7f7f7;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 0 rgba(0,0,0,0.035);
+  border-bottom: 1px solid #eaeaea;
+  color: #3a3a3a;
+  padding: 12px 8px;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+#tab-team .tree-table tbody td:first-child {
+  background: linear-gradient(90deg, #f3f3f3 0%, #f7f7f7 100%);
+  font-weight: 500;
+  border-right: 1.5px solid #e0e0e0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 0 rgba(0,0,0,0.035), 2px 0 4px rgba(0,0,0,0.03);
+}
+#tab-team .tree-table .tree-parent td {
+  background: #f0f0f0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -1px 0 rgba(0,0,0,0.05);
+  border-bottom: 1px solid #e0e0e0;
+}
+#tab-team .tree-table .tree-parent td:first-child {
+  background: linear-gradient(90deg, #ececec 0%, #f0f0f0 100%);
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -1px 0 rgba(0,0,0,0.05), 2px 0 4px rgba(0,0,0,0.03);
+}
+#tab-team .tree-table .tree-child td {
+  background: #f9f9f9;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+}
+#tab-team .tree-table tbody tr:hover td {
+  background: #ececec;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(0,0,0,0.07);
+}
+#tab-team .tree-table tbody tr:hover td:first-child {
+  background: linear-gradient(90deg, #e8e8e8 0%, #ececec 100%);
+}
+#tab-team .tree-table .tree-parent:hover td {
+  background: #e8e8e8;
+}
+#tab-team .tree-table .num-cell .num-main {
+  font-weight: 600;
+  font-size: clamp(12px, 1.3vw, 16px);
+  color: #333;
+}
+#tab-team .tree-table .num-cell .positive {
+  color: #1a8a3a;
+}
+#tab-team .tree-table .num-cell .negative {
+  color: #c0392b;
+}
+#tab-team .detail-btn {
+  background: linear-gradient(180deg, #ffffff 0%, #f2f2f2 100%);
+  border: 1px solid #d0d0d0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+#tab-team .detail-btn:hover {
+  background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  border-color: #b8b8b8;
+}
+#tab-team .detail-btn:active {
+  background: linear-gradient(180deg, #e8e8e8 0%, #f2f2f2 100%);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+  transform: scale(0.97);
+}
+#tab-team .tree-table .tree-label {
+  color: #333;
+  font-weight: 500;
+}
 /* -- Num Cell -- */
 .num-cell { text-align: right !important; white-space: nowrap; font-variant-numeric: tabular-nums; font-size: clamp(11px, 1.1vw, 14px); }
 .num-cell .num-main { font-weight: 500; font-size: clamp(12px, 1.3vw, 16px); }
@@ -170,7 +299,7 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .chart-box { width: 100%; }
 
 /* 2×2 趋势图网格 — 子图表白色卡片化 */
-.trend-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.trend-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .trend-sub-chart { background: var(--card); border-radius: var(--radius-sm); padding: 18px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: all 0.2s; }
 .trend-sub-chart:hover { box-shadow: var(--shadow); }
 .trend-sub-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; letter-spacing: -0.2px; }
@@ -221,11 +350,11 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .budget-header h3 { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; color: var(--text); }
 .admin-area { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 /* -- Detail Modal -- */
-.detail-modal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index: 900; justify-content: center; align-items: center; padding: 24px; }
+.detail-modal { display: none; position: fixed; inset: 0; background: rgba(220,220,220,0.85); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 900; justify-content: center; align-items: center; padding: 24px; }
 .detail-modal.show { display: flex; }
-.detail-modal-content { background: var(--card); border-radius: var(--radius-lg); width: 95vw; max-width: 1100px; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-xl); animation: modalUp 0.3s ease; border: 1px solid var(--border); }
-.detail-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); background: var(--card); position: sticky; top: 0; z-index: 10; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
-.detail-modal-header h3 { margin: 0; font-size: 18px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.detail-modal-content { background: #fff; border-radius: var(--radius-lg); width: 95vw; max-width: 1100px; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-premium); animation: modalUp 0.3s ease; border: 1px solid rgba(0,0,0,0.04); }
+.detail-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; border-bottom: 1px solid var(--border); background: #fff; position: sticky; top: 0; z-index: 10; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.detail-modal-header h3 { margin: 0; font-size: 16px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
 .detail-modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text3); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; }
 .detail-modal-close:hover { background: var(--divider); color: var(--text); }
 .detail-modal-body { padding: 24px; }
@@ -239,14 +368,18 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .pivot-table-wrap { overflow-x: auto; overflow-y: auto; max-height: 55vh; border: 1px solid var(--border); border-radius: var(--radius-sm); }
 .pivot-detail-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
 .pivot-detail-table thead { position: sticky; top: 0; z-index: 2; }
-.pivot-detail-table th { background: var(--card); padding: 14px 10px; text-align: right; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--text2); white-space: nowrap; font-size: 12px; text-transform: none; letter-spacing: 0.3px; }
-.pivot-detail-table th.pivot-sticky-col { text-align: left; width: 120px; left: 0; z-index: 3; border-right: 1px solid var(--border); background: var(--card); }
+.pivot-detail-table th { background: #fff; padding: 14px 10px; text-align: right; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--text2); white-space: nowrap; font-size: 12px; text-transform: none; letter-spacing: 0.3px; }
+.pivot-detail-table th.pivot-sticky-col { text-align: left; width: 120px; left: 0; z-index: 3; border-right: 1px solid var(--border); background: #fff; }
 .pivot-detail-table td { padding: 11px 10px; border-bottom: 1px solid var(--divider); text-align: right; font-variant-numeric: tabular-nums; color: var(--text); font-size: 13px; }
-.pivot-detail-table td.pivot-sticky-col { text-align: left; position: sticky; left: 0; z-index: 1; border-right: 1px solid var(--divider); background: var(--card); }
+.pivot-detail-table td.pivot-sticky-col { text-align: left; position: sticky; left: 0; z-index: 1; border-right: 1px solid var(--divider); background: #fff; white-space: nowrap; }
 .pivot-detail-table tbody tr:hover td { background: rgba(0,0,0,0.03) !important; }
 .pivot-detail-table tbody tr:hover td.pivot-sticky-col { background: rgba(0,0,0,0.03) !important; }
-.pivot-detail-table .pivot-ratio { color: var(--text3); font-size: 11px; }
+.pivot-detail-table .pivot-ratio { color: var(--text2); font-size: 12px; font-weight: 600; letter-spacing: 0.3px; font-style: italic; font-family: 'Georgia', 'Times New Roman', serif; }
 .pivot-detail-table .pivot-highlight { background: var(--primary-light); font-weight: 600; position: relative; }
+.pivot-detail-table .pivot-level-total td { background: #f5f5f7 !important; }
+.pivot-detail-table .pivot-level-total td.pivot-sticky-col { background: #f0f0f3 !important; }
+.pivot-detail-table .pivot-level-total:hover td { background: #eeeeef !important; }
+.pivot-detail-table .pivot-level-total:hover td.pivot-sticky-col { background: #e8e8ec !important; }
 .pivot-detail-table .pivot-section-income:first-child td { border-top: none; }
 .pivot-detail-table .pivot-section-expense td { border-top: 2px solid var(--divider); }
 .pivot-detail-table .pivot-section-fee td { border-top: 2px solid var(--divider); }
@@ -323,9 +456,9 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary); box-sh
 #loginOverlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 99999; }
 /* -- Responsive -- */
 @media (max-width: 1100px) {
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .trend-grid { grid-template-columns: repeat(2, 1fr); }
   .detail-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .trend-sub-chart { padding: 14px; }
   .nav-brand { font-size: 16px; }
   .content { padding: 20px 20px 32px; }
   .nav-inner { padding: 12px 18px; }
@@ -335,7 +468,6 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary); box-sh
   .trend-sub-chart { padding: 16px; }
 }
 @media (max-width: 600px) {
-  .kpi-grid { grid-template-columns: 1fr; }
   .trend-grid { grid-template-columns: 1fr; }
   .detail-kpi-grid { grid-template-columns: 1fr; }
   .detail-modal-content { width: 100vw; max-height: 100vh; border-radius: 0; }
@@ -345,12 +477,10 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary); box-sh
   .nav-brand { font-size: 15px; }
   .tab-btn { font-size: 13px; padding: 6px 14px; }
   .content { padding: 16px 16px 28px; }
-  .kpi-card { padding: 18px 16px 16px; }
   .nav-inner { flex-wrap: wrap; gap: 6px; padding: 8px 12px; }
   .nav .month-pills { justify-content: center; }
   .nav .month-pills .month-pill { padding: 2px 6px; font-size: 9px; min-height: 24px; }
   .tabs { justify-content: center; }
-  .kpi-value { font-size: 28px; }
   .table-card { padding: 4px 0; }
   .modal { width: 100vw; max-height: 100vh; border-radius: 0; }
   .modal > *:not(.modal-header):not(:first-child) { margin: 18px; }
@@ -368,11 +498,13 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary); box-sh
   .detail-monthly-table { font-size: 12px; }
   .detail-monthly-table th, .detail-monthly-table td { padding: 6px 4px; }
   .detail-monthly-table th { font-size: 11px; }
-  .pivot-detail-table { font-size: 11px; }
-  .pivot-detail-table th { font-size: 10px; padding: 8px 5px; }
-  .pivot-detail-table td { padding: 7px 5px; font-size: 11px; }
-  .pivot-summary-card { padding: 8px 6px; }
-  .pivot-summary-card .ps-value { font-size: 14px; }
+  .pivot-detail-table { font-size: 10px; }
+  .pivot-detail-table th { font-size: 9px; padding: 6px 3px; white-space: nowrap; }
+  .pivot-detail-table td { padding: 5px 3px; font-size: 10px; white-space: nowrap; }
+  .pivot-summary-card { padding: 6px 4px; }
+  .pivot-summary-card .ps-value { font-size: 12px; }
+  .pivot-summary-card .ps-label { font-size: 8px; }
+  .pivot-table-wrap { overflow-x: auto; }
   .qa-search { flex-direction: column; }
   .admin-area { flex-wrap: wrap; }
   .table-wrap { border-radius: 10px; }
@@ -383,6 +515,16 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary); box-sh
 @media print {
   .nav, .modal, .detail-modal, .controls, .sort-bar, .back-btn { display: none !important; }
   .kpi-card, .table-card, .chart-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+}
+
+/* -- KPI Responsive -- */
+@media (max-width: 767px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+  .kpi-card { padding: 18px 16px 16px; }
+  .kpi-value { font-size: 28px; }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 </style>
@@ -447,7 +589,7 @@ document.getElementById('globalPwd').addEventListener('keypress', function(e) {
     <!-- 下钻表格区（苹果风格卡片） -->
     <div class="table-card" id="tableCardProduct">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-        <div id="tableTitleProduct" style="font-size:20px;font-weight:600"></div>
+        <div id="tableTitleProduct" style="font-size:16px;font-weight:600"></div>
         <div id="sortBtnsProduct" class="sort-bar"></div>
       </div>
       <div id="backBtnAreaProduct"></div>
@@ -482,7 +624,7 @@ document.getElementById('globalPwd').addEventListener('keypress', function(e) {
     <!-- 创业团队树状表格 -->
     <div class="table-card" id="tableCardTeam">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-        <div id="tableTitleTeam" style="font-size:20px;font-weight:600"></div>
+        <div id="tableTitleTeam" style="font-size:16px;font-weight:600"></div>
         <div id="sortBtnsTeam"></div>
       </div>
       <div id="backBtnAreaTeam"></div>
@@ -501,10 +643,10 @@ document.getElementById('globalPwd').addEventListener('keypress', function(e) {
       <button class="qa-btn" id="qaBtn"><i class="fa-solid fa-paper-plane"></i> 提问</button>
     </div>
     <div class="preset-grid" id="presetGrid"></div>
-    <!-- 月报列表 -->
+    <!-- 延伸阅读列表 -->
     <div class="card" id="reportListCard" style="margin-bottom:12px;display:none">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <span style="font-size:14px;font-weight:600"><i class="fa-solid fa-newspaper"></i> 北京地区银发经济月报</span>
+        <span style="font-size:14px;font-weight:600"><i class="fa-solid fa-newspaper"></i> 延伸阅读</span>
       </div>
       <div id="reportListWrap" style="max-height:300px;overflow-y:auto"></div>
     </div>
@@ -699,12 +841,36 @@ async function apiPost(p, body) {
 function fmt(v) { 
     if (v == null || v === '' || v === 'NaN' || v === 'nan' || v === 'NULL' || v === 'null' || v === 'undefined' || (typeof v === 'number' && isNaN(v))) return '-'; 
     const n = Number(v); 
-    return isNaN(n) ? '-' : Math.round(n).toLocaleString('zh-CN'); 
+    if (isNaN(n)) return '-';
+    if (Math.abs(n) < 0.05) return '-';
+    return Math.round(n).toLocaleString('zh-CN'); 
 }
 function fmtPct(v) { return v == null ? '-' : (v >= 0 ? '+' : '') + Math.round(v) + '%'; }
 function fmtPctSign(v) { return v == null ? '-' : (v >= 0 ? '+' : '') + Math.round(v) + '%'; }
+function fmtDiff(v) { return v == null ? '-' : (v >= 0 ? '+' : '') + Math.round(v * 10) / 10 + '个百分点'; }
 function pctCls(v) { return v == null ? '' : v >= 0 ? 'positive' : 'negative'; }
 function numCls(v) { return v == null ? '' : v >= 0 ? 'positive' : 'negative'; }
+
+function buildKpiSub(prefix, pct, refText, isRate) {
+  const arrow = pct != null ? '<i class="fa-solid fa-arrow-trend-' + (pct >= 0 ? 'up' : 'down') + '"></i> ' : '';
+  const trendCls = pct != null ? (pct >= 0 ? 'up' : 'down') : '';
+  const pctFmt = isRate ? (pct != null ? fmtDiff(pct) : '-') : (pct != null ? fmtPctSign(pct) : '-');
+  let html = '<div class="kpi-sub"><span class="trend ' + trendCls + '">' + arrow + prefix + ' ' + pctFmt + '</span>';
+  if (refText) html += ' <span class="ref">(' + refText + ')</span>';
+  html += '</div>';
+  return html;
+}
+// 绝对值版本：同比/环比 +-X万（用于业务板块）
+function buildKpiSubAbs(prefix, diff, refText) {
+  const arrow = diff != null ? '<i class="fa-solid fa-arrow-trend-' + (diff >= 0 ? 'up' : 'down') + '"></i> ' : '';
+  const trendCls = diff != null ? (diff >= 0 ? 'up' : 'down') : '';
+  const sign = diff != null ? (diff >= 0 ? '+' : '') : '';
+  const diffFmt = diff != null ? sign + fmt(diff) + '万' : '-';
+  let html = '<div class="kpi-sub"><span class="trend ' + trendCls + '">' + arrow + prefix + ' ' + diffFmt + '</span>';
+  if (refText) html += ' <span class="ref">(' + refText + ')</span>';
+  html += '</div>';
+  return html;
+}
 
 // === Tab Routing ===
 function switchTab(name) {
@@ -774,120 +940,108 @@ async function loadKPIProduct() {
     const incomeYoYPrev = d.yoy['income_prev'];
     const incomeMomPct = d.mom['income_pct'];
     const incomeMomPrev = d.mom['income_prev'];
-    const incomeValDisplay = Math.round(d.income);
+    const incomeValDisplay = fmt(d.income);
     const incomeYoYPctFmt = incomeYoYPct != null ? fmtPctSign(incomeYoYPct) : '-';
-    const incomeYoYPrevFmt = d.yoy['income_prev_formatted'] || fmt(Math.round(incomeYoYPrev));
+    const incomeYoYPrevFmt = d.yoy['income_prev_formatted'] || fmt(incomeYoYPrev);
     const incomeYoYArrow = incomeYoYPct != null ? '<i class="fa-solid fa-arrow-trend-' + (incomeYoYPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
     const incomeYoYPctCls = pctCls(incomeYoYPct);
     
-    let incomeHtml = '<div class="kpi-card card-income">';
-    // 第一行：大字标题 + 大数字
-    incomeHtml += '<div class="kpi-header card-income-header">总收入</div>';
-    incomeHtml += '<div class="kpi-value card-income-value">' + incomeValDisplay + '<span class="unit">万元</span></div>';
-    // 第二行：同比
-    incomeHtml += '<div class="kpi-row ' + incomeYoYPctCls + '">';
-    incomeHtml += incomeYoYArrow + '同比 <span class="pct">' + incomeYoYPctFmt + '</span> <span class="prev">(' + prevYear + '年同期 ' + incomeYoYPrevFmt + '万)</span>';
-    incomeHtml += '</div>';
-    // 第三行：环比（单月）或 累计增长（累计）
+    let incomeHtml = '<div class="kpi-card">';
+    incomeHtml += '<div class="kpi-header">总收入</div>';
+    incomeHtml += '<div class="kpi-value">' + incomeValDisplay + '<span class="unit">万元</span></div>';
     if (isSingle) {
-      const incomeMomPctFmt = incomeMomPct != null ? fmtPctSign(incomeMomPct) : '-';
-      const incomeMomPrevFmt = d.mom['income_prev_formatted'] || fmt(Math.round(incomeMomPrev));
-      const incomeMomArrow = incomeMomPct != null ? '<i class="fa-solid fa-arrow-trend-' + (incomeMomPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
-      const incomeMomPctCls = pctCls(incomeMomPct);
-      incomeHtml += '<div class="kpi-row ' + incomeMomPctCls + '">';
-      incomeHtml += incomeMomArrow + '环比 <span class="pct">' + incomeMomPctFmt + '</span> <span class="prev">(vs ' + momLabel + ' ' + incomeMomPrevFmt + '万)</span>';
-      incomeHtml += '</div>';
+      const incomeYoYRef = 'vs ' + (prevYear % 100) + '年同期 ' + (d.yoy['income_prev_formatted'] || fmt(incomeYoYPrev)) + '万';
+      const incomeMomRef = 'vs 上月 ' + (d.mom['income_prev_formatted'] || fmt(incomeMomPrev)) + '万';
+      incomeHtml += buildKpiSub('同比', incomeYoYPct, incomeYoYRef);
+      incomeHtml += buildKpiSub('环比', incomeMomPct, incomeMomRef);
     } else if (d.cumulative) {
+      const incomeYoYRef = 'vs ' + (prevYear % 100) + '年同期 ' + (d.yoy['income_prev_formatted'] || fmt(incomeYoYPrev)) + '万';
+      incomeHtml += buildKpiSub('同比', incomeYoYPct, incomeYoYRef);
       const growthKey = 'income_growth';
       const growthPct = d.cumulative[growthKey + '_pct'];
-      const growthPctFmt = growthPct != null ? fmtPctSign(growthPct) : '-';
       const prevRangeLabel = d.cumulative.prev_range_label || momLabel;
       const contribution = d.month_contribution;
-      const growthArrow = growthPct != null ? '<i class="fa-solid fa-arrow-trend-' + (growthPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
-      const growthPctCls = pctCls(growthPct);
-      incomeHtml += '<div class="kpi-row kpi-cumulative">';
-      incomeHtml += '<div class="cum-left">';
-      incomeHtml += growthArrow + '较' + prevRangeLabel + ' <span class="pct">' + growthPctFmt + '</span>';
-      incomeHtml += '</div>';
+      let secondRef = '';
       if (contribution) {
         const contribVal = contribution.income || 0;
-        const contribSign = contribVal >= 0 ? '+' : '-';
-        const contribValFmt = fmt(Math.abs(Math.round(contribVal)));
-        incomeHtml += '<div class="cum-right">';
-        incomeHtml += '<span class="prev">其中' + contribution.month + '月 </span>';
-        incomeHtml += '<span class="pct ' + (contribVal >= 0 ? 'positive' : 'negative') + '">' + contribSign + contribValFmt + '万</span>';
-        incomeHtml += '</div>';
+        const contribSign = contribVal >= 0 ? '+' : '';
+        secondRef = '其中' + contribution.month + '月 ' + contribSign + fmt(contribVal) + '万';
       }
-      incomeHtml += '</div>';
+      incomeHtml += buildKpiSub('较' + prevRangeLabel, growthPct, secondRef);
     }
     incomeHtml += '</div>';
     
     // 其他卡片
     const otherCards = [
-      { label: '总支出', val: d.expense, yoy: d.yoy, mom: d.mom, isRate: false, isSingle: isSingle, momLabel: momLabel, prevYear: prevYear, cumulative: d.cumulative, monthContribution: d.month_contribution },
-      { label: '总结余', val: d.balance, yoy: d.yoy, mom: d.mom, isRate: false, isSingle: isSingle, momLabel: momLabel, prevYear: prevYear, cumulative: d.cumulative, monthContribution: d.month_contribution },
-      { label: '结余率', val: d.balance_rate, yoy: d.yoy, mom: d.mom, isRate: true, isSingle: isSingle, momLabel: momLabel, prevYear: prevYear, cumulative: d.cumulative, monthContribution: d.month_contribution }
+      { label: '总支出', val: d.expense, yoyKey: 'expense', isRate: false },
+      { label: '总结余', val: d.balance, yoyKey: 'balance', isRate: false },
+      { label: '结余率', val: d.balance_rate, yoyKey: 'balance', isRate: true }
     ];
     
-    // 根据卡片标签设置颜色 class
     let html = incomeHtml;
     for (const c of otherCards) {
-      const cardColorClass = c.label === '总支出' ? 'card-expense' : c.label === '总结余' ? 'card-balance' : 'card-rate';
-      const yoyKey = c.label === '总支出' ? 'expense' : 'balance';
-      const yoyPct = c.yoy[yoyKey + '_pct'];
-      const yoyPrev = c.yoy[yoyKey + '_prev'];
-      const momPct = c.mom[yoyKey + '_pct'];
-      const momPrev = c.mom[yoyKey + '_prev'];
+      const isBalanceRate = c.isRate;
+      const yoyKey = c.yoyKey;
       
-      const valDisplay = c.isRate ? (c.val != null ? Math.round(c.val) + '%' : '-') : Math.round(c.val);
+      const yoyPct = isBalanceRate ? d.yoy[yoyKey + '_rate_diff'] : d.yoy[yoyKey + '_pct'];
+      const yoyPrev = d.yoy[yoyKey + '_prev'];
+      const yoyPrevFmt = d.yoy[yoyKey + '_prev_formatted'];
+      const momPct = isBalanceRate ? d.mom[yoyKey + '_rate_diff'] : d.mom[yoyKey + '_pct'];
+      const momPrev = d.mom[yoyKey + '_prev'];
+      const momPrevFmt = d.mom[yoyKey + '_prev_formatted'];
+      
+      const valDisplay = c.isRate ? (c.val != null ? (Math.round(c.val * 10) / 10) + '%' : '-') : fmt(c.val);
       const valUnit = c.isRate ? '' : '<span class="unit">万元</span>';
       
-      let html2 = '<div class="kpi-header ' + cardColorClass + '-header">' + c.label + '</div>';
-      html2 += '<div class="kpi-value ' + cardColorClass + '-value">' + valDisplay + valUnit + '</div>';
+      let cardHtml = '<div class="kpi-card">';
+      cardHtml += '<div class="kpi-header">' + c.label + '</div>';
+      cardHtml += '<div class="kpi-value">' + valDisplay + valUnit + '</div>';
       
-      const yoyPctFmt = yoyPct != null ? fmtPctSign(yoyPct) : '-';
-      const yoyPrevFmt = c.yoy[yoyKey + '_prev_formatted'] || fmt(Math.round(yoyPrev));
-      const yoyArrow = yoyPct != null ? '<i class="fa-solid fa-arrow-trend-' + (yoyPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
-      const yoyPctCls = pctCls(yoyPct);
-      html2 += '<div class="kpi-row ' + yoyPctCls + '">';
-      html2 += yoyArrow + '同比 <span class="pct">' + yoyPctFmt + '</span> <span class="prev">(' + prevYear + '年同期 ' + yoyPrevFmt + '万)</span>';
-      html2 += '</div>';
-      
-      if (c.isSingle) {
-        const momPctFmt = momPct != null ? fmtPctSign(momPct) : '-';
-        const momPrevFmt = c.mom[yoyKey + '_prev_formatted'] || fmt(Math.round(momPrev));
-        const momArrow = momPct != null ? '<i class="fa-solid fa-arrow-trend-' + (momPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
-        const momPctCls = pctCls(momPct);
-        html2 += '<div class="kpi-row ' + momPctCls + '">';
-        html2 += momArrow + '环比 <span class="pct">' + momPctFmt + '</span> <span class="prev">(vs ' + momLabel + ' ' + momPrevFmt + '万)</span>';
-        html2 += '</div>';
-      } else if (c.cumulative) {
-        const growthKey = yoyKey === 'income' ? 'income_growth' : 'balance_growth';
-        const growthPct = c.cumulative[growthKey + '_pct'];
-        const growthPctFmt = growthPct != null ? fmtPctSign(growthPct) : '-';
-        const prevRangeLabel = c.cumulative.prev_range_label || momLabel;
-        const contribution = c.monthContribution;
-        const growthArrow = growthPct != null ? '<i class="fa-solid fa-arrow-trend-' + (growthPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
-        const growthPctCls = pctCls(growthPct);
-        
-        html2 += '<div class="kpi-row kpi-cumulative">';
-        html2 += '<div class="cum-left">';
-        html2 += growthArrow + '较' + prevRangeLabel + ' <span class="pct">' + growthPctFmt + '</span>';
-        html2 += '</div>';
-        if (contribution) {
-          const contribKey = yoyKey;
-          const contribVal = contribution[contribKey] || 0;
-          const contribSign = contribVal >= 0 ? '+' : '-';
-          const contribValFmt = fmt(Math.abs(Math.round(contribVal)));
-          html2 += '<div class="cum-right">';
-          html2 += '<span class="prev">其中' + contribution.month + '月 </span>';
-          html2 += '<span class="pct ' + (contribVal >= 0 ? 'positive' : 'negative') + '">' + contribSign + contribValFmt + '万</span>';
-          html2 += '</div>';
+      if (isBalanceRate) {
+        if (isSingle) {
+          const yoyRef = 'vs ' + (prevYear % 100) + '年同期 ' + (yoyPrevFmt || (yoyPrev != null ? (Math.round(yoyPrev * 10) / 10) + '%' : '-'));
+          const momRef = 'vs 上月 ' + (momPrevFmt || (momPrev != null ? (Math.round(momPrev * 10) / 10) + '%' : '-'));
+          cardHtml += buildKpiSub('同比', yoyPct, yoyRef, true);
+          cardHtml += buildKpiSub('环比', momPct, momRef, true);
+        } else if (d.cumulative) {
+          const yoyRef = 'vs ' + (prevYear % 100) + '年同期 ' + (yoyPrevFmt || (yoyPrev != null ? (Math.round(yoyPrev * 10) / 10) + '%' : '-'));
+          cardHtml += buildKpiSub('同比', yoyPct, yoyRef, true);
+          const growthKey = yoyKey + '_growth';
+          const growthPct = d.cumulative[growthKey + '_pct'];
+          const prevRangeLabel = d.cumulative.prev_range_label || momLabel;
+          const contribution = d.month_contribution;
+          let secondRef = '';
+          if (contribution) {
+            const contribVal = contribution[yoyKey] || 0;
+            const contribSign = contribVal >= 0 ? '+' : '';
+            secondRef = '其中' + contribution.month + '月 ' + contribSign + fmt(contribVal) + '万';
+          }
+          cardHtml += buildKpiSub('较' + prevRangeLabel, growthPct, secondRef);
         }
-        html2 += '</div>';
+      } else {
+        if (isSingle) {
+          const yoyRef = 'vs ' + (prevYear % 100) + '年同期 ' + (yoyPrevFmt || fmt(yoyPrev)) + '万';
+          const momRef = 'vs 上月 ' + (momPrevFmt || fmt(momPrev)) + '万';
+          cardHtml += buildKpiSub('同比', yoyPct, yoyRef);
+          cardHtml += buildKpiSub('环比', momPct, momRef);
+        } else if (d.cumulative) {
+          const yoyRef = 'vs ' + (prevYear % 100) + '年同期 ' + (yoyPrevFmt || fmt(yoyPrev)) + '万';
+          cardHtml += buildKpiSub('同比', yoyPct, yoyRef);
+          const growthKey = yoyKey + '_growth';
+          const growthPct = d.cumulative[growthKey + '_pct'];
+          const prevRangeLabel = d.cumulative.prev_range_label || momLabel;
+          const contribution = d.month_contribution;
+          let secondRef = '';
+          if (contribution) {
+            const contribVal = contribution[yoyKey] || 0;
+            const contribSign = contribVal >= 0 ? '+' : '';
+            secondRef = '其中' + contribution.month + '月 ' + contribSign + fmt(contribVal) + '万';
+          }
+          cardHtml += buildKpiSub('较' + prevRangeLabel, growthPct, secondRef);
+        }
       }
-      
-      html += '<div class="kpi-card ' + cardColorClass + '">' + html2 + '</div>';
+      cardHtml += '</div>';
+      html += cardHtml;
     }
     document.getElementById('kpiGridProduct').innerHTML = html;
   } catch (e) { console.error('KPI Product error:', e); }
@@ -910,75 +1064,81 @@ async function loadKPITeam() {
     const prevYear = d.prev_year || (S.year - 1);
     
     const cards = [
-      { label: '总收入', val: d.income, yoy: d.yoy, mom: d.mom, isRate: false, isSingle: isSingle, momLabel: momLabel, prevYear: prevYear, cumulative: d.cumulative, monthContribution: d.month_contribution },
-      { label: '总支出', val: d.expense, yoy: d.yoy, mom: d.mom, isRate: false, isSingle: isSingle, momLabel: momLabel, prevYear: prevYear, cumulative: d.cumulative, monthContribution: d.month_contribution },
-      { label: '总结余', val: d.balance, yoy: d.yoy, mom: d.mom, isRate: false, isSingle: isSingle, momLabel: momLabel, prevYear: prevYear, cumulative: d.cumulative, monthContribution: d.month_contribution },
-      { label: '结余率', val: d.balance_rate, yoy: d.yoy, mom: d.mom, isRate: true, isSingle: isSingle, momLabel: momLabel, prevYear: prevYear, cumulative: d.cumulative, monthContribution: d.month_contribution }
+      { label: '总收入', val: d.income, yoyKey: 'income', isRate: false },
+      { label: '总支出', val: d.expense, yoyKey: 'expense', isRate: false },
+      { label: '总结余', val: d.balance, yoyKey: 'balance', isRate: false },
+      { label: '结余率', val: d.balance_rate, yoyKey: 'balance', isRate: true }
     ];
     
     let html = '';
     for (const c of cards) {
-      const yoyKey = c.label === '总收入' ? 'income' : c.label === '总支出' ? 'expense' : 'balance';
-      const yoyPct = c.yoy[yoyKey + '_pct'];
-      const yoyPrev = c.yoy[yoyKey + '_prev'];
-      const momPct = c.mom[yoyKey + '_pct'];
-      const momPrev = c.mom[yoyKey + '_prev'];
+      const isBalanceRate = c.isRate;
+      const yoyKey = c.yoyKey;
       
-      // 第一行：大数字，取整
-      const valDisplay = c.isRate ? (c.val != null ? Math.round(c.val) + '%' : '-') : Math.round(c.val);
+      const yoyPct = isBalanceRate ? d.yoy[yoyKey + '_rate_diff'] : d.yoy[yoyKey + '_pct'];
+      const yoyPrev = d.yoy[yoyKey + '_prev'];
+      const yoyPrevFmt = d.yoy[yoyKey + '_prev_formatted'];
+      const momPct = isBalanceRate ? d.mom[yoyKey + '_rate_diff'] : d.mom[yoyKey + '_pct'];
+      const momPrev = d.mom[yoyKey + '_prev'];
+      const momPrevFmt = d.mom[yoyKey + '_prev_formatted'];
+      // 同比/环比绝对值差值
+      const yoyDiff = (!isBalanceRate && c.val != null && yoyPrev != null) ? (c.val - yoyPrev) : null;
+      const momDiff = (!isBalanceRate && c.val != null && momPrev != null) ? (c.val - momPrev) : null;
+      
+      const valDisplay = c.isRate ? (c.val != null ? Math.round(c.val) + '%' : '-') : fmt(c.val);
       const valUnit = c.isRate ? '' : '<span class="unit">万元</span>';
       
-      let html2 = '<div class="kpi-header">' + c.label + '</div>';
-      html2 += '<div class="kpi-value">' + valDisplay + valUnit + '</div>';
+      let cardHtml = '<div class="kpi-card">';
+      cardHtml += '<div class="kpi-header">' + c.label + '</div>';
+      cardHtml += '<div class="kpi-value">' + valDisplay + valUnit + '</div>';
       
-      // 第二行：同比
-      const yoyPctFmt = yoyPct != null ? fmtPctSign(yoyPct) : '-';
-      const yoyPrevFmt = c.yoy[yoyKey + '_prev_formatted'] || fmt(Math.round(yoyPrev));
-      const yoyArrow = yoyPct != null ? '<i class="fa-solid fa-arrow-trend-' + (yoyPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
-      const yoyPctCls = pctCls(yoyPct);
-      html2 += '<div class="kpi-row ' + yoyPctCls + '">';
-      html2 += yoyArrow + '同比 <span class="pct">' + yoyPctFmt + '</span> <span class="prev">(' + prevYear + '年同期 ' + yoyPrevFmt + '万)</span>';
-      html2 += '</div>';
-      
-      // 第三行：环比（单月模式）或 累计增长+贡献值（累计模式）
-      if (c.isSingle) {
-        const momPctFmt = momPct != null ? fmtPctSign(momPct) : '-';
-        const momPrevFmt = c.mom[yoyKey + '_prev_formatted'] || fmt(Math.round(momPrev));
-        const momArrow = momPct != null ? '<i class="fa-solid fa-arrow-trend-' + (momPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
-        const momPctCls = pctCls(momPct);
-        html2 += '<div class="kpi-row ' + momPctCls + '">';
-        html2 += momArrow + '环比 <span class="pct">' + momPctFmt + '</span> <span class="prev">(vs ' + momLabel + ' ' + momPrevFmt + '万)</span>';
-        html2 += '</div>';
-      } else if (c.cumulative) {
-        const growthKey = yoyKey === 'income' ? 'income_growth' : 'balance_growth';
-        const growthPct = c.cumulative[growthKey + '_pct'];
-        const growthPctFmt = growthPct != null ? fmtPctSign(growthPct) : '-';
-        const prevRangeLabel = c.cumulative.prev_range_label || momLabel;
-        const contribution = c.monthContribution;
-        const growthArrow = growthPct != null ? '<i class="fa-solid fa-arrow-trend-' + (growthPct >= 0 ? 'up' : 'down') + ' arrow"></i> ' : '';
-        const growthPctCls = pctCls(growthPct);
-        
-        // 累计模式：左右布局
-        html2 += '<div class="kpi-row kpi-cumulative">';
-        // 左侧：较X-X月增长 +/-X%
-        html2 += '<div class="cum-left">';
-        html2 += growthArrow + '较' + prevRangeLabel + ' <span class="pct">' + growthPctFmt + '</span>';
-        html2 += '</div>';
-        // 右侧：其中X月 +/-XXX万
-        if (contribution) {
-          const contribKey = yoyKey === 'income' ? 'income' : 'balance';
-          const contribVal = contribution[contribKey] || 0;
-          const contribSign = contribVal >= 0 ? '+' : '-';
-          const contribValFmt = fmt(Math.abs(Math.round(contribVal)));
-          html2 += '<div class="cum-right">';
-          html2 += '<span class="prev">其中' + contribution.month + '月 </span>';
-          html2 += '<span class="pct ' + (contribVal >= 0 ? 'positive' : 'negative') + '">' + contribSign + contribValFmt + '万</span>';
-          html2 += '</div>';
+      if (isBalanceRate) {
+        // 结余率：保持百分点差值
+        if (isSingle) {
+          const yoyRef = 'vs ' + (prevYear % 100) + '年同期 ' + (yoyPrevFmt || (yoyPrev != null ? Math.round(yoyPrev * 10) / 10 + '%' : '-'));
+          const momRef = 'vs 上月 ' + (momPrevFmt || (momPrev != null ? Math.round(momPrev * 10) / 10 + '%' : '-'));
+          cardHtml += buildKpiSub('同比', yoyPct, yoyRef, true);
+          cardHtml += buildKpiSub('环比', momPct, momRef, true);
+        } else if (d.cumulative) {
+          const yoyRef = 'vs ' + (prevYear % 100) + '年同期 ' + (yoyPrevFmt || (yoyPrev != null ? Math.round(yoyPrev * 10) / 10 + '%' : '-'));
+          cardHtml += buildKpiSub('同比', yoyPct, yoyRef, true);
+          const growthKey = yoyKey + '_growth';
+          const growthPct = d.cumulative[growthKey + '_pct'];
+          const prevRangeLabel = d.cumulative.prev_range_label || momLabel;
+          const contribution = d.month_contribution;
+          let secondRef = '';
+          if (contribution) {
+            const contribVal = contribution[yoyKey] || 0;
+            const contribSign = contribVal >= 0 ? '+' : '';
+            secondRef = '其中' + contribution.month + '月 ' + contribSign + fmt(contribVal) + '万';
+          }
+          cardHtml += buildKpiSub('较' + prevRangeLabel, growthPct, secondRef);
         }
-        html2 += '</div>';
+      } else {
+        // 收入/支出/结余：显示绝对值 +-X万
+        if (isSingle) {
+          const yoyRef = 'vs ' + (prevYear % 100) + '年同期 ' + (yoyPrevFmt || fmt(yoyPrev)) + '万';
+          const momRef = 'vs 上月 ' + (momPrevFmt || fmt(momPrev)) + '万';
+          cardHtml += buildKpiSubAbs('同比', yoyDiff, yoyRef);
+          cardHtml += buildKpiSubAbs('环比', momDiff, momRef);
+        } else if (d.cumulative) {
+          const yoyRef = 'vs ' + (prevYear % 100) + '年同期 ' + (yoyPrevFmt || fmt(yoyPrev)) + '万';
+          cardHtml += buildKpiSubAbs('同比', yoyDiff, yoyRef);
+          const growthKey = yoyKey + '_growth';
+          const growthPct = d.cumulative[growthKey + '_pct'];
+          const prevRangeLabel = d.cumulative.prev_range_label || momLabel;
+          const contribution = d.month_contribution;
+          let secondRef = '';
+          if (contribution) {
+            const contribVal = contribution[yoyKey] || 0;
+            const contribSign = contribVal >= 0 ? '+' : '';
+            secondRef = '其中' + contribution.month + '月 ' + contribSign + fmt(contribVal) + '万';
+          }
+          cardHtml += buildKpiSub('较' + prevRangeLabel, growthPct, secondRef);
+        }
       }
-      
-      html += '<div class="kpi-card">' + html2 + '</div>';
+      cardHtml += '</div>';
+      html += cardHtml;
     }
     if (kpiEl) kpiEl.innerHTML = html;
   } catch (e) { console.error('KPI Team error:', e); }
@@ -1047,13 +1207,7 @@ async function loadChartsProduct() {
           axisLine: { show: false },
           splitLine: { lineStyle: { color: '#f5f5f5', type: 'dashed' } }
         },
-        legend: {
-          show: true,
-          top: 0,
-          right: 0,
-          textStyle: { fontSize: isMobile ? 9 : 11 },
-          itemWidth: isMobile ? 12 : 15
-        },
+        legend: { show: false },
         series: [
           {
             name: '2026 ' + board.name,
@@ -1122,18 +1276,20 @@ async function loadKPITeam() {
       const yoyPrev = c.yoy ? c.yoy[yoyKey + '_prev'] : null;
       const momPct = c.mom ? c.mom[yoyKey + '_pct'] : null;
       const momPrev = c.mom ? c.mom[yoyKey + '_prev'] : null;
+      // 结余率使用百分点差值展示
+      const yoyDiff = c.yoy ? c.yoy[yoyKey + '_diff'] : null;
+      const momDiff = c.mom ? c.mom[yoyKey + '_diff'] : null;
 
       const cls = c.isRate ? 'rate-cell' : 'num-cell';
       const valStr = c.isRate ? (c.val != null ? c.val + '%' : '-') : (c.val != null ? fmt(c.val) : '-');
 
       let extra = '';
-      if (c.isSingle && momPct != null) {
-        extra += '<div class="mom-row"><span class="yoy-label">环比</span> <span class="yoy-value ' + pctCls(momPct) + '">' + fmtPct(momPct) + '</span></div>';
-      } else if (!c.isSingle && momPct != null) {
-        extra += '<div class="mom-row"><span class="yoy-label">环比</span> <span class="yoy-value ' + pctCls(momPct) + '">' + fmtPct(momPct) + '</span></div>';
-      }
-      if (yoyPct != null) {
-        extra += '<div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ' + pctCls(yoyPct) + '">' + fmtPct(yoyPct) + '</span></div>';
+      // 结余率使用百分点差值，其他指标使用百分比变化率
+      const isBalanceRate = c.label === '结余率';
+      if (c.isSingle && (isBalanceRate ? momDiff != null : momPct != null)) {
+        extra += '<div class="mom-row"><span class="yoy-label">环比</span> <span class="yoy-value ' + pctCls(isBalanceRate ? momDiff : momPct) + '">' + (isBalanceRate ? fmtDiff(momDiff) : fmtPct(momPct)) + '</span></div>';
+      } else if (!c.isSingle && (isBalanceRate ? momDiff != null : momPct != null)) {
+        extra += '<div class="mom-row"><span class="yoy-label">环比</span> <span class="yoy-value ' + pctCls(isBalanceRate ? momDiff : momPct) + '">' + (isBalanceRate ? fmtDiff(momDiff) : fmtPct(momPct)) + '</span></div>';
       }
 
       html += '<div class="kpi-card"><div class="kpi-label">' + c.label + '</div><div class="kpi-value ' + cls + '">' + valStr + '</div><div class="kpi-extra">' + extra + '</div></div>';
@@ -1396,6 +1552,13 @@ function fmtYoy(val) {
   return sign + rounded + '万';
 }
 
+// 格式化同比/环比百分比（+5%、-12%）
+function fmtYoyPct(val) {
+  if (val == null || val === '' || isNaN(val)) return '-';
+  const sign = val >= 0 ? '+' : '';
+  return sign + Math.round(val) + '%';
+}
+
 // 显示团队详情弹窗（增强版：分组透视表）
 window.showTeamDetailMatrix = async function(teamName) {
   const name = decodeURIComponent(teamName);
@@ -1432,7 +1595,7 @@ window.showTeamDetailMatrix = async function(teamName) {
     }
     if (summary.income_yoy != null) {
       const yoyC = summary.income_yoy >= 0 ? '#34C759' : '#FF3B30';
-      html += '<div class="pivot-summary-card"><div class="ps-label">收入同比</div><div class="ps-value" style="color:' + yoyC + '">' + (summary.income_yoy >= 0 ? '+' : '') + summary.income_yoy + '%</div></div>';
+      html += '<div class="pivot-summary-card"><div class="ps-label">收入环比</div><div class="ps-value" style="color:' + yoyC + '">' + (summary.income_yoy >= 0 ? '+' : '') + summary.income_yoy + '%</div></div>';
     }
     html += '</div>';
     // 2. 透视表（Excel 压缩形式）
@@ -1477,6 +1640,16 @@ window.showTeamDetailMatrix = async function(teamName) {
       return s;
     };
 
+    // 判断 pivot 行是否所有值都 < 0.05（跳过）
+    const isPivotRowAllSmall = (row) => {
+      if (Math.abs(row.total || 0) >= 0.05) return false;
+      if (Math.abs(sum312(row)) >= 0.05) return false;
+      for (const m of months) {
+        if (Math.abs((row.values && row.values[m]) || 0) >= 0.05) return false;
+      }
+      return true;
+    };
+
     // 行渲染函数
     const renderPivotRow = (row, stype) => {
       let nameStyle = row.level === 'total' ? 'font-weight:700' : (row.indent ? 'padding-left:24px;font-weight:400;color:#555' : 'font-weight:500');
@@ -1491,7 +1664,8 @@ window.showTeamDetailMatrix = async function(teamName) {
         return fmt(v);
       };
 
-      let tr = '<tr class="pivot-section-' + stype + '">';
+      const totalCls = row.level === 'total' ? ' pivot-level-total' : '';
+      let tr = '<tr class="pivot-section-' + stype + totalCls + '">';
       tr += '<td class="pivot-sticky-col" style="' + nameStyle + '">' + row.name + '</td>';
       for (const m of months) {
         const v = (row.values && row.values[m]) || 0;
@@ -1515,9 +1689,9 @@ window.showTeamDetailMatrix = async function(teamName) {
       return tr;
     };
 
-    for (const r of sortGroup(incomeRows)) html += renderPivotRow(r, 'income');
-    for (const r of sortGroup(expenseRows)) html += renderPivotRow(r, 'expense');
-    for (const r of sortGroup(feeRows)) html += renderPivotRow(r, 'fee');
+    for (const r of sortGroup(incomeRows)) { if (!isPivotRowAllSmall(r)) html += renderPivotRow(r, 'income'); }
+    for (const r of sortGroup(expenseRows)) { if (!isPivotRowAllSmall(r)) html += renderPivotRow(r, 'expense'); }
+    for (const r of sortGroup(feeRows)) { if (!isPivotRowAllSmall(r)) html += renderPivotRow(r, 'fee'); }
     if (balanceRows.length > 0) {
       const br = balanceRows[0];
       const bVals = months.map(m => (br.values && br.values[m]) || 0);
@@ -1707,7 +1881,7 @@ function generateTeamDetailHTML(name, row, momData, parentTotals, level, detailD
         <tbody>
           <!-- 结余部分（黄色背景） -->
           <tr class="balance-row">
-            <td class="sticky-col balance-label"><span class="row-code"></span><span class="row-name">结余(万元)</span></td>
+            <td class="sticky-col balance-label"><span class="row-code"></span><span class="row-name">结余</span></td>
             ${genMonthCells('结余', false)}
             <td class="num-cell highlight-cell balance-cell"><div class="cell-value" style="color:${sum312Balance >= 0 ? '#34C759' : '#FF3B30'};font-weight:600">${fmt(sum312Balance)}</div></td>
             <td class="num-cell highlight-cell balance-cell"><div class="cell-value" style="color:${totalBalance >= 0 ? '#34C759' : '#FF3B30'};font-weight:600">${fmt(totalBalance)}</div></td>
@@ -1872,19 +2046,20 @@ function renderProductRow(row, level, prevData, momData, isParent) {
   const prevBalance = (prev.收入 || 0) - (prev.支出 || 0) - (prev.平台管理费 || 0);
   const momBalanceVal = momData ? ((momData.收入 || 0) - (momData.支出 || 0) - (momData.平台管理费 || 0)) : 0;
   
-  const yoyIncome = (row.收入 || 0) - (prev.收入 || 0);
-  const yoyExpense = (row.支出 || 0) - (prev.支出 || 0);
-  const yoyFee = (row.平台管理费 || 0) - (prev.平台管理费 || 0);
-  const yoyBalance = balance - prevBalance;
-  const balanceColor = yoyBalance >= 0 ? 'color:#34C759' : 'color:#FF3B30';
+  // 同比增长率 = (当期 - 去年同期) / |去年同期| × 100
+  const yoyIncome = prev.收入 ? ((row.收入 - prev.收入) / Math.abs(prev.收入) * 100) : null;
+  const yoyExpense = prev.支出 ? ((row.支出 - prev.支出) / Math.abs(prev.支出) * 100) : null;
+  const yoyFee = prev.平台管理费 ? ((row.平台管理费 - prev.平台管理费) / Math.abs(prev.平台管理费) * 100) : null;
+  const yoyBalance = prevBalance ? ((balance - prevBalance) / Math.abs(prevBalance) * 100) : null;
+  const balanceColor = balance >= 0 ? 'color:#34C759' : 'color:#FF3B30';
   const indentClass = level === 1 ? 'tree-indent-1' : level === 2 ? 'tree-indent-2' : '';
   const rowClass = level === 0 ? 'tree-parent' : level === 1 ? 'tree-child' : 'tree-grandchild';
   
-  // 获取环比数据
-  const momIncome = momData ? (momData.收入 || 0) : 0;
-  const momExpense = momData ? (momData.支出 || 0) : 0;
-  const momFee = momData ? (momData.平台管理费 || 0) : 0;
-  const momBalance = momBalanceVal;
+  // 环比增长率 = (当期 - 上月) / |上月| × 100
+  const momIncome = momData && momData.收入 ? ((row.收入 - momData.收入) / Math.abs(momData.收入) * 100) : null;
+  const momExpense = momData && momData.支出 ? ((row.支出 - momData.支出) / Math.abs(momData.支出) * 100) : null;
+  const momFee = momData && momData.平台管理费 ? ((row.平台管理费 - momData.平台管理费) / Math.abs(momData.平台管理费) * 100) : null;
+  const momBalance = momData && momBalanceVal ? ((balance - momBalanceVal) / Math.abs(momBalanceVal) * 100) : null;
   
   // 展开按钮逻辑
   let toggleBtn = '<span class="tree-toggle empty">▶</span>';
@@ -1893,12 +2068,15 @@ function renderProductRow(row, level, prevData, momData, isParent) {
     toggleBtn = `<span class="tree-toggle" data-board="${row.业务板块 || ''}" data-product="${row.产品 || ''}" data-level="${level}">▶</span>`;
   }
   
+  // 颜色辅助函数
+  const pctCls = (v) => v == null ? '' : (v >= 0 ? 'positive' : 'negative');
+  
   let html = `<tr class="${rowClass}" data-name="${name}" data-level="${level}">`;
   html += `<td class="${indentClass}"><div class="tree-row"><span class="tree-toggle-area">${toggleBtn}</span><span class="tree-label" style="font-weight:${level === 0 ? 600 : 500}">${name}</span></div></td>`;
-  html += `<td class="num-cell"><div class="num-main">${fmt(row.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momIncome)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyIncome)}</span></div></td>`;
-  html += `<td class="num-cell"><div class="num-main">${fmt(row.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momExpense)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyExpense)}</span></div></td>`;
-  html += `<td class="num-cell"><div class="num-main">${fmt(row.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momFee)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyFee)}</span></div></td>`;
-  html += `<td class="num-cell balance-cell"><div class="num-main" style="${balanceColor}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value ${momBalance >= 0 ? 'positive' : 'negative'}">${fmtYoy(momBalance)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${yoyBalance >= 0 ? 'positive' : 'negative'}">${fmtYoy(yoyBalance)}</span></div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(row.收入)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyIncome)}">${fmtYoyPct(yoyIncome)}</span></div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(row.支出)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyExpense)}">${fmtYoyPct(yoyExpense)}</span></div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(row.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyFee)}">${fmtYoyPct(yoyFee)}</span></div></td>`;
+  html += `<td class="num-cell balance-cell"><div class="num-main" style="${balanceColor}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyBalance)}">${fmtYoyPct(yoyBalance)}</span></div></td>`;
   html += '</tr>';
   return html;
 }
@@ -1942,6 +2120,9 @@ async function loadTableProduct() {
       }
     }
     for (const row of sortedBoards) {
+      const rInc = row.收入 || 0, rExp = row.支出 || 0, rFee = row.平台管理费 || 0;
+      const rBal = rInc - rExp - rFee;
+      if (Math.abs(rInc) < 0.05 && Math.abs(rExp) < 0.05 && Math.abs(rFee) < 0.05 && Math.abs(rBal) < 0.05) continue;
       html += renderProductRow(row, 0, prevData, momDataMap[row.业务板块]);
     }
     
@@ -2023,19 +2204,24 @@ function bindProductTreeEvents() {
         const productData = window._productTreeCache.products[cacheKey];
         const frag = document.createDocumentFragment();
         for (const pRow of productData) {
+          const pInc = pRow.收入 || 0, pExp = pRow.支出 || 0, pFee = pRow.平台管理费 || 0;
+          const balance = pInc - pExp - pFee;
+          if (Math.abs(pInc) < 0.05 && Math.abs(pExp) < 0.05 && Math.abs(pFee) < 0.05 && Math.abs(balance) < 0.05) continue;
           const tr = document.createElement('tr');
           tr.className = 'tree-child';
           tr.dataset.level = '1';
           tr.dataset.name = pRow.产品 || '';
           tr.style.display = '';
-          // 计算结余：收入 - 支出 - 平台管理费
-          const balance = (pRow.收入 || 0) - (pRow.支出 || 0) - (pRow.平台管理费 || 0);
           const prevBalance = (prevData[pRow.产品]?.收入 || 0) - (prevData[pRow.产品]?.支出 || 0) - (prevData[pRow.产品]?.平台管理费 || 0);
-          const yoyIncome = (pRow.收入 || 0) - (prevData[pRow.产品]?.收入 || 0);
-          const yoyExpense = (pRow.支出 || 0) - (prevData[pRow.产品]?.支出 || 0);
-          const yoyFee = (pRow.平台管理费 || 0) - (prevData[pRow.产品]?.平台管理费 || 0);
-          const yoyBalance = balance - prevBalance;
-          tr.innerHTML = `<td class="tree-indent-1"><div class="tree-row"><span class="tree-toggle-area"><span class="tree-toggle" data-board="${board}" data-product="${pRow.产品 || ''}" data-level="1">▶</span></span><span class="tree-label">${pRow.产品 || ''}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyIncome)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyExpense)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyFee)}</span></div></td><td class="num-cell balance-cell"><div class="num-main" style="${yoyBalance >= 0 ? 'color:#34C759' : 'color:#FF3B30'}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${yoyBalance >= 0 ? 'positive' : 'negative'}">${fmtYoy(yoyBalance)}</span></div></td>`;
+          const prevInc = prevData[pRow.产品]?.收入 || 0;
+          const prevExp = prevData[pRow.产品]?.支出 || 0;
+          const prevFee = prevData[pRow.产品]?.平台管理费 || 0;
+          const yoyIncome = prevInc ? ((pRow.收入 - prevInc) / Math.abs(prevInc) * 100) : null;
+          const yoyExpense = prevExp ? ((pRow.支出 - prevExp) / Math.abs(prevExp) * 100) : null;
+          const yoyFee = prevFee ? ((pRow.平台管理费 - prevFee) / Math.abs(prevFee) * 100) : null;
+          const yoyBalance = prevBalance ? ((balance - prevBalance) / Math.abs(prevBalance) * 100) : null;
+          const balColor = balance >= 0 ? 'color:#34C759' : 'color:#FF3B30';
+          tr.innerHTML = `<td class="tree-indent-1"><div class="tree-row"><span class="tree-toggle-area"><span class="tree-toggle" data-board="${board}" data-product="${pRow.产品 || ''}" data-level="1">▶</span></span><span class="tree-label">${pRow.产品 || ''}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.收入)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyIncome)}">${fmtYoyPct(yoyIncome)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.支出)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyExpense)}">${fmtYoyPct(yoyExpense)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyFee)}">${fmtYoyPct(yoyFee)}</span></div></td><td class="num-cell balance-cell"><div class="num-main" style="${balColor}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyBalance)}">${fmtYoyPct(yoyBalance)}</span></div></td>`;
           frag.appendChild(tr);
         }
         row.parentNode.insertBefore(frag, insertBeforeRow);
@@ -2065,19 +2251,24 @@ function bindProductTreeEvents() {
         const projectData = window._productTreeCache.projects[cacheKey];
         const frag = document.createDocumentFragment();
         for (const pRow of projectData) {
+          const pInc = pRow.收入 || 0, pExp = pRow.支出 || 0, pFee = pRow.平台管理费 || 0;
+          const balance = pInc - pExp - pFee;
+          if (Math.abs(pInc) < 0.05 && Math.abs(pExp) < 0.05 && Math.abs(pFee) < 0.05 && Math.abs(balance) < 0.05) continue;
           const tr = document.createElement('tr');
           tr.className = 'tree-grandchild';
           tr.dataset.level = '2';
           tr.dataset.name = pRow.项目 || '';
           tr.style.display = '';
-          const yoyIncome = (pRow.收入 || 0) - (prevData[pRow.项目]?.收入 || 0);
-          const yoyExpense = (pRow.支出 || 0) - (prevData[pRow.项目]?.支出 || 0);
-          const yoyFee = (pRow.平台管理费 || 0) - (prevData[pRow.项目]?.平台管理费 || 0);
-          // 计算结余：收入 - 支出 - 平台管理费
-          const balance = (pRow.收入 || 0) - (pRow.支出 || 0) - (pRow.平台管理费 || 0);
+          const prevInc = prevData[pRow.项目]?.收入 || 0;
+          const prevExp = prevData[pRow.项目]?.支出 || 0;
+          const prevFee = prevData[pRow.项目]?.平台管理费 || 0;
           const prevBalance = (prevData[pRow.项目]?.收入 || 0) - (prevData[pRow.项目]?.支出 || 0) - (prevData[pRow.项目]?.平台管理费 || 0);
-          const yoyBal = balance - prevBalance;
-          tr.innerHTML = `<td class="tree-indent-2"><div class="tree-row"><span class="tree-toggle-area"><span class="tree-toggle empty">▶</span></span><span class="tree-label">${pRow.项目 || ''}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyIncome)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyExpense)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyFee)}</span></div></td><td class="num-cell balance-cell"><div class="num-main" style="${yoyBal >= 0 ? 'color:#34C759' : 'color:#FF3B30'}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">-</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${yoyBal >= 0 ? 'positive' : 'negative'}">${fmtYoy(yoyBal)}</span></div></td>`;
+          const yoyIncome = prevInc ? ((pRow.收入 - prevInc) / Math.abs(prevInc) * 100) : null;
+          const yoyExpense = prevExp ? ((pRow.支出 - prevExp) / Math.abs(prevExp) * 100) : null;
+          const yoyFee = prevFee ? ((pRow.平台管理费 - prevFee) / Math.abs(prevFee) * 100) : null;
+          const yoyBal = prevBalance ? ((balance - prevBalance) / Math.abs(prevBalance) * 100) : null;
+          const projBalColor = balance >= 0 ? 'color:#34C759' : 'color:#FF3B30';
+          tr.innerHTML = `<td class="tree-indent-2"><div class="tree-row"><span class="tree-toggle-area"><span class="tree-toggle empty">▶</span></span><span class="tree-label">${pRow.项目 || ''}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.收入)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyIncome)}">${fmtYoyPct(yoyIncome)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.支出)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyExpense)}">${fmtYoyPct(yoyExpense)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyFee)}">${fmtYoyPct(yoyFee)}</span></div></td><td class="num-cell balance-cell"><div class="num-main" style="${projBalColor}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyBal)}">${fmtYoyPct(yoyBal)}</span></div></td>`;
           frag.appendChild(tr);
         }
         row.parentNode.insertBefore(frag, insertBeforeRow);
@@ -2158,10 +2349,10 @@ function renderTeamRow(row, level, prevData) {
   
   let html = `<tr class="${rowClass}" data-name="${name}" data-level="${level}">`;
   html += `<td class="${indentClass}"><div class="tree-row"><span class="tree-toggle-area">${toggleBtn}</span><span class="tree-label" style="font-weight:${level === 0 ? 600 : 500}">${name}</span></div></td>`;
-  html += `<td class="num-cell"><div class="num-main">${fmt(row.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momIncome)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyIncome)}</span></div></td>`;
-  html += `<td class="num-cell"><div class="num-main">${fmt(row.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momExpense)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyExpense)}</span></div></td>`;
-  html += `<td class="num-cell"><div class="num-main">${fmt(row.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momFee)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">${fmtYoy(yoyFee)}</span></div></td>`;
-  html += `<td class="num-cell balance-cell"><div class="num-main" style="${balanceColor}">${fmt(balance)}万元</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value ${momBalance >= 0 ? 'positive' : 'negative'}">${fmtYoy(momBalance)}</span></div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${yoyBalance >= 0 ? 'positive' : 'negative'}">${fmtYoy(yoyBalance)}</span></div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(row.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momIncome)}</span></div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(row.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momExpense)}</span></div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmt(row.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momFee)}</span></div></td>`;
+  html += `<td class="num-cell balance-cell"><div class="num-main" style="${balanceColor}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value ${momBalance >= 0 ? 'positive' : 'negative'}">${fmtYoy(momBalance)}</span></div></td>`;
   html += `<td class="num-cell" style="text-align:center"><button class="detail-btn" onclick="showTeamDetail('${name}', ${level}, '${nature}')"><i class="fa-solid fa-eye"></i></button></td>`;
   html += '</tr>';
   return html;
@@ -2232,11 +2423,11 @@ async function loadTableTeam() {
     title.parentElement.style.marginBottom = '0';  // 移除标题区域间距
 
     let html = '<table class="tree-table"><thead><tr>';
-    html += '<th style="text-align:left;width:100px">H团队线性质</th>';
-    html += '<th class="num-cell-th">一、收入<sup style="color:#888;font-size:11px">(万元)</sup></th>';
-    html += '<th class="num-cell-th">二、支出<sup style="color:#888;font-size:11px">(万元)</sup></th>';
-    html += '<th class="num-cell-th">三、管理费<sup style="color:#888;font-size:11px">(万元)</sup></th>';
-    html += '<th class="num-cell-th">结余<sup style="color:#888;font-size:11px">(万元)</sup></th>';
+    html += '<th style="text-align:left;width:100px">线性质</th>';
+    html += '<th class="num-cell-th">一、收入</th>';
+    html += '<th class="num-cell-th">二、支出</th>';
+    html += '<th class="num-cell-th">三、管理费</th>';
+    html += '<th class="num-cell-th">结余</th>';
     html += '<th style="text-align:center;width:50px">明细</th>';
     html += '</tr></thead><tbody>';
 
@@ -2248,7 +2439,9 @@ async function loadTableTeam() {
       const bal = inc - exp - fee;
       const balCls = bal >= 0 ? 'positive' : 'negative';
 
-      // Nature 行
+      // 跳过 nature 行（若所有值 < 0.05）
+      if (Math.abs(inc) < 0.05 && Math.abs(exp) < 0.05 && Math.abs(fee) < 0.05 && Math.abs(bal) < 0.05) continue;
+
       const children = parentByNature[natureName] || [];
       const hasMultiChildren = children.length > 1;
 
@@ -2270,6 +2463,8 @@ async function loadTableTeam() {
           const pExp = pRow['支出'] || 0;
           const pFee = pRow['平台管理费'] || 0;
           const pBal = pInc - pExp - pFee;
+          // 跳过 parent 行（若所有值 < 0.05）
+          if (Math.abs(pInc) < 0.05 && Math.abs(pExp) < 0.05 && Math.abs(pFee) < 0.05 && Math.abs(pBal) < 0.05) continue;
           const pBalCls = pBal >= 0 ? 'positive' : 'negative';
           const prevInc = (prevParent[pName] && prevParent[pName]['收入']) || 0;
           const prevExp = (prevParent[pName] && prevParent[pName]['支出']) || 0;
@@ -2279,10 +2474,10 @@ async function loadTableTeam() {
           html += '<tr class="' + (hasMultiChildren ? 'tree-child' : 'tree-parent') + '" data-level="1" data-nature="' + natureName + '" style="display:' + (hasMultiChildren ? '' : 'none') + '">';
           html += '<td class="' + (hasMultiChildren ? 'tree-indent-1' : '') + '"><div class="tree-row">';
           html += '<span class="tree-label" style="font-weight:500">' + pName + '</span></div></td>';
-          html += '<td class="num-cell"><div class="num-main">' + fmt(pInc) + '</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">' + fmtYoy(pInc - prevInc) + '</span></div></td>';
-          html += '<td class="num-cell"><div class="num-main">' + fmt(pExp) + '</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">' + fmtYoy(pExp - prevExp) + '</span></div></td>';
-          html += '<td class="num-cell"><div class="num-main">' + fmt(pFee) + '</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value">' + fmtYoy(pFee - prevFee) + '</span></div></td>';
-          html += '<td class="num-cell balance-cell"><div class="num-main ' + pBalCls + '">' + fmt(pBal) + '</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ' + (pBal - prevPBal >= 0 ? 'positive' : 'negative') + '">' + fmtYoy(pBal - prevPBal) + '</span></div></td>';
+          html += '<td class="num-cell"><div class="num-main">' + fmt(pInc) + '</div></td>';
+          html += '<td class="num-cell"><div class="num-main">' + fmt(pExp) + '</div></td>';
+          html += '<td class="num-cell"><div class="num-main">' + fmt(pFee) + '</div></td>';
+          html += '<td class="num-cell balance-cell"><div class="num-main ' + pBalCls + '">' + fmt(pBal) + '</div></td>';
           html += '<td class="num-cell" style="text-align:center"><button class="detail-btn" onclick="showTeamDetail(\x27' + encodeURIComponent(pName) + '\x27, 1, \x27' + encodeURIComponent(natureName) + '\x27)"><i class="fa-solid fa-eye"></i></button></td>';
           html += '</tr>';
         }
@@ -2396,6 +2591,9 @@ window.doSortTeamTree = async function() {
   
   for (const row of data) {
     row._momData = momDataMap[row['H团队线-上级']] || {};
+    const rInc = row.收入 || 0, rExp = row.支出 || 0, rFee = row.平台管理费 || 0;
+    const rBal = rInc - rExp - rFee;
+    if (Math.abs(rInc) < 0.05 && Math.abs(rExp) < 0.05 && Math.abs(rFee) < 0.05 && Math.abs(rBal) < 0.05) continue;
     html += renderTeamRow(row, 0, prevData);
   }
   
@@ -2407,7 +2605,7 @@ window.doSortTeamTree = async function() {
   html += `<td class="num-cell"><div class="num-main">${fmt(totalIncome)}</div></td>`;
   html += `<td class="num-cell"><div class="num-main">${fmt(totalExpense)}</div></td>`;
   html += `<td class="num-cell"><div class="num-main">${fmt(totalFee)}</div></td>`;
-  html += `<td class="num-cell balance-cell"><div class="num-main" style="color:${totalBalanceColor}">${fmt(totalBalance)}万元</div></td>`;
+  html += `<td class="num-cell balance-cell"><div class="num-main" style="color:${totalBalanceColor}">${fmt(totalBalance)}</div></td>`;
   html += '<td></td>';
   html += '</tr>';
   
@@ -2467,12 +2665,12 @@ async function refreshTeamTab() {
 }
 
 // === Q&A ===
-const presets = ['哪些板块结余率低于5%？', '支出增长最快的产品？', '近3个月支出增长最快的产品？', '连续亏损的板块有哪些？', '收入波动异常的板块？', '物业板块详情', '管理费占比超过10%的板块？', '机构医疗各产品结余'];
+const presets = ['哪些板块结余率低于5%？', '支出增长最快的产品？', '收入波动异常的板块？', '物业板块详情', '管理费占比超过10%的板块？', '机构医疗各产品结余'];
 function initQA() {
   const g = document.getElementById('presetGrid');
   if (g.children.length > 0) return;
   g.innerHTML = presets.map(p => '<button class="preset-btn"><i class="fa-solid fa-circle-question" style="color:var(--accent);margin-right:4px"></i>' + p + '</button>').join('');
-  g.querySelectorAll('.preset-btn').forEach(b => b.addEventListener('click', () => { document.getElementById('qaInput').value = b.textContent.replace(/^.*?(?=[^\s])/, ''); doQuery(b.textContent); }));
+  g.querySelectorAll('.preset-btn').forEach(b => b.addEventListener('click', () => { const q = b.textContent.replace(/^.*?(?=[^\s])/, ''); document.getElementById('qaInput').value = q; doQuery(q); }));
   document.getElementById('qaBtn').addEventListener('click', () => doQuery(document.getElementById('qaInput').value));
   document.getElementById('qaInput').addEventListener('keydown', e => { if (e.key === 'Enter') doQuery(e.target.value); });
   loadReportList();
@@ -2504,7 +2702,7 @@ async function loadReportList() {
     }
     if (reports.length === 0) { reportCard.style.display = 'none'; return; }
     wrap.innerHTML = reports.map(r => {
-      const label = r.year + '\u5e74' + String(r.month).padStart(2, '0') + '\u6708\u5317\u4eac\u5730\u533a\u94f6\u53d1\u7ecf\u6d4e\u6708\u62a5';
+      const label = r.year + '\u5e74' + String(r.month).padStart(2, '0') + '\u6708';
       return '<div class="report-item" style="padding:8px 12px;cursor:pointer;border-radius:8px;transition:background 0.2s;display:flex;align-items:center;gap:8px" onclick="queryMonthlyReport(' + r.year + ',' + r.month + ')" onmouseover="this.style.backgroundColor=\'#f5f7fa\'" onmouseout="this.style.backgroundColor=\'\'">'
         + '<i class="fa-solid fa-file-lines" style="color:var(--accent);font-size:14px"></i>'
         + '<span style="font-size:13px">' + label + '</span>'
@@ -2512,13 +2710,13 @@ async function loadReportList() {
     }).join('');
     reportCard.style.display = 'block';
   } catch (e) {
-    console.error('加载月报列表失败', e);
+    console.error('加载延伸阅读列表失败', e);
   }
 }
 
 async function queryMonthlyReport(year, month) {
   const area = document.getElementById('qaResult');
-  area.innerHTML = '<div class="loading"><div class="spinner"></div>\u751f\u6210\u6708\u62a5\u4e2d...</div>';
+  area.innerHTML = '<div class="loading"><div class="spinner"></div>生成简报中...</div>';
   try {
     const d = await apiPost('/api/generate_report', { year, month });
     if (d.success && d.html) {
@@ -2526,10 +2724,10 @@ async function queryMonthlyReport(year, month) {
         + d.html
         + '</div>';
     } else {
-      area.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation" style="color:var(--red);font-size:24px;margin-bottom:8px"></i><br>\u6708\u62a5\u751f\u6210\u5931\u8d25<br><span style="font-size:12px;color:var(--text2)">' + (d.error || '\u672a\u77e5\u9519\u8bef') + '</span></div>';
+      area.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation" style="color:var(--red);font-size:24px;margin-bottom:8px"></i><br>\u7b80\u62a5\u751f\u6210\u5931\u8d25<br><span style="font-size:12px;color:var(--text2)">' + (d.error || '\u672a\u77e5\u9519\u8bef') + '</span></div>';
     }
   } catch (e) {
-    area.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation" style="color:var(--red);font-size:24px;margin-bottom:8px"></i><br>\u6708\u62a5\u751f\u6210\u5931\u8d25</div>';
+    area.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation" style="color:var(--red);font-size:24px;margin-bottom:8px"></i><br>\u7b80\u62a5\u751f\u6210\u5931\u8d25</div>';
   }
 }
 

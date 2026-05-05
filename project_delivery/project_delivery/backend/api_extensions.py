@@ -48,11 +48,11 @@ def filter_team(team_df, year, months):
 
 # ==================== 增强版智能问答 API ====================
 
-def enhanced_query(product_df, team_df, question: str, year: int, months: List[int], use_ai: bool = True) -> dict:
+def enhanced_query(product_df, team_df, question: str, year: int, months: List[int]) -> dict:
     """
-    增强版智能问答接口
-    - use_ai=True: 使用火山引擎豆包大模型（VolcEngineAgent）
-    - use_ai=False: 使用规则匹配（FinancialAgent）
+    增强版智能问答接口（规则匹配优先 + DeepSeek AI 补充）
+    - 优先使用 FinancialAgent（规则匹配）
+    - 规则未命中时，使用 DeepSeek V3.2 进行数据分析和回答
     """
     # 关键词别名映射（将非标准名称映射为数据中实际名称）
     alias_map = {
@@ -62,15 +62,29 @@ def enhanced_query(product_df, team_df, question: str, year: int, months: List[i
     for alias, target in alias_map.items():
         if alias in question and target:
             question = question.replace(alias, target)
-    if use_ai:
-        # 优先使用豆包 AI
-        agent = VolcEngineAgent(product_df, team_df)
-    else:
-        # 降级到规则匹配
-        agent = FinancialAgent(product_df, team_df)
     
-    agent.set_context(year, months)
-    return ensure_native(agent.query(question))
+    # 1. 规则匹配优先
+    rule_agent = FinancialAgent(product_df, team_df)
+    rule_agent.set_context(year, months)
+    rule_result = rule_agent.query(question)
+    
+    # 默认回复含 suggestions 字段，表示未命中规则
+    is_default = "suggestions" in rule_result
+    if is_default:
+        # 规则未命中，使用 DeepSeek AI 补充
+        try:
+            ai_agent = VolcEngineAgent(product_df, team_df)
+            ai_agent.set_context(year, months)
+            ai_result = ai_agent.query(question)
+            if ai_result and ai_result.get("answer") and "抱歉" not in ai_result.get("answer", ""):
+                ai_result["source"] = "rule+ai"
+                return ensure_native(ai_result)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+    
+    rule_result["source"] = "rule"
+    return ensure_native(rule_result)
 
 
 def get_ai_suggestions(product_df, team_df, year: int, months: List[int]) -> List[dict]:

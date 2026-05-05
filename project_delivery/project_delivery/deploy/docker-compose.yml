@@ -6,6 +6,8 @@ services:
       context: ..
       dockerfile: backend/Dockerfile
     container_name: financial-agent-backend
+    env_file:
+      - .env
     ports:
       - "8000:80"
     volumes:
@@ -13,12 +15,14 @@ services:
       - ../管理报表.xlsx:/app/管理报表.xlsx:ro
       # VIP数据持久化
       - ./vip_data:/app/backend/data
+      # 前端静态文件（用于 /static 挂载）
+      - ../frontend:/app/frontend:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:80/health').read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   nginx:
     image: nginx:alpine

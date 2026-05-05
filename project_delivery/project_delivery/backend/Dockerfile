@@ -2,9 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# 安装依赖
+# 安装依赖（使用清华镜像加速）
 COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 # 复制代码（不包含 pycache 和 xlsx.old 文件）
 COPY backend/main.py .
@@ -15,6 +15,7 @@ COPY backend/api_extensions.py .
 COPY backend/special_logic.py .
 COPY backend/vip_progress.py .
 COPY backend/admin_api.py .
+COPY backend/silver_headlines.py .
 COPY backend/cloudbase-config.json .
 
 # 复制数据文件
