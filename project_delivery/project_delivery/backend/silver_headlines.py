@@ -153,13 +153,14 @@ def _build_html(data: dict, gen_time: str):
     color_text = "#1D1D1F"
     color_text2 = "#6E6E73"
     color_text3 = "#86868B"
+    color_accent = "#007AFF"
     color_link = "#0066CC"
     color_divider = "#E5E5EA"
     color_highlight_bg = "#F5F5F7"
     color_highlight_border = "#D2D2D7"
     
-    def card_open(margin=20):
-        return f'<div style="background:{color_card};border-radius:16px;padding:28px 32px;margin-bottom:{margin}px;box-shadow:0 1px 3px rgba(0,0,0,0.04);border:1px solid {color_divider}">'
+    def card_open(margin=16):
+        return f'<div style="background:{color_card};border-radius:10px;padding:16px 14px;margin-bottom:{margin}px;box-shadow:0 1px 3px rgba(0,0,0,0.04);border:1px solid {color_divider}">'
     
     def card_close():
         return '</div>'
@@ -174,16 +175,16 @@ body{{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC
 a{{color:{color_link};text-decoration:none}}
 a:hover{{text-decoration:underline}}
 </style>
-<div style="max-width:720px;margin:0 auto;padding:20px 24px 40px">
+<div style="max-width:720px;margin:0 auto;padding:14px 10px 28px">
 ''')
     
     # === 头部 ===
     html.append(f'''
-<div style="padding:40px 0 32px;border-bottom:1px solid {color_divider};margin-bottom:32px">
-    <div style="font-size:13px;font-weight:500;color:{color_text3};letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Extended Reading</div>
-    <h1 style="font-size:34px;font-weight:700;letter-spacing:-0.5px;color:{color_text};margin:0">延伸阅读</h1>
-    <div style="font-size:15px;font-weight:400;color:{color_text2};margin-top:8px;line-height:1.5">银发经济决策简报 · 聚焦长护险、家庭医疗、慢病、老干部体检、招投标</div>
-    <div style="font-size:12px;color:{color_text3};margin-top:14px">{gen_time}</div>
+<div style="padding:24px 0 18px;border-bottom:1px solid {color_divider};margin-bottom:20px">
+    <div style="font-size:11px;font-weight:500;color:{color_text3};letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Extended Reading</div>
+    <h1 style="font-size:24px;font-weight:700;letter-spacing:-0.5px;color:{color_text};margin:0">延伸阅读</h1>
+    <div style="font-size:13px;font-weight:400;color:{color_text2};margin-top:6px;line-height:1.5">银发经济决策简报 · 聚焦长护险、家庭医疗、慢病、老干部体检、招投标</div>
+    <div style="font-size:11px;color:{color_text3};margin-top:10px">{gen_time}</div>
 </div>
 ''')
     
@@ -191,30 +192,30 @@ a:hover{{text-decoration:underline}}
     core = data.get("core", [])
     if core:
         html.append(f'''
-<div style="background:{color_highlight_bg};border:1px solid {color_highlight_border};border-radius:14px;padding:24px 28px;margin-bottom:28px">
-    <div style="font-size:11px;font-weight:600;color:{color_text3};letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px">核心关注</div>
+<div style="background:{color_highlight_bg};border:1px solid {color_highlight_border};border-radius:10px;padding:14px 14px;margin-bottom:18px">
+    <div style="font-size:10px;font-weight:600;color:{color_accent};letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px">核心关注</div>
 ''')
         for i, item in enumerate(core):
-            sep = f'border-top:1px solid {color_divider};padding-top:18px;margin-top:18px' if i > 0 else ''
+            sep = f'border-top:1px solid {color_divider};padding-top:14px;margin-top:14px' if i > 0 else ''
             html.append(f'''
     <div style="{sep}">
-        <a href="{item["url"]}" target="_blank" rel="noopener" style="font-size:18px;font-weight:600;color:{color_text};display:block;line-height:1.4;margin-bottom:6px">{item["title"]}</a>
-        <div style="font-size:12px;color:{color_text3};margin-bottom:6px">{item["source"]} · {item["date"]}</div>
-        <div style="font-size:14px;color:{color_text2};line-height:1.6">{item["summary"]}</div>
+        <a href="{item["url"]}" target="_blank" rel="noopener" style="font-size:15px;font-weight:600;color:{color_text};display:block;line-height:1.4;margin-bottom:4px">{item["title"]}</a>
+        <div style="font-size:11px;color:{color_text3};margin-bottom:4px">{item["source"]} · {item["date"]}</div>
+        <div style="font-size:13px;color:{color_text2};line-height:1.5">{item["summary"]}</div>
     </div>''')
         html.append(card_close())
     
     # === 各板块 ===
     for sec in data.get("sections", []):
         html.append(card_open())
-        html.append(f'<div style="font-size:13px;font-weight:600;color:{color_text3};letter-spacing:1.5px;text-transform:uppercase;margin-bottom:20px">{sec["title"]}</div>')
+        html.append(f'<div style="font-size:11px;font-weight:600;color:{color_accent};letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px">{sec["title"]}</div>')
         for i, item in enumerate(sec["items"]):
-            sep = f'border-top:1px solid {color_divider};padding-top:18px;margin-top:18px' if i > 0 else ''
+            sep = f'border-top:1px solid {color_divider};padding-top:14px;margin-top:14px' if i > 0 else ''
             html.append(f'''
         <div style="{sep}">
-            <a href="{item["url"]}" target="_blank" rel="noopener" style="font-size:16px;font-weight:600;color:{color_text};display:block;line-height:1.4;margin-bottom:4px">{item["title"]}</a>
-            <div style="font-size:12px;color:{color_text3};margin-bottom:4px">{item["source"]} · {item["date"]}</div>
-            <div style="font-size:14px;color:{color_text2};line-height:1.6">{item["summary"]}</div>
+            <a href="{item["url"]}" target="_blank" rel="noopener" style="font-size:14px;font-weight:600;color:{color_text};display:block;line-height:1.4;margin-bottom:3px">{item["title"]}</a>
+            <div style="font-size:11px;color:{color_text3};margin-bottom:3px">{item["source"]} · {item["date"]}</div>
+            <div style="font-size:13px;color:{color_text2};line-height:1.5">{item["summary"]}</div>
         </div>''')
         html.append(card_close())
     

@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>财务综述 Agent</title>
+<title>财务报告 Agent</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="/echarts.min.js"></script>
 <style>
 /* ==============================================================
-   财务综述 Agent - Stripe Design System
+   财务报告 Agent - Stripe Design System
    Clean, modern, card-layered BI Dashboard
    ============================================================== */
 :root {
@@ -537,7 +537,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary); box-sh
     <div style="width:56px;height:56px;border-radius:16px;background:var(--primary);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 8px 24px rgba(255,149,0,.3)">
       <i class="fa-solid fa-chart-pie" style="font-size:24px;color:#fff"></i>
     </div>
-    <h2 style="margin:0 0 6px;font-size:22px;color:#1D1D1F;font-weight:700;letter-spacing:-0.3px">财务综述 Agent</h2>
+    <h2 style="margin:0 0 6px;font-size:22px;color:#1D1D1F;font-weight:700;letter-spacing:-0.3px">财务报告 Agent</h2>
     <p style="margin:0 0 28px;color:#6E6E73;font-size:14px">智能财务分析与决策支持平台</p>
     <input type="password" id="globalPwd" placeholder="请输入访问密码" style="width:100%;padding:14px 18px;border:2px solid #E5E5EA;border-radius:14px;font-size:15px;outline:0;box-sizing:border-box;margin-bottom:16px;text-align:center;background:#F2F2F7;transition:border-color .2s" onfocus="this.style.borderColor='#0066CC';this.style.background='#fff'" onblur="this.style.borderColor='#E5E5EA';this.style.background='#F2F2F7'">
     <button onclick="doGlobalLogin()" style="width:100%;padding:14px;background:#0066CC;color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit" onmouseover="this.style.background='#004C99'" onmouseout="this.style.background='#0066CC'">进入系统</button>
@@ -643,14 +643,14 @@ document.getElementById('globalPwd').addEventListener('keypress', function(e) {
       <button class="qa-btn" id="qaBtn"><i class="fa-solid fa-paper-plane"></i> 提问</button>
     </div>
     <div class="preset-grid" id="presetGrid"></div>
+    <div class="card" id="qaResult"><div class="empty-state"><div class="spinner"></div><br>选择预设问题或输入查询开始分析</div></div>
     <!-- 延伸阅读列表 -->
     <div class="card" id="reportListCard" style="margin-bottom:12px;display:none">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <span style="font-size:14px;font-weight:600"><i class="fa-solid fa-newspaper"></i> 延伸阅读</span>
+        <span style="font-size:14px;font-weight:600"><i class="fa-solid fa-newspaper"></i> 北京市银发经营月报</span>
       </div>
       <div id="reportListWrap" style="max-height:300px;overflow-y:auto"></div>
     </div>
-    <div class="card" id="qaResult"><div class="empty-state"><div class="spinner"></div><br>选择预设问题或输入查询开始分析</div></div>
   </div>
 </div>
 
@@ -822,6 +822,23 @@ let S = {
 
 // 板块显示顺序
 const BOARD_ORDER = ['物业板块', '医养板块', '餐饮板块', '美好生活', '支持团队'];
+
+// 产品显示顺序（按板块分组）
+const PRODUCT_ORDER = [
+  '物业管理','东环','泛交行','富卓','中科','紫金长安','紫金新干线','日报','商报','外经贸','新纪元','星颐佳园','保龄','阜贞','机关幼儿园','吉源','朗清园托班','协和项目','英特公寓','万寿路街道','丰收国际项目','东城区社区服务中心','惠州中海油','锅炉房','停车场','创新','公区清洁','绿化',
+  '医疗机构','居家照护','社区养老','机构养老','教育培训',
+  '银杏餐厅','其他餐厅','便利店','咖啡馆',
+  '居家清洁','头疗店','康养行'
+];
+function sortByProductOrder(arr, key) {
+  const idx = {};
+  PRODUCT_ORDER.forEach((k, i) => { idx[k] = i; });
+  return arr.sort((a, b) => {
+    const ai = key(a) in idx ? idx[key(a)] : 9999;
+    const bi = key(b) in idx ? idx[key(b)] : 9999;
+    return ai - bi;
+  });
+}
 
 // === Helpers ===
 const API_BASE = '';
@@ -2202,6 +2219,7 @@ function bindProductTreeEvents() {
         }
         
         const productData = window._productTreeCache.products[cacheKey];
+        sortByProductOrder(productData, r => r.产品 || '');
         const frag = document.createDocumentFragment();
         for (const pRow of productData) {
           const pInc = pRow.收入 || 0, pExp = pRow.支出 || 0, pFee = pRow.平台管理费 || 0;
@@ -2701,14 +2719,21 @@ async function loadReportList() {
       }
     }
     if (reports.length === 0) { reportCard.style.display = 'none'; return; }
-    wrap.innerHTML = reports.map(r => {
-      const label = r.year + '\u5e74' + String(r.month).padStart(2, '0') + '\u6708';
-      return '<div class="report-item" style="padding:8px 12px;cursor:pointer;border-radius:8px;transition:background 0.2s;display:flex;align-items:center;gap:8px" onclick="queryMonthlyReport(' + r.year + ',' + r.month + ')" onmouseover="this.style.backgroundColor=\'#f5f7fa\'" onmouseout="this.style.backgroundColor=\'\'">'
-        + '<i class="fa-solid fa-file-lines" style="color:var(--accent);font-size:14px"></i>'
-        + '<span style="font-size:13px">' + label + '</span>'
-        + '</div>';
-    }).join('');
+    // 直接展示最近月份月报内容
+    const latest = reports[0];
     reportCard.style.display = 'block';
+    wrap.innerHTML = '<div class="loading"><div class="spinner"></div>生成简报中...</div>';
+    try {
+      const d = await apiPost('/api/generate_report', { year: latest.year, month: latest.month });
+      if (d.success && d.html) {
+        wrap.innerHTML = '<div style="width:100%;overflow:auto;border-radius:10px">' + d.html + '</div>';
+        wrap.style.maxHeight = 'none';
+      } else {
+        wrap.innerHTML = '<span style="font-size:13px;color:var(--text2)">简报生成失败: ' + (d.error || '未知错误') + '</span>';
+      }
+    } catch (e2) {
+      wrap.innerHTML = '<span style="font-size:13px;color:var(--text2)">简报加载失败</span>';
+    }
   } catch (e) {
     console.error('加载延伸阅读列表失败', e);
   }
