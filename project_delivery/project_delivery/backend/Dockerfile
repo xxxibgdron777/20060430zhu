@@ -16,7 +16,9 @@ COPY backend/special_logic.py .
 COPY backend/vip_progress.py .
 COPY backend/admin_api.py .
 COPY backend/silver_headlines.py .
-COPY backend/cloudbase-config.json .
+COPY backend/ratings.py .
+COPY backend/analysis_agent.py .
+COPY backend/monthly_beijing_report.py .
 
 # 复制数据文件
 COPY 管理报表.xlsx .

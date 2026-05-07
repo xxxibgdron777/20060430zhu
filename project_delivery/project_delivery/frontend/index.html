@@ -133,28 +133,47 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .table-wrap .tree-table .tree-parent:hover td { background: rgba(0,0,0,0.04); }
 .table-wrap .tree-table .tree-parent td:first-child { background: rgba(0,0,0,0.01); font-weight: 600; }
 .table-wrap .tree-table .tree-parent:hover td:first-child { background: rgba(0,0,0,0.04); }
-/* -- Product Tab - 一级行立体浅色填充 -- */
+/* -- Product Tab - 一级行立体悬浮效果 (0.9x 行高) -- */
 #tab-product .tree-table .tree-parent td {
-  background: linear-gradient(180deg, #fafafa 0%, #f2f2f2 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.04);
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(180deg, #fdfdfd 0%, #f4f4f4 100%);
+  box-shadow:
+    0 2px 6px rgba(0,0,0,0.07),
+    0 0 0 1px rgba(0,0,0,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.95);
   border-bottom: 1px solid #e0e0e0;
   font-weight: 600;
-  color: #333;
-  padding: 13px 8px;
-  transition: background 0.15s;
+  color: #222;
+  padding: 11.7px 7.2px;
+  transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+  border-radius: 2px;
 }
 #tab-product .tree-table .tree-parent:hover td {
-  background: linear-gradient(180deg, #f0f0f0 0%, #e8e8e8 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), inset 0 -1px 0 rgba(0,0,0,0.06);
+  z-index: 2;
+  background: linear-gradient(180deg, #ffffff 0%, #f6f6f6 100%);
+  box-shadow:
+    0 6px 16px rgba(0,0,0,0.10),
+    0 0 0 1px rgba(0,0,0,0.04),
+    inset 0 1px 0 rgba(255,255,255,1);
+  transform: translateY(-1px);
 }
 #tab-product .tree-table .tree-parent td:first-child {
-  background: linear-gradient(90deg, #f5f5f5 0%, #fafafa 100%);
+  background: linear-gradient(90deg, #f8f8f8 0%, #fdfdfd 100%);
   font-weight: 700;
-  border-right: 1.5px solid #e0e0e0;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.04), 1px 0 3px rgba(0,0,0,0.02);
+  border-right: 2px solid rgba(0,0,0,0.06);
+  box-shadow:
+    2px 0 8px rgba(0,0,0,0.04),
+    0 2px 6px rgba(0,0,0,0.07),
+    inset 1px 0 0 rgba(255,255,255,0.9);
+  border-radius: 3px 0 0 3px;
 }
 #tab-product .tree-table .tree-parent:hover td:first-child {
-  background: linear-gradient(90deg, #ececec 0%, #f0f0f0 100%);
+  background: linear-gradient(90deg, #f2f2f2 0%, #fafafa 100%);
+  box-shadow:
+    3px 0 12px rgba(0,0,0,0.06),
+    0 6px 16px rgba(0,0,0,0.10),
+    inset 1px 0 0 rgba(255,255,255,1);
 }
 /* -- Product Tab Num Cell: 主数据黑色加粗, 辅助数据灰色 -- */
 #tab-product .tree-table .num-cell .num-main {
@@ -375,7 +394,7 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .pivot-detail-table tbody tr:hover td { background: rgba(0,0,0,0.03) !important; }
 .pivot-detail-table tbody tr:hover td.pivot-sticky-col { background: rgba(0,0,0,0.03) !important; }
 .pivot-detail-table .pivot-ratio { color: var(--text2); font-size: 12px; font-weight: 600; letter-spacing: 0.3px; font-style: italic; font-family: 'Georgia', 'Times New Roman', serif; }
-.pivot-detail-table .pivot-highlight { background: var(--primary-light); font-weight: 600; position: relative; }
+.pivot-detail-table .pivot-highlight { background: var(--accent-light); font-weight: 600; position: relative; }
 .pivot-detail-table .pivot-level-total td { background: #f5f5f7 !important; }
 .pivot-detail-table .pivot-level-total td.pivot-sticky-col { background: #f0f0f3 !important; }
 .pivot-detail-table .pivot-level-total:hover td { background: #eeeeef !important; }
@@ -1466,7 +1485,15 @@ async function getPrevYearDataProduct(level, board, product) {
     if (r.data) {
       const map = {};
       for (const row of r.data) {
-        const key = row.业务板块 || row.产品 || row.项目 || '';
+        // 根据层级选择正确的 key 字段，否则产品/项目级会因业务板块字段非空而错误映射
+        let key;
+        if (level === 'board') {
+          key = row.业务板块 || '';
+        } else if (level === 'product') {
+          key = row.产品 || '';
+        } else {
+          key = row.项目 || '';
+        }
         map[key] = row;
       }
       return map;
@@ -2306,7 +2333,7 @@ window.doSortProductTree = async function() {
   const prevData = await getPrevYearDataProduct('board', null, null);
   const momDataMap = await getProductMomData(data);
   
-  let html = '<table><thead><tr>';
+  let html = '<table class="tree-table"><thead><tr>';
   html += '<th>业务板块</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th>';
   html += '</tr></thead><tbody>';
   
@@ -2600,7 +2627,7 @@ window.doSortTeamTree = async function() {
   const totalIncome = data.reduce((sum, r) => sum + (r.收入 || 0), 0);
   const totalExpense = data.reduce((sum, r) => sum + (r.支出 || 0), 0);
   
-  let html = '<table><thead><tr>';
+  let html = '<table class="tree-table"><thead><tr>';
   html += '<th>创业团队</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th><th class="num-col">明细</th>';
   html += '</tr></thead><tbody>';
   
