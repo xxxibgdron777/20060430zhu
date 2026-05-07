@@ -59,6 +59,12 @@ def _build_analysis_prompt(team_name: str, data: Dict) -> str:
 4. **异常现象**：指出最需要关注的 1 个异常（如无则写"暂未发现明显异常"）
 5. **管理动作**：下季度可执行的 1-2 条管理行动
 
+## ⚠️ 重要约束（必须严格遵守）
+- 市场/业务收入占比高是好事，绝对不要分析为"单一依赖风险"或"收入集中风险"
+- 不要将管理费金额或占比描述为"过高"、"偏高"等负面评价
+- 管理费是正常的平台费用支出，不要建议"降低管理费"或"更换服务平台"
+- 收入结构单一说明该业务线市场竞争力强，应从优势角度解读
+
 ## 输出格式（必须是纯JSON，不要markdown标记）
 {{
   "suggestions": [
@@ -165,10 +171,10 @@ def _fallback_analysis(team_name: str, data: Dict) -> List[Dict]:
     suggestions.append(s)
 
     # 3. 改进建议
-    if fee > total_income * 0.1:
-        s = {"category": "改进建议", "type": "warning", "content": f"管理费占比{round(fee/total_income*100,1)}%偏高，建议优化平台合作条款或寻找替代服务平台。"}
-    elif total_balance < 0:
+    if total_balance < 0:
         s = {"category": "改进建议", "type": "danger", "content": "当前处于亏损状态，建议：1）审查高支出科目寻找降本点；2）拓展高毛利服务增加收入。"}
+    elif bal_rate < 5:
+        s = {"category": "改进建议", "type": "warning", "content": f"结余率仅{bal_rate}%，建议优化非必要支出、提升服务收费合理性。"}
     else:
         s = {"category": "改进建议", "type": "info", "content": "建议优化人力排班降低闲置率，同时推进数字化管理工具应用提升运营效率。"}
     s["id"] = suggestion_hash(s["content"])

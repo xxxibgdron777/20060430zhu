@@ -37,6 +37,9 @@ deploy_*
 skey-*
 known_hosts*
 
+# 临时部署目录
+temp_deploy/
+
 # 系统文件
 Thumbs.db
 .DS_Store

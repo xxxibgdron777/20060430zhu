@@ -232,27 +232,25 @@ def _team_amt_col(df: pd.DataFrame) -> str:
     return "金额g"
 
 
-def _team_calc(sub_df: pd.DataFrame, inc_col: str = "收支", exp_col: str = "收支") -> Tuple[float, float, float]:
+def _team_calc(sub_df: pd.DataFrame, inc_col: str = "收支", exp_col: str = "收支") -> Tuple[float, float]:
     """
-    从数据计算 收入/支出/平台管理费
-    分类列：收支（值为"一、收入"/"二、支出"/"三、管理费"）
+    从数据计算 收入/支出
+    分类列：收支（值为"一、收入"/"二、支出"）
     金额列：金额g
     """
     if sub_df.empty:
-        return 0.0, 0.0, 0.0
+        return 0.0, 0.0
 
     amt_col = "金额g"
     
-    # 使用"收支"列，值为"一、收入"/"二、支出"/"三、管理费"
+    # 使用"收支"列，值为"一、收入"/"二、支出"/"三、管理费"（管理费并入支出）
     income_cond = (sub_df[inc_col] == "一、收入")
-    expense_cond = (sub_df[exp_col] == "二、支出")
-    fee_cond = (sub_df[inc_col] == "三、管理费")
+    expense_cond = (sub_df[exp_col] == "二、支出") | (sub_df[exp_col] == "三、管理费")
 
     income = float(sub_df.loc[income_cond, amt_col].sum())
     expense = float(-sub_df.loc[expense_cond, amt_col].sum())  # 负→正
-    fee = float(-sub_df.loc[fee_cond, amt_col].sum())  # 负→正
 
-    return income, expense, fee
+    return income, expense
 
 
 def aggregate_team_nature(df_filtered: pd.DataFrame) -> pd.DataFrame:
@@ -263,12 +261,12 @@ def aggregate_team_nature(df_filtered: pd.DataFrame) -> pd.DataFrame:
     groups = df_filtered.groupby("H团队线性质")
     records = []
     for name, group in groups:
-        inc, exp, fee = _team_calc(group)
+        inc, exp = _team_calc(group)
         records.append({
             "H团队线性质": str(name),
             "H团队线-上级": "",  # 一级不需要这个字段，由前端展开时填充
-            "收入": inc, "支出": exp, "平台管理费": fee,
-            "结余": inc - exp - fee,
+            "收入": inc, "支出": exp, "平台管理费": 0,
+            "结余": inc - exp,
         })
     return pd.DataFrame(records)
 
@@ -283,12 +281,12 @@ def aggregate_team_parent(df_filtered: pd.DataFrame, nature: Optional[str] = Non
     groups = df_filtered.groupby(["H团队线性质", "H团队线-上级"])
     records = []
     for (nat, parent), group in groups:
-        inc, exp, fee = _team_calc(group)
+        inc, exp = _team_calc(group)
         records.append({
             "H团队线性质": str(nat),
             "H团队线-上级": str(parent),
-            "收入": inc, "支出": exp, "平台管理费": fee,
-            "结余": inc - exp - fee,
+            "收入": inc, "支出": exp, "平台管理费": 0,
+            "结余": inc - exp,
         })
     return pd.DataFrame(records)
 
@@ -303,13 +301,13 @@ def aggregate_team_account(df_filtered: pd.DataFrame, parent: Optional[str] = No
     groups = df_filtered.groupby(["H团队线性质", "H团队线-上级", "H团队线-核算"])
     records = []
     for (nat, par, acc), group in groups:
-        inc, exp, fee = _team_calc(group)
+        inc, exp = _team_calc(group)
         records.append({
             "H团队线性质": str(nat),
             "H团队线-上级": str(par),
             "H团队线-核算": str(acc),
-            "收入": inc, "支出": exp, "平台管理费": fee,
-            "结余": inc - exp - fee,
+            "收入": inc, "支出": exp, "平台管理费": 0,
+            "结余": inc - exp,
         })
     return pd.DataFrame(records)
 
@@ -589,37 +587,34 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
             "rows": [], "summary": {}, "analysis": [f"未找到 '{parent_name}' 的数据"]
         }
 
-    # ---- 按 (收支1, 月) 分组计算（汇总行） ----
+    # ---- 按 (部门收支, 月) 分组计算（汇总行） ----
     def _build_pivot(df_subset):
         if df_subset.empty:
-            empty_df = pd.DataFrame(index=pd.Index([], name="收支1"), columns=list(months) + ["全年"])
-            return empty_df, empty_df.copy(), empty_df.copy()
+            empty_df = pd.DataFrame(index=pd.Index([], name="部门收支"), columns=list(months) + ["全年"])
+            return empty_df, empty_df.copy()
         records = []
-        grouped = df_subset.groupby(["收支1", "月"])
+        grouped = df_subset.groupby(["部门收支", "月"])
         for (subj, month), group in grouped:
-            inc, exp, fee = _team_calc(group)
-            records.append({"收支1": subj, "月": month, "收入": inc, "支出": exp, "管理费": fee})
+            inc, exp = _team_calc(group)
+            records.append({"部门收支": subj, "月": month, "收入": inc, "支出": exp})
         if not records:
-            empty_df = pd.DataFrame(index=pd.Index([], name="收支1"), columns=list(months) + ["全年"])
-            return empty_df, empty_df.copy(), empty_df.copy()
+            empty_df = pd.DataFrame(index=pd.Index([], name="部门收支"), columns=list(months) + ["全年"])
+            return empty_df, empty_df.copy()
         dg = pd.DataFrame(records)
-        piv_i = dg.pivot_table(index="收支1", columns="月", values="收入", fill_value=0)
-        piv_e = dg.pivot_table(index="收支1", columns="月", values="支出", fill_value=0)
-        piv_f = dg.pivot_table(index="收支1", columns="月", values="管理费", fill_value=0)
+        piv_i = dg.pivot_table(index="部门收支", columns="月", values="收入", fill_value=0)
+        piv_e = dg.pivot_table(index="部门收支", columns="月", values="支出", fill_value=0)
         for m in months:
-            for p in [piv_i, piv_e, piv_f]:
+            for p in [piv_i, piv_e]:
                 if m not in p.columns:
                     p[m] = 0
         piv_i = piv_i.reindex(columns=months, fill_value=0)
         piv_e = piv_e.reindex(columns=months, fill_value=0)
-        piv_f = piv_f.reindex(columns=months, fill_value=0)
         piv_i["全年"] = piv_i[months].sum(axis=1)
         piv_e["全年"] = piv_e[months].sum(axis=1)
-        piv_f["全年"] = piv_f[months].sum(axis=1)
-        return piv_i, piv_e, piv_f
+        return piv_i, piv_e
 
-    piv_i, piv_e, piv_f = _build_pivot(filtered)
-    prev_piv_i, prev_piv_e, prev_piv_f = _build_pivot(prev_filtered)
+    piv_i, piv_e = _build_pivot(filtered)
+    prev_piv_i, prev_piv_e = _build_pivot(prev_filtered)
 
     # ---- 分类汇总 ----
     def _classify(name):
@@ -629,35 +624,29 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
             return "income"
         if s.startswith("2.") or s == "二、支出":
             return "expense"
-        if "管理费" in s or s == "三、管理费":
-            return "fee"
         return "unknown"
 
-    all_subjects = set(list(piv_i.index) + list(piv_e.index) + list(piv_f.index))
+    all_subjects = set(list(piv_i.index) + list(piv_e.index))
     income_subjects = sorted([s for s in all_subjects if _classify(s) == "income"])
-    # 费用科目：在piv_f中有非零值的项（不论收支1名称）
-    fee_subjects = sorted([s for s in piv_f.index if piv_f.loc[s, "全年"] != 0]) if not piv_f.empty else []
-    expense_subjects = sorted([s for s in all_subjects if _classify(s) == "expense" and s not in fee_subjects])
+    expense_subjects = sorted([s for s in all_subjects if _classify(s) == "expense"])
 
     # ---- 按类型聚合部门特殊明细 ----
-    # 一次性构建：按收支类型（income/expense/fee）聚合部门特殊
+    # 一次性构建：按收支类型（income/expense）聚合部门特殊
     def _build_type_pivot(df, type_subjects, piv_type):
-        """按类型聚合部门特殊明细，跨多个收支1科目"""
+        """按类型聚合部门特殊明细，跨多个部门收支科目"""
         if df.empty or "部门特殊" not in df.columns or not type_subjects:
             return None  # 空DataFrame
-        sub_df = df[df["收支1"].isin(type_subjects)]
+        sub_df = df[df["部门收支"].isin(type_subjects)]
         if sub_df.empty:
             return None
         records = []
         grouped = sub_df.groupby(["部门特殊", "月"])
         for (dept, month), group in grouped:
-            inc, exp, fee_amt = _team_calc(group)
+            inc, exp = _team_calc(group)
             if piv_type == "i":
                 val = inc
-            elif piv_type == "e":
-                val = exp
             else:
-                val = fee_amt
+                val = exp
             records.append({"部门特殊": dept, "月": month, "金额": val})
         if not records:
             return None
@@ -672,10 +661,9 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
         piv = piv[piv["全年"] != 0]
         return piv
 
-    # 构建三种类型的聚合透视
+    # 构建两种类型的聚合透视
     dept_inc_piv = _build_type_pivot(filtered, income_subjects, "i")
-    dept_exp_piv = _build_type_pivot(filtered, expense_subjects + fee_subjects, "e")
-    dept_fee_piv = _build_type_pivot(filtered, fee_subjects, "f")
+    dept_exp_piv = _build_type_pivot(filtered, expense_subjects, "e")
 
     def _get_subject_total(piv, subj, col="全年"):
         if subj in piv.index and col in piv.columns:
@@ -690,20 +678,17 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
     # 全年合计
     total_income = float(sum(_get_subject_total(piv_i, s) for s in income_subjects))
     total_expense = float(sum(_get_subject_total(piv_e, s) for s in expense_subjects))
-    total_fee = float(sum(_get_subject_total(piv_f, s) for s in fee_subjects))
-    total_balance = total_income - total_expense - total_fee
+    total_balance = total_income - total_expense
 
     # 上期全年
     prev_total_income = float(sum(_get_subject_total(prev_piv_i, s) for s in income_subjects))
     prev_total_expense = float(sum(_get_subject_total(prev_piv_e, s) for s in expense_subjects))
-    prev_total_fee = float(sum(_get_subject_total(prev_piv_f, s) for s in fee_subjects))
-    prev_total_balance = prev_total_income - prev_total_expense - prev_total_fee
+    prev_total_balance = prev_total_income - prev_total_expense
 
     # ---- 构建行数据 ----
     rows = []
 
     def _make_row(name, level, rtype, subj_list, piv, prev_piv, ratio_base, indent=False):
-        # subj_list: for summary rows (e.g. all income subjects), or empty for total row
         if subj_list:
             vals = {m: sum(_get_subject_total(piv, s, m) for s in subj_list) for m in months}
             total = float(sum(_get_subject_total(piv, s) for s in subj_list))
@@ -764,18 +749,10 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
         rows.append(_make_row("一、收入", "total", "income", income_subjects, piv_i, prev_piv_i, total_income))
         _render_type_dept_rows(dept_inc_piv, "income", total_income)
 
-    # 支出：总行（含fee科目的支出部分）
-    all_expense_subs = list(dict.fromkeys(expense_subjects + fee_subjects))
-    if all_expense_subs:
-        total_expense = float(sum(_get_subject_total(piv_e, s) for s in all_expense_subs if s in piv_e.index))
-        rows.append(_make_row("二、支出", "total", "expense", all_expense_subs, piv_e, prev_piv_e, total_expense))
+    # 支出：总行 + 聚合的部门特殊明细
+    if expense_subjects:
+        rows.append(_make_row("二、支出", "total", "expense", expense_subjects, piv_e, prev_piv_e, total_expense))
         _render_type_dept_rows(dept_exp_piv, "expense", total_expense)
-
-    # 管理费：总行 + 聚合的部门特殊明细
-    if fee_subjects and dept_fee_piv is not None and not dept_fee_piv.empty:
-        total_fee = float(sum(_get_subject_total(piv_f, s) for s in fee_subjects))
-        rows.append(_make_row("三、管理费", "total", "fee", fee_subjects, piv_f, prev_piv_f, total_income))
-        _render_type_dept_rows(dept_fee_piv, "fee", total_income)
 
     # 结余行
     balance_yoy = _get_yoy(total_balance, prev_total_balance)
@@ -785,8 +762,7 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
         "type": "balance",
         "values": {m: to_wan(
             sum(_get_subject_total(piv_i, s, m) for s in income_subjects) -
-            sum(_get_subject_total(piv_e, s, m) for s in expense_subjects) -
-            sum(_get_subject_total(piv_f, s, m) for s in fee_subjects)
+            sum(_get_subject_total(piv_e, s, m) for s in expense_subjects)
         ) for m in months},
         "total": to_wan(total_balance),
         "yoy_pct": balance_yoy,
@@ -815,19 +791,12 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
     elif total_balance > 0 and prev_total_balance < 0:
         analysis.append(f"🎉 结余由亏转盈，扭亏 {to_wan(total_balance - prev_total_balance)}万。")
 
-    if total_income > 0:
-        fee_ratio = total_fee / total_income * 100
-        if fee_ratio > 15:
-            analysis.append(f"⚙️ 管理费占收入 {fee_ratio:.0f}%，比例偏高，建议关注管理效率。")
-        elif fee_ratio > 10:
-            analysis.append(f"ℹ️ 管理费占收入 {fee_ratio:.0f}%，处于合理区间。")
-
     if income_subjects and total_income > 0:
         max_sub = max(income_subjects, key=lambda s: _get_subject_total(piv_i, s))
         max_val = _get_subject_total(piv_i, max_sub)
         ratio = max_val / total_income * 100
-        if ratio > 50 and len(income_subjects) > 1:
-            analysis.append(f"📊 收入集中度过高：{max_sub} 占 {ratio:.0f}%，存在单一依赖风险。")
+        if ratio > 70 and len(income_subjects) > 1:
+            analysis.append(f"📊 核心收入来源：{max_sub} 占 {ratio:.0f}%，是团队收入的坚实支柱。")
 
     if expense_subjects and total_expense > 0:
         high = [s for s in expense_subjects if _get_subject_total(piv_e, s) / total_expense > 0.4]
@@ -843,9 +812,9 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
         "summary": {
             "income": to_wan(total_income),
             "expense": to_wan(total_expense),
-            "fee": to_wan(total_fee),
+            "fee": 0,
             "balance": to_wan(total_balance),
-            "fee_ratio": f"{total_fee/total_income*100:.1f}%" if total_income else "0%",
+            "fee_ratio": "0%",
             "income_yoy": _get_yoy(total_income, prev_total_income),
             "expense_yoy": _get_yoy(total_expense, prev_total_expense),
             "balance_yoy": _get_yoy(total_balance, prev_total_balance),
@@ -1159,27 +1128,25 @@ def get_team_pivot(team_df: pd.DataFrame, parent_name: str, year: int,
     if df.empty:
         return {"table": pd.DataFrame(), "analysis": [f"未找到 '{parent_name}' 的数据"]}
 
-    # ---- 2. 按 (收支1, 月) 分组，调用 _team_calc ----
+    # ---- 2. 按 (部门收支, 月) 分组，调用 _team_calc ----
     records = []
-    for (subj, m), group in df.groupby(["收支1", "月"]):
-        inc, exp, fee = _team_calc(group)
-        records.append({"收支1": subj, "月": m, "收入": inc, "支出": exp, "管理费": fee})
+    for (subj, m), group in df.groupby(["部门收支", "月"]):
+        inc, exp = _team_calc(group)
+        records.append({"部门收支": subj, "月": m, "收入": inc, "支出": exp})
 
     if not records:
         return {"table": pd.DataFrame(), "analysis": [f"'{parent_name}' 无可用数据"]}
 
     dg = pd.DataFrame(records)
 
-    piv_i = dg.pivot_table(index="收支1", columns="月", values="收入", fill_value=0)
-    piv_e = dg.pivot_table(index="收支1", columns="月", values="支出", fill_value=0)
-    piv_f = dg.pivot_table(index="收支1", columns="月", values="管理费", fill_value=0)
+    piv_i = dg.pivot_table(index="部门收支", columns="月", values="收入", fill_value=0)
+    piv_e = dg.pivot_table(index="部门收支", columns="月", values="支出", fill_value=0)
     for m in months:
-        for p in [piv_i, piv_e, piv_f]:
+        for p in [piv_i, piv_e]:
             if m not in p.columns:
                 p[m] = 0
     piv_i = piv_i.reindex(columns=sorted(piv_i.columns), fill_value=0)
     piv_e = piv_e.reindex(columns=sorted(piv_e.columns), fill_value=0)
-    piv_f = piv_f.reindex(columns=sorted(piv_f.columns), fill_value=0)
 
     # ---- 3. 区分科目类型 ----
     def _classify(s):
@@ -1190,14 +1157,11 @@ def get_team_pivot(team_df: pd.DataFrame, parent_name: str, year: int,
             return "income"
         if s.startswith("2.") or s == "二、支出":
             return "expense"
-        if "管理费" in s or s == "三、管理费":
-            return "fee"
         return "unknown"
 
-    all_subjects = set(piv_i.index) | set(piv_e.index) | set(piv_f.index)
+    all_subjects = set(piv_i.index) | set(piv_e.index)
     income_subs = sorted([s for s in all_subjects if _classify(s) == "income"])
     expense_subs = sorted([s for s in all_subjects if _classify(s) == "expense"])
-    fee_subs = sorted([s for s in all_subjects if _classify(s) == "fee"])
 
     def _total(piv, subj, col="全年"):
         if subj in piv.index and col in piv.columns:
@@ -1207,19 +1171,16 @@ def get_team_pivot(team_df: pd.DataFrame, parent_name: str, year: int,
     # 全年列
     piv_i["全年"] = piv_i[months].sum(axis=1)
     piv_e["全年"] = piv_e[months].sum(axis=1)
-    piv_f["全年"] = piv_f[months].sum(axis=1)
     # 3-12月合计列
     m3_12 = [m for m in months if m >= 3]
     if has_m3 and m3_12:
         piv_i["3-12月合计"] = piv_i[m3_12].sum(axis=1)
         piv_e["3-12月合计"] = piv_e[m3_12].sum(axis=1)
-        piv_f["3-12月合计"] = piv_f[m3_12].sum(axis=1)
 
     # ---- 4. 汇总值 ----
     total_income = sum(_total(piv_i, s) for s in income_subs)
     total_expense = sum(_total(piv_e, s) for s in expense_subs)
-    total_fee = sum(_total(piv_f, s) for s in fee_subs)
-    total_balance = total_income - total_expense - total_fee
+    total_balance = total_income - total_expense
 
     # ---- 5. 构建层级表格行 ----
     table_rows = []
@@ -1269,20 +1230,11 @@ def get_team_pivot(team_df: pd.DataFrame, parent_name: str, year: int,
         ratio = f"{(sub_vals['全年'] / total_expense * 100):.1f}%" if total_expense else None
         table_rows.append(_make_row(f"  {subj}", sub_vals, ratio))
 
-    # --- 三、管理费 ---
-    fee_total_vals = {m: sum(_total(piv_f, s, m) for s in fee_subs) for m in months}
-    fee_total_vals["全年"] = total_fee
-    if has_m3:
-        fee_total_vals["3-12月合计"] = sum(fee_total_vals.get(m, 0) for m in m3_12)
-    fee_ratio = f"{(total_fee / total_income * 100):.1f}%" if total_income else None
-    table_rows.append(_make_row("三、管理费", fee_total_vals, fee_ratio))
-
     # --- 结余 ---
     bal_vals = {
         **{m: (
             sum(_total(piv_i, s, m) for s in income_subs) -
-            sum(_total(piv_e, s, m) for s in expense_subs) -
-            sum(_total(piv_f, s, m) for s in fee_subs)
+            sum(_total(piv_e, s, m) for s in expense_subs)
         ) for m in months},
         "全年": total_balance,
     }
@@ -1307,10 +1259,10 @@ def get_team_pivot(team_df: pd.DataFrame, parent_name: str, year: int,
             (s, _total(piv_i, s) / total_income * 100)
             for s in income_subs
             if s not in ("一、收入",)
-            and _total(piv_i, s) / total_income * 100 > 50
+            and _total(piv_i, s) / total_income * 100 > 70
         ]
         for subj, ratio in concentrated:
-            analysis.append(f"📈 收入高度集中于「{subj}」，占比 {ratio:.1f}%，存在依赖风险。")
+            analysis.append(f"📈 核心收入来源：「{subj}」占比 {ratio:.1f}%，市场认可度较高。")
 
     if expense_subs and total_expense > 0:
         high_exp = [
@@ -1323,11 +1275,6 @@ def get_team_pivot(team_df: pd.DataFrame, parent_name: str, year: int,
             analysis.append(
                 f"💰 支出占比过高：{'、'.join(high_exp)} 合计占总支出的 {high_ratio:.1f}%，建议优化。"
             )
-
-    if total_income > 0:
-        fee_pct = total_fee / total_income * 100
-        if fee_pct > 15:
-            analysis.append(f"⚙️ 管理费占收入比例较高（{fee_pct:.1f}%），需关注管理效率。")
 
     return {"table": df_table, "analysis": analysis}
 

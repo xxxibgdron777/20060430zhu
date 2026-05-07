@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- VERSION: 20260507-v2 -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -231,6 +232,7 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
   background: #f0f0f0;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -1px 0 rgba(0,0,0,0.05);
   border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
 }
 #tab-team .tree-table .tree-parent td:first-child {
   background: linear-gradient(90deg, #ececec 0%, #f0f0f0 100%);
@@ -240,6 +242,7 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 #tab-team .tree-table .tree-child td {
   background: #f9f9f9;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+  cursor: pointer;
 }
 #tab-team .tree-table tbody tr:hover td {
   background: #ececec;
@@ -844,19 +847,27 @@ const BOARD_ORDER = ['物业板块', '医养板块', '餐饮板块', '美好生�
 
 // 产品显示顺序（按板块分组）
 const PRODUCT_ORDER = [
-  '物业管理','东环','泛交行','富卓','中科','紫金长安','紫金新干线','日报','商报','外经贸','新纪元','星颐佳园','保龄','阜贞','机关幼儿园','吉源','朗清园托班','协和项目','英特公寓','万寿路街道','丰收国际项目','东城区社区服务中心','惠州中海油','锅炉房','停车场','创新','公区清洁','绿化',
-  '医疗机构','居家照护','社区养老','机构养老','教育培训',
-  '银杏餐厅','其他餐厅','便利店','咖啡馆',
-  '居家清洁','头疗店','康养行'
+  // 物业板块
+  '物业管理','东环','泛交行','紫金长安','紫金新干线','星颐佳园','机关幼儿园','富卓','新纪元','日报','英特公寓','外经贸','中科','保龄','商报','朗清园托班','万寿路街道','吉源','协和项目','丰收国际项目','阜贞','惠州中海油','东城区社区服务中心','锅炉房','停车场','创新','公区清洁','绿化',
+  // 医养板块
+  '医疗机构','神经康复(含居家)','运动康复','健康管理及日常医疗','居家照护','家庭适老化','小时型照护','住家照护','社区养老','驿站','区域指导中心','机构养老','银杏舍','宝坻','教育培训','校企合作',
+  // 餐饮板块
+  '银杏餐厅','东环食堂','东四十三条','其他餐厅','光明桥幼儿园','京津新城养老服务中心','军休所','器械城','通州幼儿园','便利店','土桥便利店','咖啡馆','独乐寺','三里屯',
+  // 美好生活
+  '居家清洁','头疗店'
 ];
 function sortByProductOrder(arr, key) {
   const idx = {};
   PRODUCT_ORDER.forEach((k, i) => { idx[k] = i; });
-  return arr.sort((a, b) => {
+  arr.sort((a, b) => {
     const ai = key(a) in idx ? idx[key(a)] : 9999;
     const bi = key(b) in idx ? idx[key(b)] : 9999;
     return ai - bi;
   });
+  // 调试：打印排序后的前5个产品名
+  const preview = arr.slice(0, 5).map(r => key(r)).join(' → ');
+  console.log('[PRODUCT_ORDER已更新] 排序后前5项:', preview, '| 总', arr.length, '项');
+  return arr;
 }
 
 // === Helpers ===
@@ -1627,16 +1638,12 @@ window.showTeamDetailMatrix = async function(teamName) {
     }
     let html = '';
     // 1. KPI 汇总条
-    const bal = (summary.income || 0) - (summary.expense || 0) - (summary.fee || 0);
+    const bal = (summary.income || 0) - (summary.expense || 0);
     const balColor = bal >= 0 ? '#34C759' : '#FF3B30';
     html += '<div class="pivot-summary-bar">';
     html += '<div class="pivot-summary-card"><div class="ps-label">收入合计</div><div class="ps-value">' + fmt(summary.income) + '<span class="ps-unit">万</span></div></div>';
     html += '<div class="pivot-summary-card"><div class="ps-label">支出合计</div><div class="ps-value">' + fmt(summary.expense) + '<span class="ps-unit">万</span></div></div>';
-    html += '<div class="pivot-summary-card"><div class="ps-label">管理费合计</div><div class="ps-value">' + fmt(summary.fee) + '<span class="ps-unit">万</span></div></div>';
     html += '<div class="pivot-summary-card"><div class="ps-label">净结余</div><div class="ps-value" style="color:' + balColor + '">' + fmt(bal) + '<span class="ps-unit">万</span></div></div>';
-    if (summary.fee_ratio) {
-      html += '<div class="pivot-summary-card"><div class="ps-label">管理费占比</div><div class="ps-value">' + summary.fee_ratio + '</div></div>';
-    }
     if (summary.income_yoy != null) {
       const yoyC = summary.income_yoy >= 0 ? '#34C759' : '#FF3B30';
       html += '<div class="pivot-summary-card"><div class="ps-label">收入环比</div><div class="ps-value" style="color:' + yoyC + '">' + (summary.income_yoy >= 0 ? '+' : '') + summary.income_yoy + '%</div></div>';
@@ -1649,7 +1656,7 @@ window.showTeamDetailMatrix = async function(teamName) {
     html += '<div class="pivot-table-wrap">';
     html += '<table class="pivot-detail-table">';
     html += '<thead><tr>';
-    html += '<th class="pivot-sticky-col">收支1</th>';
+    html += '<th class="pivot-sticky-col">部门收支</th>';
     for (const m of months) {
       html += '<th class="pivot-num-col">' + m + '月</th>';
     }
@@ -1662,7 +1669,6 @@ window.showTeamDetailMatrix = async function(teamName) {
     // 计算各项汇总值
     const totalIncome = summary.income || 0;
     const totalExpense = summary.expense || 0;
-    const totalExpenseAndFee = (summary.expense || 0) + (summary.fee || 0);
 
     // 行分组
     const sortGroup = (arr) => {
@@ -1672,7 +1678,6 @@ window.showTeamDetailMatrix = async function(teamName) {
     };
     const incomeRows = rows.filter(r => r.type === 'income');
     const expenseRows = rows.filter(r => r.type === 'expense');
-    const feeRows = rows.filter(r => r.type === 'fee');
     const balanceRows = rows.filter(r => r.type === 'balance' || r.level === 'balance');
 
     // 计算3-12月合计
@@ -1700,11 +1705,11 @@ window.showTeamDetailMatrix = async function(teamName) {
       const totalVal = row.total || 0;
       const sum312Val = sum312(row);
       const incRatio = (stype === 'income' && totalIncome > 0) ? Math.round(totalVal / totalIncome * 100) + '%' : '-';
-      const expRatio = ((stype === 'expense' || stype === 'fee') && totalExpenseAndFee > 0) ? Math.round(totalVal / totalExpenseAndFee * 100) + '%' : '-';
+      const expRatio = (stype === 'expense' && totalExpense > 0) ? Math.round(totalVal / totalExpense * 100) + '%' : '-';
 
-      // 二、支出 and 三、管理费的值取负（× -1）
+      // 二、支出的值取绝对（× -1 转正已在后端处理）
       const displayVal = (v) => {
-        if (stype === 'expense' || stype === 'fee') return fmt(Math.abs(v));
+        if (stype === 'expense') return fmt(Math.abs(v));
         return fmt(v);
       };
 
@@ -1724,7 +1729,7 @@ window.showTeamDetailMatrix = async function(teamName) {
         tr += '<td class="pivot-num-col pivot-ratio">-</td>';
       }
       // 支出结构
-      if (stype === 'expense' || stype === 'fee') {
+      if (stype === 'expense') {
         tr += '<td class="pivot-num-col pivot-ratio">' + expRatio + '</td>';
       } else {
         tr += '<td class="pivot-num-col pivot-ratio">-</td>';
@@ -1735,7 +1740,6 @@ window.showTeamDetailMatrix = async function(teamName) {
 
     for (const r of sortGroup(incomeRows)) { if (!isPivotRowAllSmall(r)) html += renderPivotRow(r, 'income'); }
     for (const r of sortGroup(expenseRows)) { if (!isPivotRowAllSmall(r)) html += renderPivotRow(r, 'expense'); }
-    for (const r of sortGroup(feeRows)) { if (!isPivotRowAllSmall(r)) html += renderPivotRow(r, 'fee'); }
     if (balanceRows.length > 0) {
       const br = balanceRows[0];
       const bVals = months.map(m => (br.values && br.values[m]) || 0);
@@ -2200,7 +2204,12 @@ function bindProductTreeEvents() {
   if (!wrap) return;
   
   wrap.onclick = async function(e) {
-    const toggle = e.target.closest('.tree-toggle:not(.empty)');
+    // 先尝试直接点击 toggle，否则从所在行查找
+    let toggle = e.target.closest('.tree-toggle:not(.empty)');
+    if (!toggle) {
+      const tr = e.target.closest('tr');
+      if (tr) toggle = tr.querySelector('.tree-toggle:not(.empty)');
+    }
     if (!toggle) return;
     
     e.stopPropagation();
@@ -2325,6 +2334,8 @@ function bindProductTreeEvents() {
 // 产品线树形表格排序
 window.doSortProductTree = async function() {
   console.log('[TreeTable] 执行产品线排序...');
+  // 清空产品/项目缓存，避免旧排序缓存污染
+  window._productTreeCache = { products: {}, projects: {} };
   // 获取板块数据并排序
   const r = await apiPost('/api/product/drill', { year: S.year, months: S.monthsProduct, level: 'board' });
   const data = r.data || [];
@@ -2394,11 +2405,11 @@ function renderTeamRow(row, level, prevData) {
   
   let html = `<tr class="${rowClass}" data-name="${name}" data-level="${level}">`;
   html += `<td class="${indentClass}"><div class="tree-row"><span class="tree-toggle-area">${toggleBtn}</span><span class="tree-label" style="font-weight:${level === 0 ? 600 : 500}">${name}</span></div></td>`;
+  html += `<td style="text-align:center"><button class="detail-btn" onclick="showTeamDetail('${name}', ${level}, '${nature}')"><i class="fa-solid fa-eye"></i> 查看明细</button></td>`;
   html += `<td class="num-cell"><div class="num-main">${fmt(row.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momIncome)}</span></div></td>`;
   html += `<td class="num-cell"><div class="num-main">${fmt(row.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momExpense)}</span></div></td>`;
   html += `<td class="num-cell"><div class="num-main">${fmt(row.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momFee)}</span></div></td>`;
   html += `<td class="num-cell balance-cell"><div class="num-main" style="${balanceColor}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value ${momBalance >= 0 ? 'positive' : 'negative'}">${fmtYoy(momBalance)}</span></div></td>`;
-  html += `<td class="num-cell" style="text-align:center"><button class="detail-btn" onclick="showTeamDetail('${name}', ${level}, '${nature}')"><i class="fa-solid fa-eye"></i></button></td>`;
   html += '</tr>';
   return html;
 }
@@ -2420,31 +2431,34 @@ async function loadTableTeam() {
 
     // 按指定顺序排序 H团队线性质
     const NATURE_ORDER = {
-      '01.老干局': 1, '老干局': 1,
-      '02.长护险与小时型照护': 2, '长护险与小时型照护': 2,
-      '03.居家清洁': 3, '居家清洁': 3,
-      '04.住家照护': 4, '住家照护': 4,
-      '05.体验中心': 5, '体验中心': 5,
-      '三里屯医疗诊所': 6,
-      '06.医疗-神经康复': 7, '医疗-神经康复': 7,
-      '07.医疗-运动康复': 8, '医疗-运动康复': 8,
-      '健康管理及日常医疗': 9, '驿站': 10,
-      '08.东直门&交道口': 11, '东直门&交道口': 11,
-      '09.体育馆路': 12, '体育馆路': 12,
-      '10.德外街道': 13, '德外街道': 13,
-      '11.北下关南二': 14, '北下关南二': 14,
-      '12.海淀镇': 15, '海淀镇': 15,
-      '13.万寿路紫金': 16, '万寿路紫金': 16,
-      '14.田村路&中关村': 17, '田村路&中关村': 17,
-      '机构养老': 18,
-      '16.银杏舍': 19, '银杏舍': 19,
-      '16.上京和园': 20, '上京和园': 20,
-      '培训学校': 21,
-      '17.培训学校': 22, '校企合作': 23, '17.校企合作': 23,
-      '物业+养老': 24,
-      '15.土桥、新干线': 25, '土桥、新干线': 25,
-      '21.器械城': 26, '器械城': 26,
-      '东城指导中心': 27, '体能': 28
+      '三里屯医疗诊所': 1,
+      '01.神经康复': 2, '神经康复': 2,
+      '02.运动康复': 3, '运动康复': 3,
+      '健康管理及日常医疗': 4,
+      '03.老干局': 5, '老干局': 5,
+      '04.小时型照护': 6, '小时型照护': 6,
+      '05.住家照护': 7, '住家照护': 7,
+      '06.体验中心': 8, '体验中心': 8,
+      '机构养老': 9,
+      '07.银杏舍': 10, '银杏舍': 10,
+      '07.上京和园': 11, '上京和园': 11,
+      '培训学校': 12,
+      '15.校企合作': 13, '校企合作': 13,
+      '15.培训学校': 14,
+      '物业+养老': 15,
+      '16.土桥、新干线': 16, '土桥、新干线': 16,
+      '17.器械城': 17, '器械城': 17,
+      '驿站': 18,
+      '08.东直门&交道口': 19, '东直门&交道口': 19,
+      '09.体育馆路': 20, '体育馆路': 20,
+      '10.德外街道': 21, '德外街道': 21,
+      '11.北下关南二': 22, '北下关南二': 22,
+      '12.海淀镇': 23, '海淀镇': 23,
+      '13.万寿路紫金': 24, '万寿路紫金': 24,
+      '14.田村路&中关村': 25, '田村路&中关村': 25,
+      '21.居家清洁': 26, '居家清洁': 26,
+      '体能': 27,
+      '东城指导中心': 28
     };
     const getNatureRank = (name) => NATURE_ORDER[name] || 999;
     natureData.sort((a, b) => getNatureRank(a['H团队线性质']) - getNatureRank(b['H团队线性质']));
@@ -2468,12 +2482,12 @@ async function loadTableTeam() {
     title.parentElement.style.marginBottom = '0';  // 移除标题区域间距
 
     let html = '<table class="tree-table"><thead><tr>';
-    html += '<th style="text-align:left;width:100px">线性质</th>';
+    html += '<th style="text-align:left;width:100px">H团队线性质</th>';
+    html += '<th style="text-align:center;width:80px">明细</th>';
     html += '<th class="num-cell-th">一、收入</th>';
     html += '<th class="num-cell-th">二、支出</th>';
     html += '<th class="num-cell-th">三、管理费</th>';
     html += '<th class="num-cell-th">结余</th>';
-    html += '<th style="text-align:center;width:50px">明细</th>';
     html += '</tr></thead><tbody>';
 
     for (const natureRow of natureData) {
@@ -2493,11 +2507,15 @@ async function loadTableTeam() {
       html += '<tr class="tree-parent">';
       html += '<td><div class="tree-row">';
       html += '<span class="tree-label" style="font-weight:600">' + natureName + '</span></div></td>';
+      if (natureName === '三里屯医疗诊所') {
+        html += '<td style="text-align:center"></td>';
+      } else {
+        html += '<td style="text-align:center"><button class="detail-btn" onclick="showTeamDetailMatrix(\x27' + encodeURIComponent(natureName) + '\x27)"><i class="fa-solid fa-eye"></i> 查看明细</button></td>';
+      }
       html += '<td class="num-cell"><div class="num-main">' + fmt(inc) + '</div></td>';
       html += '<td class="num-cell"><div class="num-main">' + fmt(exp) + '</div></td>';
       html += '<td class="num-cell"><div class="num-main">' + fmt(fee) + '</div></td>';
       html += '<td class="num-cell balance-cell"><div class="num-main ' + balCls + '">' + fmt(bal) + '</div></td>';
-      html += '<td class="num-cell" style="text-align:center"><button class="detail-btn" onclick="showTeamDetailMatrix(\x27' + encodeURIComponent(natureName) + '\x27)"><i class="fa-solid fa-eye"></i></button></td>';
       html += '</tr>';
 
       // Parent 子行（只有当有多于1个孩子时才显示parent层级）
@@ -2519,11 +2537,11 @@ async function loadTableTeam() {
           html += '<tr class="' + (hasMultiChildren ? 'tree-child' : 'tree-parent') + '" data-level="1" data-nature="' + natureName + '" style="display:' + (hasMultiChildren ? '' : 'none') + '">';
           html += '<td class="' + (hasMultiChildren ? 'tree-indent-1' : '') + '"><div class="tree-row">';
           html += '<span class="tree-label" style="font-weight:500">' + pName + '</span></div></td>';
+          html += '<td style="text-align:center"><button class="detail-btn" onclick="showTeamDetail(\x27' + encodeURIComponent(pName) + '\x27, 1, \x27' + encodeURIComponent(natureName) + '\x27)"><i class="fa-solid fa-eye"></i> 查看明细</button></td>';
           html += '<td class="num-cell"><div class="num-main">' + fmt(pInc) + '</div></td>';
           html += '<td class="num-cell"><div class="num-main">' + fmt(pExp) + '</div></td>';
           html += '<td class="num-cell"><div class="num-main">' + fmt(pFee) + '</div></td>';
           html += '<td class="num-cell balance-cell"><div class="num-main ' + pBalCls + '">' + fmt(pBal) + '</div></td>';
-          html += '<td class="num-cell" style="text-align:center"><button class="detail-btn" onclick="showTeamDetail(\x27' + encodeURIComponent(pName) + '\x27, 1, \x27' + encodeURIComponent(natureName) + '\x27)"><i class="fa-solid fa-eye"></i></button></td>';
           html += '</tr>';
         }
       }
@@ -2550,7 +2568,12 @@ function bindTeamTreeEvents() {
   wrap._teamTreeBound = true;
 
   wrap.onclick = function(e) {
-    const toggle = e.target.closest('.tree-toggle:not(.empty)');
+    // 不拦截按钮、链接等可交互元素的点击
+    if (e.target.closest('button, a, .detail-btn')) return;
+    // 寻找目标行上的展开/折叠图标
+    const row = e.target.closest('tr');
+    if (!row) return;
+    const toggle = row.querySelector('.tree-toggle:not(.empty)');
     if (!toggle) return;
     e.stopPropagation();
     const level = parseInt(toggle.dataset.level);
@@ -2559,7 +2582,6 @@ function bindTeamTreeEvents() {
     if (isExpanded) {
       toggle.classList.remove('expanded');
       toggle.textContent = '▶';
-      const row = toggle.closest('tr');
       let nextRow = row.nextElementSibling;
       while (nextRow && parseInt(nextRow.dataset.level || 0) > level) {
         nextRow.style.display = 'none';
@@ -2573,7 +2595,6 @@ function bindTeamTreeEvents() {
     } else {
       toggle.classList.add('expanded');
       toggle.textContent = '▼';
-      const row = toggle.closest('tr');
       let nextRow = row.nextElementSibling;
       while (nextRow && parseInt(nextRow.dataset.level || 0) > level) {
         if (nextRow.dataset.level == (level + 1).toString()) {
@@ -2592,31 +2613,34 @@ window.doSortTeamTree = async function() {
   const data = r.data || [];
   // 使用指定顺序排序
   const NATURE_ORDER = {
-    '01.老干局': 1, '老干局': 1,
-    '02.长护险与小时型照护': 2, '长护险与小时型照护': 2,
-    '03.居家清洁': 3, '居家清洁': 3,
-    '04.住家照护': 4, '住家照护': 4,
-    '05.体验中心': 5, '体验中心': 5,
-    '三里屯医疗诊所': 6,
-    '06.医疗-神经康复': 7, '医疗-神经康复': 7,
-    '07.医疗-运动康复': 8, '医疗-运动康复': 8,
-    '健康管理及日常医疗': 9, '驿站': 10,
-    '08.东直门&交道口': 11, '东直门&交道口': 11,
-    '09.体育馆路': 12, '体育馆路': 12,
-    '10.德外街道': 13, '德外街道': 13,
-    '11.北下关南二': 14, '北下关南二': 14,
-    '12.海淀镇': 15, '海淀镇': 15,
-    '13.万寿路紫金': 16, '万寿路紫金': 16,
-    '14.田村路&中关村': 17, '田村路&中关村': 17,
-    '机构养老': 18,
-    '16.银杏舍': 19, '银杏舍': 19,
-    '16.上京和园': 20, '上京和园': 20,
-    '培训学校': 21,
-    '17.培训学校': 22, '校企合作': 23, '17.校企合作': 23,
-    '物业+养老': 24,
-    '15.土桥、新干线': 25, '土桥、新干线': 25,
-    '21.器械城': 26, '器械城': 26,
-    '东城指导中心': 27, '体能': 28
+    '三里屯医疗诊所': 1,
+    '01.神经康复': 2, '神经康复': 2,
+    '02.运动康复': 3, '运动康复': 3,
+    '健康管理及日常医疗': 4,
+    '03.老干局': 5, '老干局': 5,
+    '04.小时型照护': 6, '小时型照护': 6,
+    '05.住家照护': 7, '住家照护': 7,
+    '06.体验中心': 8, '体验中心': 8,
+    '机构养老': 9,
+    '07.银杏舍': 10, '银杏舍': 10,
+    '07.上京和园': 11, '上京和园': 11,
+    '培训学校': 12,
+    '15.校企合作': 13, '校企合作': 13,
+    '15.培训学校': 14,
+    '物业+养老': 15,
+    '16.土桥、新干线': 16, '土桥、新干线': 16,
+    '17.器械城': 17, '器械城': 17,
+    '驿站': 18,
+    '08.东直门&交道口': 19, '东直门&交道口': 19,
+    '09.体育馆路': 20, '体育馆路': 20,
+    '10.德外街道': 21, '德外街道': 21,
+    '11.北下关南二': 22, '北下关南二': 22,
+    '12.海淀镇': 23, '海淀镇': 23,
+    '13.万寿路紫金': 24, '万寿路紫金': 24,
+    '14.田村路&中关村': 25, '田村路&中关村': 25,
+    '21.居家清洁': 26, '居家清洁': 26,
+    '体能': 27,
+    '东城指导中心': 28
   };
   const getNatureRank = (name) => NATURE_ORDER[name] || 999;
   data.sort((a, b) => getNatureRank(a['H团队线性质']) - getNatureRank(b['H团队线性质']));
@@ -2628,7 +2652,7 @@ window.doSortTeamTree = async function() {
   const totalExpense = data.reduce((sum, r) => sum + (r.支出 || 0), 0);
   
   let html = '<table class="tree-table"><thead><tr>';
-  html += '<th>创业团队</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th><th class="num-col">明细</th>';
+  html += '<th>H团队线性质</th><th class="num-col">明细</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th>';
   html += '</tr></thead><tbody>';
   
   // 获取环比数据
@@ -2948,6 +2972,7 @@ async function loadBudget() {
 
 // === Init ===
 async function init() {
+  console.log('%c📋 财务综述 v20260507-v2 — 加载中', 'font-size:16px;color:#2563eb');
 
   // 初始化月份选择器和图表
   renderGlobalMonths();
