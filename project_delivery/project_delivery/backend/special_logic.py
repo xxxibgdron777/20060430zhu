@@ -10,6 +10,18 @@ import re
 import pandas as pd
 from calculators import to_wan, to_wan_f, calc_pct, aggregate_board, aggregate_product, aggregate_project
 
+# 物业管理子科目(项目)自定义排序
+_WUYE_PROJECT_ORDER = [
+    "东环","泛交行","紫金长安","紫金新干线","星颐佳园","机关幼儿园","富卓","新纪元","日报","英特公寓","外经贸","中科","保龄","商报","朗清园托班","万寿路街道","吉源","协和项目"
+]
+_WUYE_IDX = {k: i for i, k in enumerate(_WUYE_PROJECT_ORDER)}
+
+def _sort_wuye_projects(projects: list) -> list:
+    """按物业管理自定义项目顺序排序"""
+    if not projects:
+        return projects
+    return sorted(projects, key=lambda p: _WUYE_IDX.get(p.get("项目", ""), 9999))
+
 
 def get_property_detail(df: pd.DataFrame, year: int, months: list) -> dict:
     """物业板块各产品收支明细"""
@@ -57,7 +69,7 @@ def get_property_detail(df: pd.DataFrame, year: int, months: list) -> dict:
     
     return {
         "products": products,
-        "projects": projects,
+        "projects": _sort_wuye_projects(projects),
         "total": {"收入": to_wan(ti), "支出": to_wan(te), "平台管理费": to_wan(tp), "结余": to_wan(ti - te - tp)},
     }
 

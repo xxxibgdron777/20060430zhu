@@ -320,6 +320,20 @@ def api_product_business_card(
     # 固定板块顺序
     BOARD_ORDER = ["物业板块", "医养板块", "餐饮板块", "美好生活", "支持团队"]
     
+    # 项目显示顺序（按产品分组）
+    PROJECT_ORDER = {
+        "物业管理": [
+            "东环","泛交行","紫金长安","紫金新干线","星颐佳园","机关幼儿园","富卓","新纪元","日报","英特公寓","外经贸","中科","保龄","商报","朗清园托班","万寿路街道","吉源","协和项目"
+        ]
+    }
+    def _sort_projects(product_name: str, projects: list) -> list:
+        """按自定义顺序排列项目，不在列表中的排在最后"""
+        order = PROJECT_ORDER.get(product_name)
+        if not order:
+            return projects  # 无自定义顺序则保持原样
+        idx = {k: i for i, k in enumerate(order)}
+        return sorted(projects, key=lambda p: idx.get(p, 9999))
+    
     result = []
     
     for board in BOARD_ORDER:
@@ -355,12 +369,13 @@ def api_product_business_card(
             
             prod_yoy_balance = calc_pct(prod_balance, prod_prev_balance)
             
-            # 获取该项目下的所有项目（只取前3个）
+                    # 获取该项目下的所有项目（只取前3个），按自定义顺序排序
             projects = prod_data["项目"].dropna().unique()
+            projects = _sort_projects(prod, list(projects))
             project_count = len(projects)
             project_list = []
             
-            for proj in list(projects)[:3]:
+            for proj in projects[:3]:
                 proj_data = prod_data[prod_data["项目"] == proj]
                 proj_prev = prod_prev[prod_prev["项目"] == proj] if not prod_prev.empty else pd.DataFrame()
                 
