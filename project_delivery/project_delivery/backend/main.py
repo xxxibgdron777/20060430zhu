@@ -15,6 +15,7 @@ import os
 import re
 import time
 from typing import List, Optional
+import datetime
 
 from data_loader import load_product_df, load_team_df, get_meta, filter_product, filter_team, load_budget_df, get_budget_comparison_data
 from calculators import (
@@ -716,6 +717,276 @@ def api_save_team_annotation(
     return {"success": True}
 
 
+# ==================== 创业团队分析 Tip（可编辑、服务端持久化）====================
+import json as _json
+import os as _os
+from pathlib import Path as _Path
+
+_TIP_FILE = _Path(__file__).resolve().parent / "team_tips.json"
+
+def _load_tips():
+    if _TIP_FILE.exists():
+        with open(_TIP_FILE, 'r', encoding='utf-8') as f:
+            return _json.load(f)
+    return {}
+
+def _save_tips(tips: dict):
+    _TIP_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(_TIP_FILE, 'w', encoding='utf-8') as f:
+        _json.dump(tips, f, ensure_ascii=False, indent=2)
+
+@app.get("/api/team/tip")
+def api_get_team_tip(team: str = Query(...)):
+    """获取某个团队的分析分析 Tip"""
+    tips = _load_tips()
+    tip = tips.get(team, {})
+    return {"team": team, "tip": tip.get("text", ""), "updated_at": tip.get("updated_at", "")}
+
+@app.post("/api/team/tip")
+def api_save_team_tip(
+    team: str = Body(...),
+    text: str = Body(...),
+):
+    """保存团队分析 Tip（覆盖写入）"""
+    import datetime
+    tips = _load_tips()
+    tips[team] = {
+        "text": text,
+        "updated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    _save_tips(tips)
+    return {"success": True, "team": team}
+
+
+# ==================== AI 智能分析（DeepSeek）====================
+
+@app.post("/api/team/ai_analysis")
+def api_team_ai_analysis(
+    year: int = Body(...),
+    months: List[int] = Body(...),
+    team_name: str = Body(...),
+):
+    """
+    AI 智能分析 - 基于 DeepSeek 从企业决策层角度分析团队经营
+    分析要点：收入构成、扩大销售、经营建议（不提资金缺口/管理费）
+    支出参考"说明/备注"列提供业务背景
+    """
+    _refresh_if_needed()
+    if team_df is None or team_df.empty:
+        raise HTTPException(500, "团队数据未加载")
+
+    # 筛选该团队数据（按年月）
+    df_f = filter_team(team_df, year, months)
+
+    # 匹配团队（H团队线-核算 > H团队线-上级 > H团队线性质）
+    matched = pd.DataFrame()
+    match_cols = ["H团队线-核算", "H团队线-上级", "H团队线性质"]
+    for col in match_cols:
+        if col in df_f.columns:
+            m = df_f[df_f[col] == team_name]
+            if not m.empty:
+                matched = m
+                break
+
+    if matched.empty:
+        return _ensure_native({"analysis": [], "error": f"未找到 {team_name} 的数据", "fallback": True})
+
+    # 收支列名兼容
+    inc_col = next((c for c in ["收支", "部门收支", "收支1"] if c in matched.columns), matched.columns[0])
+    amt_col = _team_amt_col(matched)
+
+    # 收入计算（数值为负 => 取绝对值）
+    inc_mask = (matched[inc_col] == "一、收入") if inc_col in matched.columns else pd.Series(False, index=matched.index)
+    inc = float(abs(matched.loc[inc_mask, amt_col].sum())) if inc_mask.any() else 0.0
+
+    # 支出计算（不含管理费，取绝对值）
+    exp_mask = (matched[inc_col] == "二、支出") if inc_col in matched.columns else pd.Series(False, index=matched.index)
+    exp = float(abs(matched.loc[exp_mask, amt_col].sum())) if exp_mask.any() else 0.0
+
+    # 管理费
+    fee_mask = (matched[inc_col] == "三、管理费") if inc_col in matched.columns else pd.Series(False, index=matched.index)
+    fee = float(abs(matched.loc[fee_mask, amt_col].sum())) if fee_mask.any() else 0.0
+
+    balance = inc - exp - fee
+    bal_rate = round(balance / inc * 100, 1) if inc else 0
+
+    # 收入构成（用"部门特殊"列分组）
+    income_items = []
+    inc_data = matched[inc_mask].copy() if inc_mask.any() else pd.DataFrame()
+    if not inc_data.empty:
+        group_col = "部门特殊" if "部门特殊" in inc_data.columns else inc_col
+        for grp_name, grp in inc_data.groupby(group_col):
+            val = float(abs(grp[amt_col].sum()))
+            if val >= 5:  # 忽略极小项
+                income_items.append({"name": str(grp_name), "value": round(to_wan(val), 2)})
+    income_items.sort(key=lambda x: x["value"], reverse=True)
+
+    # 支出构成 + 说明/备注
+    expense_items = []
+    expense_notes = []
+    exp_data = matched[exp_mask].copy() if exp_mask.any() else pd.DataFrame()
+    if not exp_data.empty:
+        group_col = "部门特殊" if "部门特殊" in exp_data.columns else inc_col
+        for grp_name, grp in exp_data.groupby(group_col):
+            val = float(abs(grp[amt_col].sum()))
+            pct = round(val / exp * 100, 1) if exp else 0
+            if val >= 5:
+                expense_items.append({"name": str(grp_name), "value": round(to_wan(val), 2), "pct": pct})
+        # 提取说明/备注
+        if "说明/备注" in matched.columns:
+            notes_series = matched["说明/备注"].dropna()
+            expense_notes = [str(n).strip() for n in notes_series.unique() if str(n).strip() and str(n).strip().lower() != "nan"]
+    expense_items.sort(key=lambda x: x["value"], reverse=True)
+
+    # 调用 AI
+    try:
+        api_key = _os.environ.get("DEEPSEEK_API_KEY", "")
+        if not api_key:
+            return _ensure_native(_fallback_ai_analysis(
+                team_name, to_wan(inc), to_wan(exp), to_wan(fee), to_wan(balance),
+                income_items, expense_items, expense_notes
+            ))
+
+        from openai import OpenAI
+        import json as _j
+
+        income_str = _j.dumps(income_items[:5], ensure_ascii=False) if income_items else "暂无明细"
+        expense_str = _j.dumps(expense_items[:5], ensure_ascii=False) if expense_items else "暂无明细"
+        notes_str = "；".join(expense_notes[:10]) if expense_notes else "无备注信息"
+
+        # 团队专属上下文注入
+        team_context_map = {
+            "07.上京和园": (
+                "背景说明：07.上京和园是公司为未来开展长护险业务布局的前瞻性项目，"
+                "不要质疑该团队存在的必要性。当前无收入属业务筹备期正常状态。"
+                "支出中的房租/能源类费用主要为房产税、物业费、维修等持有物业的必要支出。"
+                "分析时可结合长护险在天津的落地政策和推进进度来评估项目的战略价值和时间窗口。"
+            ),
+            "上京和园": (
+                "背景说明：上京和园是公司为未来开展长护险业务布局的前瞻性项目，"
+                "不要质疑该团队存在的必要性。当前无收入属业务筹备期正常状态。"
+                "支出中的房租/能源类费用主要为房产税、物业费、维修等持有物业的必要支出。"
+                "分析时可结合长护险在天津的落地政策和推进进度来评估项目的战略价值和时间窗口。"
+            ),
+        }
+        team_context = team_context_map.get(team_name, "")
+        NL = "\n"
+
+        prompt = f"""你是一位资深企业财务顾问。请从企业决策层角度对团队做简要经营分析。
+
+## 当前团队
+{team_name}
+
+## 核心经营数据
+- 收入: {to_wan(inc):.2f} 万元
+- 支出: {to_wan(exp):.2f} 万元
+- 净结余: {to_wan(balance):.2f} 万元
+- 结余率: {bal_rate}%
+
+## 收入构成 (TOP)
+{income_str}
+
+## 支出构成 (TOP)
+{expense_str}
+
+## 支出相关说明/备注
+{notes_str}
+{f"{NL}## 团队专属背景{NL}{team_context}" if team_context else ""}
+
+## 分析要求
+从企业决策者视角给出最多3条简洁分析，严格遵守：
+1. 可从收入构成、扩大销售、经营改善等角度分析
+2. 可结合"说明/备注"理解支出发生的业务背景
+3. 绝对不要出现"资金缺口""管理费""毛利偏低""毛利不足""毛利率低""毛利差"这些词，也不要做毛利相关结论
+4. 不要说"是否有必要存在""存在价值""是否合理"这类质疑团队存在性的表述
+5. 每条≤80字，精炼直接，直面问题
+6. 不带序号编号，每条独立成段落
+
+## 输出格式（纯JSON，不带markdown标记）
+{{"items":["分析内容1","分析内容2","分析内容3"]}}"""
+
+        client = OpenAI(
+            base_url="https://api.deepseek.com/v1",
+            api_key=api_key,
+        )
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "你是一位资深企业财务顾问。请严格按JSON格式回复，不要输出任何其他内容。"},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=800,
+        )
+        content = response.choices[0].message.content.strip()
+
+        # 清理 markdown 包装
+        if content.startswith("```"):
+            content = content.split("\n", 1)[1] if "\n" in content else content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+
+        result = _j.loads(content)
+        items = result.get("items", [])
+
+        return _ensure_native({
+            "analysis": items[:3],
+            "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "fallback": False,
+            "income_items": income_items[:5],
+            "expense_items": expense_items[:5],
+            "expense_notes": expense_notes[:5],
+        })
+
+    except Exception as e:
+        print(f"[AI Analysis] Error: {e}")
+        return _ensure_native(_fallback_ai_analysis(
+            team_name, to_wan(inc), to_wan(exp), to_wan(fee), to_wan(balance),
+            income_items, expense_items, expense_notes
+        ))
+
+
+def _fallback_ai_analysis(team_name, inc_w, exp_w, fee_w, bal_w, income_items, expense_items, notes):
+    """规则引擎兜底分析（AI 不可用时使用）"""
+    items = []
+    bal_rate = round(bal_w / inc_w * 100, 1) if inc_w else 0
+
+    # 1. 收入构成
+    if income_items:
+        top = income_items[0]
+        items.append(f"收入以{top['name']}为主（{top['value']}万元），建议在稳固核心业务同时拓展高附加值服务，提升收入多元化水平。")
+    else:
+        items.append(f"当前营收{inc_w:.1f}万元，建议分析各业务线盈利贡献，优化资源配置以扩大营收规模。")
+
+    # 2. 支出优化
+    if expense_items:
+        top_e = expense_items[0]
+        note_hint = ""
+        if notes:
+            note_hint = "，结合备注信息"
+        items.append(f"支出中{top_e['name']}占比较高（{top_e.get('pct', 0)}%）{note_hint}，建议核查该项费用合理性，寻找节支提效空间。")
+    else:
+        items.append("建议建立支出明细台账，定期审查各项成本合理性，推行节支提效措施。")
+
+    # 3. 经营建议
+    if bal_rate > 10:
+        items.append(f"结余率{bal_rate}%表现良好，可适当加大市场拓展投入，通过扩大销售规模进一步提升盈利水平。")
+    elif bal_rate > 0:
+        items.append(f"结余率{bal_rate}%，具备一定盈利基础，建议优化收入结构并适度投入营销资源以加速业绩增长。")
+    else:
+        items.append("建议聚焦收入增长，通过拓展服务品类、扩大客群覆盖和提升复购率来驱动业务规模增长。")
+
+    return {
+        "analysis": items[:3],
+        "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fallback": True,
+        "income_items": income_items[:5] if income_items else [],
+        "expense_items": expense_items[:5] if expense_items else [],
+        "expense_notes": notes[:5] if notes else [],
+    }
+
+
 # ==================== 创业团队经营明细透视（pivot_flat）====================
 
 @app.post("/api/team/pivot_flat")
@@ -1107,7 +1378,7 @@ def budget_compare(
     
     # 备选方案2: 使用上传的预算文件数据
     if "raw" not in _budget_data:
-        return {"comparison": [], "source": "none", "message": "未找到预算数据，请上传预算Excel或检查Excel中是否有'预算对比（销售业绩）'Sheet"}
+        return {"comparison": [], "source": "none", "message": "未找到预算数据，请上传预算Excel或检查Excel中是否有'预算销售'Sheet"}
     
     result = []
     for row in _budget_data["raw"]:

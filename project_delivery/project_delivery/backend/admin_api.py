@@ -253,7 +253,7 @@ def get_budgets(
     分页获取预算对比数据
     """
     try:
-        df = load_excel("预算对比（销售业绩）")
+        df = load_excel("预算销售")
     except:
         return {"success": True, "data": [], "total": 0, "page": 1, "page_size": page_size}
 
@@ -276,7 +276,7 @@ def get_budgets(
 def create_budget(data: Dict[str, Any] = Body(...)):
     """新增预算对比数据"""
     try:
-        df = load_excel("预算对比（销售业绩）")
+        df = load_excel("预算销售")
     except:
         # 如果 sheet 不存在，创建新的
         df = pd.DataFrame()
@@ -287,13 +287,13 @@ def create_budget(data: Dict[str, Any] = Body(...)):
     else:
         df = pd.concat([df, new_row], ignore_index=True)
     
-    save_excel(df, "预算对比（销售业绩）")
+    save_excel(df, "预算销售")
     return {"success": True, "message": "新增成功"}
 
 @router.put("/budget/{index}")
 def update_budget(index: int, data: Dict[str, Any] = Body(...)):
     """更新预算对比数据"""
-    df = load_excel("预算对比（销售业绩）")
+    df = load_excel("预算销售")
     
     if index < 0 or index >= len(df):
         raise HTTPException(404, "记录不存在")
@@ -302,19 +302,19 @@ def update_budget(index: int, data: Dict[str, Any] = Body(...)):
         if key in df.columns:
             df.at[index, key] = val
     
-    save_excel(df, "预算对比（销售业绩）")
+    save_excel(df, "预算销售")
     return {"success": True, "message": "更新成功"}
 
 @router.delete("/budget/{index}")
 def delete_budget(index: int):
     """删除预算对比数据"""
-    df = load_excel("预算对比（销售业绩）")
+    df = load_excel("预算销售")
     
     if index < 0 or index >= len(df):
         raise HTTPException(404, "记录不存在")
     
     df = df.drop(index).reset_index(drop=True)
-    save_excel(df, "预算对比（销售业绩）")
+    save_excel(df, "预算销售")
     return {"success": True, "message": "删除成功"}
 
 @router.post("/import/{sheet_type}")
@@ -331,7 +331,7 @@ async def import_data(sheet_type: str, file: UploadFile = File(...)):
     sheet_map = {
         'product': '产品',
         'team': '创业团队',
-        'budget': '预算对比（销售业绩）'
+        'budget': '预算销售'
     }
     
     if sheet_type not in sheet_map:

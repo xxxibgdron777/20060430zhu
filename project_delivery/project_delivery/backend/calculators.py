@@ -232,25 +232,27 @@ def _team_amt_col(df: pd.DataFrame) -> str:
     return "金额g"
 
 
-def _team_calc(sub_df: pd.DataFrame, inc_col: str = "收支", exp_col: str = "收支") -> Tuple[float, float]:
+def _team_calc(sub_df: pd.DataFrame, inc_col: str = "收支", exp_col: str = "收支") -> Tuple[float, float, float]:
     """
-    从数据计算 收入/支出
-    分类列：收支（值为"一、收入"/"二、支出"）
+    从数据计算 收入/支出/管理费（三分法）
+    分类列：收支（值为"一、收入"/"二、支出"/"三、管理费"）
     金额列：金额g
+    返回: (收入, 支出(不含管理费), 管理费)
     """
     if sub_df.empty:
-        return 0.0, 0.0
+        return 0.0, 0.0, 0.0
 
     amt_col = "金额g"
     
-    # 使用"收支"列，值为"一、收入"/"二、支出"/"三、管理费"（管理费并入支出）
     income_cond = (sub_df[inc_col] == "一、收入")
-    expense_cond = (sub_df[exp_col] == "二、支出") | (sub_df[exp_col] == "三、管理费")
+    expense_cond = (sub_df[exp_col] == "二、支出")
+    fee_cond = (sub_df[exp_col] == "三、管理费")
 
     income = float(sub_df.loc[income_cond, amt_col].sum())
     expense = float(-sub_df.loc[expense_cond, amt_col].sum())  # 负→正
+    fee = float(-sub_df.loc[fee_cond, amt_col].sum())  # 负→正
 
-    return income, expense
+    return income, expense, fee
 
 
 def _team_calc_with_fee(sub_df: pd.DataFrame) -> Tuple[float, float, float]:
@@ -319,13 +321,15 @@ def aggregate_team_account(df_filtered: pd.DataFrame, parent: Optional[str] = No
     groups = df_filtered.groupby(["H团队线性质", "H团队线-上级", "H团队线-核算"])
     records = []
     for (nat, par, acc), group in groups:
-        inc, exp = _team_calc(group)
+        inc, exp, fee = _team_calc(group)
+        # 下钻明细保持管理费并入支出的逻辑
+        total_exp = exp + fee
         records.append({
             "H团队线性质": str(nat),
             "H团队线-上级": str(par),
             "H团队线-核算": str(acc),
-            "收入": inc, "支出": exp, "平台管理费": 0,
-            "结余": inc - exp,
+            "收入": inc, "支出": total_exp, "平台管理费": 0,
+            "结余": inc - total_exp,
         })
     return pd.DataFrame(records)
 
@@ -613,8 +617,8 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
         records = []
         grouped = df_subset.groupby(["部门收支", "月"])
         for (subj, month), group in grouped:
-            inc, exp = _team_calc(group)
-            records.append({"部门收支": subj, "月": month, "收入": inc, "支出": exp})
+            inc, exp, fee = _team_calc(group)
+            records.append({"部门收支": subj, "月": month, "收入": inc, "支出": exp + fee})
         if not records:
             empty_df = pd.DataFrame(index=pd.Index([], name="部门收支"), columns=list(months) + ["全年"])
             return empty_df, empty_df.copy()
@@ -685,11 +689,11 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
         records = []
         grouped = sub_df.groupby(["_dept_clean", "月"])
         for (dept_clean, month), group in grouped:
-            inc, exp = _team_calc(group)
+            inc, exp, fee = _team_calc(group)
             if piv_type == "i":
                 val = inc
             else:
-                val = exp
+                val = exp + fee
             display = clean_to_display.get(dept_clean, dept_clean)
             records.append({"部门特殊": display, "月": month, "金额": val})
         if not records:
@@ -1175,8 +1179,8 @@ def get_team_pivot(team_df: pd.DataFrame, parent_name: str, year: int,
     # ---- 2. 按 (部门收支, 月) 分组，调用 _team_calc ----
     records = []
     for (subj, m), group in df.groupby(["部门收支", "月"]):
-        inc, exp = _team_calc(group)
-        records.append({"部门收支": subj, "月": m, "收入": inc, "支出": exp})
+        inc, exp, fee = _team_calc(group)
+        records.append({"部门收支": subj, "月": m, "收入": inc, "支出": exp + fee})
 
     if not records:
         return {"table": pd.DataFrame(), "analysis": [f"'{parent_name}' 无可用数据"]}

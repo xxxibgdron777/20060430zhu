@@ -82,9 +82,16 @@ def filter_team(team_df, year, months):
 def load_budget_df():
     """加载预算Sheet（销售业绩）"""
     try:
-        df = pd.read_excel(EXCEL_PATH, sheet_name="预算对比（销售业绩）", engine="calamine")
+        df = pd.read_excel(EXCEL_PATH, sheet_name="预算销售", engine="calamine")
         df = _clean_cols(df)
-        for col in ["月份", "预算收入", "预算支出", "实际收入", "实际支出"]:
+        if df.empty:
+            return None
+        # 检查是否包含旧版预算对比列结构
+        required = ["月份", "预算收入", "预算支出", "实际收入", "实际支出"]
+        if not any(c in df.columns for c in required):
+            print(f"[data_loader] 预算Sheet 列结构不匹配: {list(df.columns)[:5]}...")
+            return None
+        for col in required:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
         print(f"[data_loader] 预算Sheet: {len(df)} 行")
