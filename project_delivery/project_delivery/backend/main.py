@@ -27,7 +27,7 @@ from calculators import (
     get_team_compressed_table,
 )
 from agent import FinancialAgent
-from api_extensions import enhanced_query, get_ai_suggestions, get_budget_comparison, get_team_share_detail
+from api_extensions import enhanced_query, get_ai_suggestions, get_team_share_detail
 from vip_progress import (
     get_all_vip_records, get_vip_record_by_id, create_vip_record,
     update_vip_record, delete_vip_record, get_vip_summary
