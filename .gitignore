@@ -43,3 +43,15 @@ temp_deploy/
 # 系统文件
 Thumbs.db
 .DS_Store
+
+# 协议缓冲区文件
+*.proto
+
+# 证书文件
+*.crt
+*.pem
+*.key
+*.cert
+*.cer
+*.p12
+*.pfx

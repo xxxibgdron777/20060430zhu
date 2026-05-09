@@ -606,9 +606,11 @@ def api_team_analysis(year: int, months: str = Query(...)):
         
         # 计算各项支出占比（如果有部门特殊字段）
         expense_breakdown = {}
-        if "部门特殊" in group.columns:
+        # 兼容不同数据源的收支列名
+        sz_col = "收支1" if "收支1" in group.columns else ("收支" if "收支" in group.columns else None)
+        if "部门特殊" in group.columns and sz_col:
             exp_data = group[
-                group["收支1"].str.startswith('2.', na=False) & 
+                group[sz_col].str.startswith('2.', na=False) & 
                 (group["资金流向"] != "管理费")
             ]
             for special in exp_data["部门特殊"].dropna().unique():
@@ -838,13 +840,20 @@ def api_team_ai_analysis(
             expense_notes = [str(n).strip() for n in notes_series.unique() if str(n).strip() and str(n).strip().lower() != "nan"]
     expense_items.sort(key=lambda x: x["value"], reverse=True)
 
+    # 提取 B项目1 列（用于老干局等团队的客户分析）
+    b_project1_items = []
+    if "B项目1" in matched.columns:
+        b_series = matched["B项目1"].dropna()
+        b_unique = b_series.unique()
+        b_project1_items = [str(x).strip() for x in b_unique if str(x).strip().lower() != "nan"]
+
     # 调用 AI
     try:
         api_key = _os.environ.get("DEEPSEEK_API_KEY", "")
         if not api_key:
             return _ensure_native(_fallback_ai_analysis(
                 team_name, to_wan(inc), to_wan(exp), to_wan(fee), to_wan(balance),
-                income_items, expense_items, expense_notes
+                income_items, expense_items, expense_notes, b_project1_items
             ))
 
         from openai import OpenAI
@@ -853,6 +862,18 @@ def api_team_ai_analysis(
         income_str = _j.dumps(income_items[:5], ensure_ascii=False) if income_items else "暂无明细"
         expense_str = _j.dumps(expense_items[:5], ensure_ascii=False) if expense_items else "暂无明细"
         notes_str = "；".join(expense_notes[:10]) if expense_notes else "无备注信息"
+
+        # B项目1 客户分布（用于如老干局等团队分析客户构成）
+        b_project1_str = "；".join(b_project1_items[:20]) if b_project1_items else ""
+
+        # 通用数据说明
+        data_notes_parts = []
+        # MLH 说明：检查所有备注中是否出现 MLH
+        all_notes_text = " ".join(expense_notes) if expense_notes else ""
+        if "MLH" in all_notes_text.upper() or team_name.startswith("03.老干局") or team_name == "老干局":
+            data_notes_parts.append('备注中的"MLH"是指"美丽花"业务系统（内部业务管理平台），不代表具体支出项。')
+
+        data_notes = "\n".join(data_notes_parts)
 
         # 团队专属上下文注入
         team_context_map = {
@@ -867,6 +888,16 @@ def api_team_ai_analysis(
                 "不要质疑该团队存在的必要性。当前无收入属业务筹备期正常状态。"
                 "支出中的房租/能源类费用主要为房产税、物业费、维修等持有物业的必要支出。"
                 "分析时可结合长护险在天津的落地政策和推进进度来评估项目的战略价值和时间窗口。"
+            ),
+            "03.老干局": (
+                "背景说明：03.老干局是面向中央国家机关老干部的服务团队，核算主体为机关服务。"
+                '备注中的MLH是"美丽花"业务系统的简称，是内部使用的业务管理平台。'
+                "分析时请参考B项目1列了解具体服务客户的分布情况。"
+            ),
+            "老干局": (
+                "背景说明：老干局是面向中央国家机关老干部的服务团队，核算主体为机关服务。"
+                '备注中的MLH是"美丽花"业务系统的简称，是内部使用的业务管理平台。'
+                "分析时请参考B项目1列了解具体服务客户的分布情况。"
             ),
         }
         team_context = team_context_map.get(team_name, "")
@@ -891,16 +922,20 @@ def api_team_ai_analysis(
 
 ## 支出相关说明/备注
 {notes_str}
+{f"{NL}## B项目1（客户单位分布）{NL}{b_project1_str}" if b_project1_str else ""}
+{f"{NL}## 数据说明{NL}{data_notes}" if data_notes else ""}
 {f"{NL}## 团队专属背景{NL}{team_context}" if team_context else ""}
 
 ## 分析要求
 从企业决策者视角给出最多3条简洁分析，严格遵守：
 1. 可从收入构成、扩大销售、经营改善等角度分析
 2. 可结合"说明/备注"理解支出发生的业务背景
-3. 绝对不要出现"资金缺口""管理费""毛利偏低""毛利不足""毛利率低""毛利差"这些词，也不要做毛利相关结论
-4. 不要说"是否有必要存在""存在价值""是否合理"这类质疑团队存在性的表述
-5. 每条≤80字，精炼直接，直面问题
-6. 不带序号编号，每条独立成段落
+3. 如果数据中有B项目1信息，可结合客户单位分布分析客户集中度或拓展方向
+4. 绝对不要出现"资金缺口""管理费""毛利偏低""毛利不足""毛利率低""毛利差"这些词，也不要做毛利相关结论
+5. 绝对不要将"抗衰老"项目与"净利为负""结余为负""亏损"等负面盈利判断放在同一条分析中
+6. 不要说"是否有必要存在""存在价值""是否合理"这类质疑团队存在性的表述
+7. 每条≤80字，精炼直接，直面问题
+8. 不带序号编号，每条独立成段落
 
 ## 输出格式（纯JSON，不带markdown标记）
 {{"items":["分析内容1","分析内容2","分析内容3"]}}"""
@@ -943,11 +978,11 @@ def api_team_ai_analysis(
         print(f"[AI Analysis] Error: {e}")
         return _ensure_native(_fallback_ai_analysis(
             team_name, to_wan(inc), to_wan(exp), to_wan(fee), to_wan(balance),
-            income_items, expense_items, expense_notes
+            income_items, expense_items, expense_notes, b_project1_items
         ))
 
 
-def _fallback_ai_analysis(team_name, inc_w, exp_w, fee_w, bal_w, income_items, expense_items, notes):
+def _fallback_ai_analysis(team_name, inc_w, exp_w, fee_w, bal_w, income_items, expense_items, notes, b_project1_items=None):
     """规则引擎兜底分析（AI 不可用时使用）"""
     items = []
     bal_rate = round(bal_w / inc_w * 100, 1) if inc_w else 0
@@ -1271,9 +1306,10 @@ def budget_compare(
     """
     _refresh_if_needed()
     
-    # 解析月份参数
-    if months and months.strip():
-        month_list = [int(x.strip()) for x in months.split(",") if x.strip()]
+    # 解析月份参数（兼容内部调用时 Query 默认值未解析的情况）
+    months_val = months if isinstance(months, str) else ""
+    if months_val and months_val.strip():
+        month_list = [int(x.strip()) for x in months_val.split(",") if x.strip()]
     else:
         month_list = list(range(1, 13))
     

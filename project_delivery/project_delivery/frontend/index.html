@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 20260508-wp -->
+<!-- VERSION: 20260509-apple-0509carrie -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -10,84 +10,89 @@
 <style>
 /* ===== WordPress Admin Variables & Reset ===== */
 :root {
-  --wp-sidebar: #1d2327; --wp-sidebar-hover: #2c3338; --wp-sidebar-active: #2271b1;
-  --wp-bg: #f0f0f1; --wp-card: #fff; --wp-text: #3c434a; --wp-text2: #646970;
-  --wp-text3: #8c8f94; --wp-border: #c3c4c7; --wp-divider: #dcdcde;
-  --wp-accent: #2271b1; --wp-accent-hover: #135e96; --wp-accent-light: #f0f6fc;
-  --primary: #2271b1; --primary-dark: #135e96; --primary-light: #f0f6fc;
-  --accent: #2271b1; --accent-light: #f0f6fc;
-  --green: #00a32a; --green-bg: #edfaef; --red: #d63638; --red-bg: #fcf0f1;
-  --purple: #7b349d; --amber: #dba617; --orange: #d63638; --teal: #2e9c96;
-  --bg: #f0f0f1; --card: #ffffff;
-  --text: #3c434a; --text2: #646970; --text3: #8c8f94;
-  --border: #c3c4c7; --divider: #dcdcde;
-  --radius-sm: 4px; --radius: 6px; --radius-lg: 8px; --radius-xl: 12px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.08);
-  --shadow: 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 2px 8px rgba(0,0,0,0.12);
-  --shadow-lg: 0 4px 16px rgba(0,0,0,0.14);
-  --shadow-xl: 0 8px 32px rgba(0,0,0,0.18);
-  --shadow-premium: 0 1px 2px rgba(0,0,0,0.08), 0 4px 24px rgba(0,0,0,0.14);
-  --shadow-premium-sm: 0 1px 1px rgba(0,0,0,0.06), 0 2px 12px rgba(0,0,0,0.10);
-  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --wp-sidebar: #f5f5f7; --wp-sidebar-hover: #e8e8ed; --wp-sidebar-active: #0071e317;
+  --wp-bg: #f5f5f7; --wp-card: #ffffff; --wp-text: #1d1d1f; --wp-text2: #6e6e73;
+  --wp-text3: #aeaeb2; --wp-border: #d2d2d7; --wp-divider: #e5e5ea;
+  --wp-accent: #0071e3; --wp-accent-hover: #0077ed; --wp-accent-light: rgba(0,113,227,0.08);
+  --primary: #0071e3; --primary-dark: #0066cc; --primary-light: rgba(0,113,227,0.08);
+  --accent: #0071e3; --accent-light: rgba(0,113,227,0.08);
+  --green: #30b158; --green-bg: rgba(48,177,88,0.1); --red: #ff453a; --red-bg: rgba(255,69,58,0.1);
+  --purple: #af52de; --amber: #ff9f0a; --orange: #ff6b3d; --teal: #5ac8fa;
+  --bg: #f5f5f7; --bg2: #e8e8ed; --card: #ffffff;
+  --text: #1d1d1f; --text2: #6e6e73; --text3: #aeaeb2;
+  --border: #d2d2d7; --divider: #e5e5ea;
+  --radius-sm: 6px; --radius: 10px; --radius-lg: 12px; --radius-xl: 16px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.1);
+  --shadow-xl: 0 12px 48px rgba(0,0,0,0.12);
+  --shadow-premium: 0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07);
+  --shadow-premium-sm: 0 1px 2px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.05);
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   --content-max: none;
   --sidebar-width: 220px;
-  --adminbar-height: 32px;
+  --adminbar-height: 44px;
+  --red: #ff453a; --green: #30b158; --blue: #0071e3; --yellow: #ff9f0a;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; height: 100%; }
 body { font-family: var(--font); background: var(--wp-bg); color: var(--wp-text); line-height: 1.5; font-size: 14px; -webkit-font-smoothing: antialiased; min-height: 100vh; padding-top: var(--adminbar-height); padding-left: var(--sidebar-width); position: relative; }
 ::selection { background: var(--wp-accent); color: #fff; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f0f0f0; }
-::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #a7a7a7; }
+::-webkit-scrollbar-track { background: #e8e8ed; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #c7c7cc; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #aeaeb2; }
 
 /* ===== WP Admin Bar ===== */
 #wpadminbar {
   position: fixed; top: 0; left: 0; right: 0; height: var(--adminbar-height);
-  background: #1d2327; color: #f0f0f1; z-index: 1000;
-  display: flex; align-items: center; padding: 0 12px; gap: 8px;
-  font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  background: rgba(255,255,255,0.72); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  color: var(--wp-text); z-index: 1000;
+  display: flex; align-items: center; padding: 0 16px; gap: 12px;
+  font-size: 12px; box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+  border-bottom:1px solid var(--wp-border);
 }
-#wpadminbar .wpadminbar-brand { font-weight: 600; display: flex; align-items: center; gap: 6px; color: #fff; font-size: 13px; flex-shrink: 0; }
-#wpadminbar .wpadminbar-brand i { color: #72aee6; }
-#wpadminbar .subtitle { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 3px; background: #2271b1; color: #fff; margin-left: 2px; }
-#collapse-btn { background: none; border: none; color: #f0f0f1; cursor: pointer; font-size: 16px; padding: 4px 8px; border-radius: 3px; margin: 0 4px; display: flex; align-items: center; }
-#collapse-btn:hover { background: #2c3338; }
-#wpadminbar .month-pills { display: flex; gap: 2px; flex-wrap: nowrap; overflow: hidden; flex-shrink: 1; }
-#wpadminbar .month-pills .month-pill { padding: 2px 7px; font-size: 10px; min-height: 22px; border-radius: 3px; border: none; background: #2c3338; color: #c3c4c7; cursor: pointer; white-space: nowrap; }
-#wpadminbar .month-pills .month-pill.active { background: #2271b1; color: #fff; }
-#wpadminbar .month-pills .month-pill:hover:not(.active) { background: #3c434a; color: #fff; }
+#wpadminbar .wpadminbar-brand { font-weight: 600; display: flex; align-items: center; gap: 6px; color: var(--wp-text); font-size: 13px; flex-shrink: 0; letter-spacing:0.3px; }
+#wpadminbar .wpadminbar-brand i { color: var(--wp-accent); }
+#wpadminbar .subtitle { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 3px; background: var(--wp-accent); color: #fff; margin-left: 2px; }
+#collapse-btn { background: none; border: none; color: var(--wp-text2); cursor: pointer; font-size: 15px; padding: 4px 8px; border-radius: 6px; margin: 0 4px; display: flex; align-items: center; transition:all .2s; }
+#collapse-btn:hover { background: var(--wp-accent-light); color: var(--wp-accent); }
+#wpadminbar .month-pills { display: flex; gap: 3px; flex-wrap: nowrap; overflow: hidden; flex-shrink: 1; }
+#wpadminbar .month-pills .month-pill { padding: 3px 10px; font-size: 10px; min-height: 24px; border-radius: 4px; border:1px solid var(--wp-border); background: transparent; color: var(--wp-text2); cursor: pointer; white-space: nowrap; transition:.2s; }
+#wpadminbar .month-pills .month-pill.active { background: var(--wp-accent); color: #fff; border-color:var(--wp-accent); }
+#wpadminbar .month-pills .month-pill:hover:not(.active) { background: rgba(0,0,0,0.04); color:var(--wp-text); border-color:rgba(0,0,0,0.12); }
 
 /* ===== Sidebar ===== */
 #sidebar {
   position: fixed; top: var(--adminbar-height); left: 0; bottom: 0;
-  width: var(--sidebar-width); background: var(--wp-sidebar);
+  width: var(--sidebar-width); background: rgba(250,250,252,0.8); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
   z-index: 900; display: flex; flex-direction: column;
-  overflow: hidden; transition: width 0.2s;
+  overflow: hidden; transition: width .25s cubic-bezier(0.4,0,0.2,1);
+  border-right:1px solid var(--wp-border);
 }
 #sidebar .sidebar-inner { flex: 1; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
-.s-hd { padding: 16px 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); }
-.s-hd-icon { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 14px; color: #72aee6; flex-shrink: 0; }
-.s-hd-title { color: #fff; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+.s-hd { padding: 20px 14px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--wp-divider); }
+.s-hd-icon { width: 34px; height: 34px; border-radius: 8px; background: var(--wp-accent-light); display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--wp-accent); flex-shrink: 0; }
+.s-hd-title { color: var(--wp-text); font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; }
 .s-menu { list-style: none; padding: 8px 0; flex: 1; }
 .s-menu li { margin: 2px 0; }
 .s-menu .tab-btn {
-  display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 16px;
-  border: none; background: transparent; color: rgba(240,246,252,0.75); font-size: 13px;
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 16px;
+  border: none; background: transparent; color: var(--wp-text2); font-size: 13px;
   font-weight: 400; cursor: pointer; text-align: left; border-left: 3px solid transparent;
+  border-radius:0 8px 8px 0; margin:1px 6px 1px 0;
   transition: all 0.15s; font-family: inherit; line-height: 1.4;
 }
 .s-menu .tab-btn i { width: 20px; font-size: 14px; text-align: center; flex-shrink: 0; }
-.s-menu .tab-btn:hover { background: rgba(255,255,255,0.06); color: #72aee6; }
-.s-menu .tab-btn.active { background: var(--wp-sidebar-hover); color: #fff; border-left-color: var(--wp-accent); font-weight: 500; }
-.s-menu .tab-btn.active i { color: #72aee6; }
-.s-ft { padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 11px; color: rgba(255,255,255,0.45); }
+.s-menu .tab-btn:hover { background: rgba(0,0,0,0.04); color: var(--wp-text); }
+.s-menu .tab-btn.active { background: var(--wp-accent-light); color: var(--wp-accent); border-left-color: var(--wp-accent); font-weight: 500; }
+.s-menu .tab-btn.active i { color: var(--wp-accent); }
+.s-ft { padding: 12px 16px; border-top: 1px solid var(--wp-divider); font-size: 11px; color: var(--wp-text3); }
 
 /* Collapsed sidebar */
-body.sidebar-collapsed { padding-left: 50px; }
-body.sidebar-collapsed #sidebar { width: 50px; }
+body.sidebar-collapsed { padding-left: 54px; }
+body.sidebar-collapsed #sidebar { width: 54px; }
 body.sidebar-collapsed .s-hd-title,
 body.sidebar-collapsed .s-menu .tab-btn span,
 body.sidebar-collapsed .s-ft { display: none; }
@@ -118,8 +123,10 @@ body.sidebar-collapsed .s-menu .tab-btn { justify-content: center; padding: 10px
 /* ===== WordPress Admin CSS Part 2 ===== */
 /* KPI Cards */
 .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
-.kpi-card { background: var(--wp-card); border: none; border-radius: var(--radius); padding: 16px 20px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); transition: all 0.15s; position: relative; overflow: hidden; cursor: default; }
-.kpi-card:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.kpi-card { background: var(--wp-card); border: none; border-radius: var(--radius); padding: 16px 20px 12px; box-shadow: var(--shadow-premium-sm); transition: all 0.2s; position: relative; overflow: hidden; cursor: default; }
+.kpi-card:hover { box-shadow: var(--shadow-premium); transform: translateY(-1px); }
+.kpi-card::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--wp-accent), transparent); opacity:0; transition:opacity .3s; }
+.kpi-card:hover::after { opacity:0.4; }
 .kpi-card .kpi-header { font-size: 11px; font-weight: 400; color: var(--wp-text3); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
 .kpi-value { font-size: 32px; font-weight: 600; line-height: 1.0; margin-bottom: 4px; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; color: var(--wp-text); }
 .kpi-value .unit { font-size: 13px; font-weight: 400; color: var(--wp-text3); margin-left: 2px; }
@@ -134,7 +141,7 @@ body.sidebar-collapsed .s-menu .tab-btn { justify-content: center; padding: 10px
 /* Mode Switch */
 .mode-switch { display: flex; gap: 1px; background: var(--wp-divider); padding: 3px; border-radius: var(--radius-sm); flex-wrap: wrap; }
 .mode-btn { padding: 5px 14px; border: none; background: transparent; border-radius: 3px; cursor: pointer; font-size: 12px; font-weight: 400; color: var(--wp-text2); transition: all 0.15s; min-height: 32px; font-family: inherit; }
-.mode-btn.active { background: var(--wp-card); color: var(--wp-text); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+.mode-btn.active { background: #fff; color: var(--wp-text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
 .mode-btn:hover:not(.active) { color: var(--wp-text); }
 
 /* Table Card */
@@ -156,15 +163,15 @@ body.business-view #tab-product #trendChartCard { display: none; }
 
 /* Data Table */
 table.detail-table, table.data-table, .table-wrap table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: clamp(11px, 1.1vw, 14px); table-layout: fixed; }
-table.detail-table th, table.data-table th, .table-wrap table thead th { position: sticky; top: 0; background: #f6f7f7; color: var(--wp-text); font-weight: 600; font-size: clamp(10px, 1vw, 13px); text-transform: none; letter-spacing: 0; padding: 10px 8px; text-align: right; border-bottom: 1px solid var(--wp-border); white-space: nowrap; z-index: 6; }
-table.detail-table th:first-child, table.data-table th:first-child, .table-wrap table thead th:first-child { text-align: left; padding-left: 8px; position: sticky; left: 0; top: 0; z-index: 7; background: #f6f7f7; border-right: 1px solid var(--wp-border); width: 28%; }
+table.detail-table th, table.data-table th, .table-wrap table thead th { position: sticky; top: 0; background: #f0f0f5; color: var(--wp-text); font-weight: 600; font-size: clamp(10px, 1vw, 13px); text-transform: none; letter-spacing: 0; padding: 10px 8px; text-align: right; border-bottom: 1px solid var(--wp-border); white-space: nowrap; z-index: 6; }
+table.detail-table th:first-child, table.data-table th:first-child, .table-wrap table thead th:first-child { text-align: left; padding-left: 8px; position: sticky; left: 0; top: 0; z-index: 7; background: #f0f0f5; border-right: 1px solid var(--wp-border); width: 28%; }
 .table-wrap table thead th:nth-child(2), .table-wrap table thead th:nth-child(3), .table-wrap table thead th:nth-child(4) { width: 16%; }
 .table-wrap table thead th:nth-child(5) { width: 14%; }
 .table-wrap table thead th:nth-child(6) { width: 10%; }
 table.detail-table td, table.data-table td, .table-wrap table tbody td { padding: 8px 8px; border-bottom: 1px solid var(--wp-divider); vertical-align: middle; font-size: clamp(11px, 1.1vw, 14px); color: var(--wp-text); }
 table.detail-table td:first-child, table.data-table td:first-child, .table-wrap table tbody td:first-child { padding-left: 8px; text-align: left; position: sticky; left: 0; z-index: 1; background: var(--wp-card); border-right: 1px solid var(--wp-divider); white-space: nowrap; }
-table.detail-table tbody tr:hover td:first-child, table.data-table tbody tr:hover td:first-child, .table-wrap table tbody tr:hover td:first-child { background: #f0f6fc; }
-table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap table tbody tr:hover { background: #f0f6fc; }
+table.detail-table tbody tr:hover td:first-child, table.data-table tbody tr:hover td:first-child, .table-wrap table tbody tr:hover td:first-child { background: rgba(79,143,247,0.06); }
+table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap table tbody tr:hover { background: rgba(79,143,247,0.04); }
 
 /* Tree Table */
 .tree-row { display: flex; align-items: center; gap: 6px; }
@@ -181,35 +188,39 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 
 /* Frozen first column */
 .table-wrap .tree-table { border-collapse: separate; }
-.table-wrap .tree-table thead th:first-child { position: sticky; left: 0; top: 0; z-index: 10; background: #f6f7f7; border-right: 1px solid var(--wp-border); }
+.table-wrap .tree-table thead th:first-child { position: sticky; left: 0; top: 0; z-index: 10; background: #f0f0f5; border-right: 1px solid var(--wp-border); }
 .table-wrap .tree-table tbody td:first-child { position: sticky; left: 0; z-index: 1; background: var(--wp-card); border-right: 1px solid var(--wp-divider); }
-.table-wrap .tree-table tbody tr:hover td:first-child { background: #f0f6fc; }
-.table-wrap .tree-table .tree-parent td:first-child { background: #f6f7f7; font-weight: 600; }
-.table-wrap .tree-table .tree-parent:hover td:first-child { background: #e9edf1; }
-.table-wrap .tree-table .tree-parent td { background: #f6f7f7; border-bottom: 1px solid var(--wp-border); }
-.table-wrap .tree-table .tree-parent:hover td { background: #e9edf1; }
+.table-wrap .tree-table tbody tr:hover td:first-child { background: rgba(79,143,247,0.06); }
+.table-wrap .tree-table .tree-parent td:first-child { background: #f0f0f5; font-weight: 600; }
+.table-wrap .tree-table .tree-parent:hover td:first-child { background: #e0e0e5; }
+.table-wrap .tree-table .tree-parent td { background: #f0f0f5; border-bottom: 1px solid var(--wp-border); }
+.table-wrap .tree-table .tree-parent:hover td { background: #e0e0e5; }
 
 /* Product Tab */
-#tab-product .tree-table .tree-parent td { background: #f6f7f7; border-bottom: 2px solid var(--wp-border); font-weight: 600; padding: 10px 8px; }
-#tab-product .tree-table .tree-parent td:first-child { background: #f6f7f7; font-weight: 600; }
-#tab-product .tree-table .tree-parent:hover td { background: #e9edf1; }
-#tab-product .tree-table .tree-parent:hover td:first-child { background: #e4e8ec; }
+#tab-product .tree-table .tree-parent td { background: rgba(204,236,251,0.5); border-bottom: 2px solid var(--wp-border); font-weight: 700; padding: 10px 8px; }
+#tab-product .tree-table .tree-parent td:first-child { background: rgba(204,236,251,0.5); font-weight: 700; }
+#tab-product .tree-table .tree-parent:hover td { background: rgba(204,236,251,0.65); }
+#tab-product .tree-table .tree-parent:hover td:first-child { background: rgba(204,236,251,0.65); }
+#tab-product .tree-table .tree-child td { background: rgba(204,236,251,0.25); }
+#tab-product .tree-table .tree-child td:first-child { background: rgba(204,236,251,0.25); }
+#tab-product .tree-table .tree-child:hover td { background: rgba(204,236,251,0.4); }
+#tab-product .tree-table .tree-child:hover td:first-child { background: rgba(204,236,251,0.4); }
 #tab-product .tree-table .num-cell .num-main { color: var(--wp-text); font-weight: 600; }
 #tab-product .tree-table .num-cell .yoy-row, #tab-product .tree-table .num-cell .yoy-label { color: var(--wp-text3); }
 
 /* Team Tab */
-#tab-team .table-card { border: none; border-radius: var(--radius); box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+#tab-team .table-card { border: none; border-radius: var(--radius); box-shadow: var(--shadow-premium-sm); }
 #tab-team .table-wrap { border: none; border-radius: 0; background: transparent; box-shadow: none; margin: 0; }
-#tab-team .tree-table thead th { background: #f6f7f7; font-weight: 600; padding: 10px 8px; border-bottom: 1px solid var(--wp-border); color: var(--wp-text); text-shadow: none; font-size: clamp(10px, 1vw, 13px); }
-#tab-team .tree-table thead th:first-child { background: #f6f7f7; border-right: 1px solid var(--wp-border); }
-#tab-team .tree-table tbody td { background: #fff; box-shadow: none; border-bottom: 1px solid var(--wp-divider); color: var(--wp-text); padding: 8px 8px; }
-#tab-team .tree-table tbody td:first-child { background: #fff; font-weight: 400; border-right: 1px solid var(--wp-divider); box-shadow: none; }
-#tab-team .tree-table .tree-parent td { background: #f6f7f7; cursor: pointer; }
-#tab-team .tree-table .tree-parent td:first-child { background: #f6f7f7; font-weight: 600; }
-#tab-team .tree-table .tree-child td { background: #fff; }
-#tab-team .tree-table tbody tr:hover td { background: #f0f6fc; }
-#tab-team .tree-table tbody tr:hover td:first-child { background: #eef2f8; }
-#tab-team .tree-table .tree-parent:hover td { background: #e9edf1; }
+#tab-team .tree-table thead th { background: #f0f0f5; font-weight: 600; padding: 10px 8px; border-bottom: 1px solid var(--wp-border); color: var(--wp-text); text-shadow: none; font-size: clamp(10px, 1vw, 13px); }
+#tab-team .tree-table thead th:first-child { background: #f0f0f5; border-right: 1px solid var(--wp-border); }
+#tab-team .tree-table tbody td { background: transparent; box-shadow: none; border-bottom: 1px solid var(--wp-divider); color: var(--wp-text); padding: 8px 8px; }
+#tab-team .tree-table tbody td:first-child { background: transparent; font-weight: 400; border-right: 1px solid var(--wp-divider); box-shadow: none; }
+#tab-team .tree-table .tree-parent td { background: #f0f0f5; cursor: pointer; }
+#tab-team .tree-table .tree-parent td:first-child { background: #f0f0f5; font-weight: 600; }
+#tab-team .tree-table .tree-child td { background: transparent; }
+#tab-team .tree-table tbody tr:hover td { background: rgba(79,143,247,0.04); }
+#tab-team .tree-table tbody tr:hover td:first-child { background: rgba(79,143,247,0.06); }
+#tab-team .tree-table .tree-parent:hover td { background: #e0e0e5; }
 #tab-team .tree-table .num-cell .num-main { font-weight: 600; font-size: clamp(12px, 1.3vw, 16px); color: var(--wp-text); }
 #tab-team .tree-table .num-cell .positive { color: var(--green); }
 #tab-team .tree-table .num-cell .negative { color: var(--red); }
@@ -255,11 +266,11 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .chart-title i { color: var(--wp-accent); font-size: 16px; }
 .chart-box { width: 100%; }
 .trend-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.trend-sub-chart { background: var(--wp-card); border: 1px solid var(--wp-border); border-radius: var(--radius-sm); padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); transition: all 0.15s; }
+.trend-sub-chart { background: var(--wp-card); border: none; border-radius: var(--radius-sm); padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); transition: all 0.15s; }
 .trend-sub-chart:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 .trend-sub-title { font-size: 12px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
 .trend-legend-row { display: flex; gap: 6px; margin-bottom: 8px; font-size: 10px; }
-.trend-legend-item { display: flex; align-items: center; gap: 3px; font-weight: 500; padding: 2px 8px; border-radius: 3px; background: #f6f7f7; border: 1px solid var(--wp-divider); }
+.trend-legend-item { display: flex; align-items: center; gap: 3px; font-weight: 500; padding: 2px 8px; border-radius: 3px; background: #f0f0f5; border: 1px solid var(--wp-border); }
 
 /* Buttons */
 .back-btn { padding: 5px 10px; border: none; background: transparent; border-radius: 3px; cursor: pointer; font-size: 13px; color: var(--wp-accent); transition: all 0.15s; min-height: 32px; display: inline-flex; align-items: center; gap: 6px; font-weight: 400; font-family: inherit; }
@@ -286,11 +297,11 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .suggestion-item { padding: 12px 16px; border-radius: var(--radius-sm); background: var(--wp-accent-light); margin-bottom: 6px; font-size: 13px; border: 1px solid rgba(34,113,177,0.12); }
 
 /* Comparison */
-.comparison-card { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 14px; background: #f6f7f7; border-radius: var(--radius-sm); border: 1px solid var(--wp-border); }
+.comparison-card { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 14px; background: #f0f0f5; border-radius: var(--radius-sm); border: 1px solid var(--wp-border); }
 
 /* Collapsible */
-.section-header { display: flex; align-items: center; gap: 8px; padding: 10px 14px; cursor: pointer; background: #f6f7f7; border-top: 1px solid var(--wp-border); font-weight: 600; font-size: 13px; border-radius: var(--radius-sm) var(--radius-sm) 0 0; user-select: none; color: var(--wp-text); }
-.section-header:hover { background: var(--wp-divider); }
+.section-header { display: flex; align-items: center; gap: 8px; padding: 10px 14px; cursor: pointer; background: #f0f0f5; border-top: 1px solid var(--wp-border); font-weight: 600; font-size: 13px; border-radius: var(--radius-sm) var(--radius-sm) 0 0; user-select: none; color: var(--wp-text); }
+.section-header:hover { background: #e0e0e5; }
 .section-toggle { font-size: 10px; color: var(--wp-text3); width: 18px; flex-shrink: 0; transition: transform 0.2s; }
 .collapsible-body { padding: 12px 14px; border: 1px solid var(--wp-border); border-top: none; border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
 
@@ -314,11 +325,11 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 /* Detail Modal */
 .detail-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; padding: 24px; }
 .detail-modal.show { display: flex; }
-.detail-modal-content { background: #fff; border-radius: var(--radius); width: 95vw; max-width: 1100px; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-xl); animation: modalUp 0.2s ease; border: 1px solid var(--wp-border); }
-.detail-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--wp-divider); background: #fff; position: sticky; top: 0; z-index: 10; border-radius: var(--radius) var(--radius) 0 0; }
+.detail-modal-content { background: var(--wp-card); border-radius: var(--radius); width: 95vw; max-width: 1100px; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-xl); animation: modalUp 0.2s ease; border: 1px solid var(--wp-border); }
+.detail-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--wp-divider); background: var(--wp-card); position: sticky; top: 0; z-index: 10; border-radius: var(--radius) var(--radius) 0 0; }
 .detail-modal-header h3 { margin: 0; font-size: 15px; font-weight: 600; color: var(--wp-text); display: flex; align-items: center; gap: 8px; }
 .detail-modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--wp-text3); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.15s; }
-.detail-modal-close:hover { background: #f0f0f1; color: var(--wp-text); }
+.detail-modal-close:hover { background: rgba(0,0,0,0.06); color: var(--wp-text); }
 .detail-modal-body { padding: 20px; }
 
 /* Pivot Table */
@@ -331,18 +342,18 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .pivot-table-wrap { overflow-x: auto; overflow-y: auto; max-height: 55vh; border: 1px solid var(--wp-border); border-radius: var(--radius-sm); }
 .pivot-detail-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
 .pivot-detail-table thead { position: sticky; top: 0; z-index: 2; }
-.pivot-detail-table th { background: #f6f7f7; padding: 12px 8px; text-align: right; border-bottom: 1px solid var(--wp-border); font-weight: 600; color: var(--wp-text2); white-space: nowrap; font-size: 11px; text-transform: none; letter-spacing: 0.3px; }
-.pivot-detail-table th.pivot-sticky-col { text-align: left; width: 120px; left: 0; z-index: 3; border-right: 1px solid var(--wp-border); background: #f6f7f7; }
+.pivot-detail-table th { background: #f0f0f5; padding: 12px 8px; text-align: right; border-bottom: 1px solid var(--wp-border); font-weight: 600; color: var(--wp-text2); white-space: nowrap; font-size: 11px; text-transform: none; letter-spacing: 0.3px; }
+.pivot-detail-table th.pivot-sticky-col { text-align: left; width: 120px; left: 0; z-index: 3; border-right: 1px solid var(--wp-border); background: #f0f0f5; }
 .pivot-detail-table td { padding: 9px 8px; border-bottom: 1px solid var(--wp-divider); text-align: right; font-variant-numeric: tabular-nums; color: var(--wp-text); font-size: 12px; }
-.pivot-detail-table td.pivot-sticky-col { text-align: left; position: sticky; left: 0; z-index: 1; border-right: 1px solid var(--wp-divider); background: #fff; white-space: nowrap; }
-.pivot-detail-table tbody tr:hover td { background: #f0f6fc !important; }
-.pivot-detail-table tbody tr:hover td.pivot-sticky-col { background: #eef2f8 !important; }
+.pivot-detail-table td.pivot-sticky-col { text-align: left; position: sticky; left: 0; z-index: 1; border-right: 1px solid var(--wp-divider); background: var(--wp-card); white-space: nowrap; }
+.pivot-detail-table tbody tr:hover td { background: rgba(79,143,247,0.04) !important; }
+.pivot-detail-table tbody tr:hover td.pivot-sticky-col { background: rgba(79,143,247,0.06) !important; }
 .pivot-detail-table .pivot-ratio { color: var(--wp-text2); font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
 .pivot-detail-table .pivot-highlight { background: var(--wp-accent-light); font-weight: 600; }
-.pivot-detail-table .pivot-level-total td { background: #f6f7f7 !important; }
-.pivot-detail-table .pivot-level-total td.pivot-sticky-col { background: #f0f0f3 !important; }
-.pivot-detail-table .pivot-level-total:hover td { background: #ececef !important; }
-.pivot-detail-table .pivot-level-total:hover td.pivot-sticky-col { background: #e6e6e9 !important; }
+.pivot-detail-table .pivot-level-total td { background: #f0f0f5 !important; }
+.pivot-detail-table .pivot-level-total td.pivot-sticky-col { background: #e5e5ea !important; }
+.pivot-detail-table .pivot-level-total:hover td { background: #e0e0e5 !important; }
+.pivot-detail-table .pivot-level-total:hover td.pivot-sticky-col { background: #dcdce2 !important; }
 .pivot-detail-table .pivot-section-expense td { border-top: 2px solid var(--wp-divider); }
 .pivot-detail-table .pivot-section-fee td { border-top: 2px solid var(--wp-divider); }
 .pivot-analysis { margin-top: 14px; padding: 16px 18px; background: var(--wp-card); border-radius: var(--radius-sm); border: 1px solid var(--wp-border); box-shadow: 0 1px 2px rgba(0,0,0,0.04); border-left: 3px solid var(--wp-accent); }
@@ -362,29 +373,29 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .detail-section-title { font-size: 15px; font-weight: 600; color: var(--wp-text); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--wp-accent); display: flex; align-items: center; gap: 8px; }
 .detail-section-title i { color: var(--wp-accent); }
 .detail-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.detail-table th { background: #f6f7f7; color: var(--wp-text2); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; padding: 9px 12px; text-align: right; border-bottom: 2px solid var(--wp-border); }
+.detail-table th { background: #f0f0f5; color: var(--wp-text2); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; padding: 9px 12px; text-align: right; border-bottom: 2px solid var(--wp-border); }
 .detail-table th:first-child { text-align: left; }
 .detail-table td { padding: 9px 12px; border-bottom: 1px solid var(--wp-divider); text-align: right; color: var(--wp-text); }
 .detail-table td:first-child { text-align: left; }
-.detail-table tbody tr:hover { background: #f0f6fc; }
+.detail-table tbody tr:hover { background: rgba(79,143,247,0.04); }
 .detail-summary { display: flex; gap: 12px; flex-wrap: wrap; }
 .detail-monthly-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11px; table-layout: fixed; }
-.detail-monthly-table th { background: #f6f7f7; padding: 4px 3px; text-align: right; font-size: 10px; color: var(--wp-text2); font-weight: 600; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
+.detail-monthly-table th { background: #f0f0f5; padding: 4px 3px; text-align: right; font-size: 10px; color: var(--wp-text2); font-weight: 600; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
 .detail-monthly-table th:first-child { text-align: left; position: sticky; left: 0; z-index: 3; border-right: 2px solid var(--wp-border); }
 .detail-monthly-table td { padding: 4px 3px; border-bottom: 1px solid var(--wp-divider); text-align: right; color: var(--wp-text); font-size: 11px; }
 .detail-monthly-table td:first-child { text-align: left; position: sticky; left: 0; z-index: 1; background: var(--wp-card); border-right: 1px solid var(--wp-divider); font-weight: 500; }
-.detail-monthly-table tbody tr:hover td:first-child { background: #f0f6fc; }
+.detail-monthly-table tbody tr:hover td:first-child { background: rgba(79,143,247,0.06); }
 .detail-analysis-section { margin-bottom: 12px; }
 .detail-analysis-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--wp-text); }
 .detail-analysis-list { list-style: none; padding: 0; }
 .detail-analysis-list li { padding: 5px 0; font-size: 12px; color: var(--wp-text2); display: flex; align-items: center; gap: 8px; }
 .detail-kpi-mini-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
-.detail-kpi-mini-card { background: #f6f7f7; border-radius: var(--radius-sm); padding: 10px; text-align: center; border: 1px solid var(--wp-border); }
+.detail-kpi-mini-card { background: #f0f0f5; border-radius: var(--radius-sm); padding: 10px; text-align: center; border: 1px solid var(--wp-border); }
 .detail-kpi-mini-label { font-size: 10px; color: var(--wp-text3); margin-bottom: 3px; }
 .detail-kpi-mini-value { font-size: 16px; font-weight: 600; color: var(--wp-text); }
 
 /* Notes */
-.detail-note-section { background: #f6f7f7; border-radius: var(--radius); padding: 16px; margin-top: 14px; border: 1px solid var(--wp-border); }
+.detail-note-section { background: #f0f0f5; border-radius: var(--radius); padding: 16px; margin-top: 14px; border: 1px solid var(--wp-border); }
 .detail-note-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; color: var(--wp-text); }
 .detail-note-input, .notes-area { width: 100%; min-height: 80px; border: 1px solid var(--wp-border); border-radius: var(--radius-sm); padding: 10px; font-size: 13px; font-family: inherit; resize: vertical; background: var(--wp-card); color: var(--wp-text); outline: none; }
 .detail-note-input:focus, .notes-area:focus { border-color: var(--wp-accent); box-shadow: 0 0 0 1px var(--wp-accent); }
@@ -394,7 +405,7 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .team-tip-section { margin-top: 14px; padding: 16px 18px; background: var(--wp-card); border-radius: var(--radius-sm); border: 1px solid var(--wp-border); box-shadow: 0 1px 2px rgba(0,0,0,0.04); border-left: 3px solid var(--wp-accent); }
 .team-tip-header { font-size: 13px; font-weight: 600; color: var(--wp-text); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
 .team-tip-header i { color: var(--wp-accent); }
-.team-tip-textarea { width: 100%; min-height: 80px; padding: 10px; border: 1px solid var(--wp-border); border-radius: var(--radius-sm); font-size: 12px; font-family: var(--font); color: var(--wp-text); background: #fff; resize: vertical; line-height: 1.6; outline: none; transition: border-color 0.15s, box-shadow 0.15s; box-sizing: border-box; }
+.team-tip-textarea { width: 100%; min-height: 80px; padding: 10px; border: 1px solid var(--wp-border); border-radius: var(--radius-sm); font-size: 12px; font-family: var(--font); color: var(--wp-text); background: var(--wp-card); resize: vertical; line-height: 1.6; outline: none; transition: border-color 0.15s, box-shadow 0.15s; box-sizing: border-box; }
 .team-tip-textarea:focus { border-color: var(--wp-accent); box-shadow: 0 0 0 1px var(--wp-accent); }
 .team-tip-actions { margin-top: 8px; display: flex; align-items: center; gap: 8px; }
 .team-tip-save-btn { padding: 5px 14px; background: var(--wp-accent); color: #fff; border: none; border-radius: 3px; font-size: 12px; font-weight: 400; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s; font-family: var(--font); }
@@ -403,7 +414,7 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .team-tip-status { font-size: 11px; color: var(--wp-text3); }
 
 /* AI Card */
-.ai-card { margin-top: 12px; padding: 16px 18px; background: linear-gradient(135deg, rgba(123,52,157,0.03) 0%, rgba(46,156,150,0.03) 100%); border-radius: var(--radius-sm); border: 1px solid rgba(123,52,157,0.12); box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+.ai-card { margin-top: 12px; padding: 16px 18px; background: linear-gradient(135deg, rgba(123,52,157,0.04) 0%, rgba(46,156,150,0.04) 100%); border-radius: var(--radius-sm); border: 1px solid rgba(123,52,157,0.1); box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
 .ai-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .ai-card-title { font-size: 13px; font-weight: 600; color: var(--wp-text); display: flex; align-items: center; gap: 6px; }
 .ai-card-title i { color: var(--purple); font-size: 14px; }
@@ -411,9 +422,9 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .ai-generate-btn:hover { opacity: 0.9; }
 .ai-generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .ai-card-meta { font-size: 10px; color: var(--wp-text3); margin-top: 3px; display: flex; align-items: center; gap: 6px; }
-.ai-card-meta .ai-fallback-badge { display: inline-block; padding: 2px 6px; background: #fcf9e8; color: #996800; border-radius: 3px; font-size: 10px; font-weight: 600; }
+.ai-card-meta .ai-fallback-badge { display: inline-block; padding: 2px 6px; background: #fef3c7; color: #92400e; border-radius: 3px; font-size: 10px; font-weight: 600; }
 .ai-card-body { margin-top: 4px; }
-.ai-card-item { padding: 8px 12px; margin-bottom: 6px; background: rgba(255,255,255,0.8); border-radius: var(--radius-sm); border-left: 3px solid var(--purple); font-size: 12px; color: var(--wp-text); line-height: 1.6; }
+.ai-card-item { padding: 8px 12px; margin-bottom: 6px; background: rgba(0,0,0,0.03); border-radius: var(--radius-sm); border-left: 3px solid var(--purple); font-size: 12px; color: var(--wp-text); line-height: 1.6; }
 .ai-card-item:last-child { margin-bottom: 0; }
 .ai-card-loading { text-align: center; padding: 16px; color: var(--wp-text3); }
 .ai-card-loading i { font-size: 18px; color: var(--purple); margin-bottom: 6px; }
@@ -426,7 +437,7 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--wp-divider); position: sticky; top: 0; background: var(--wp-card); z-index: 1; border-radius: var(--radius) var(--radius) 0 0; }
 .modal-header h3 { font-size: 16px; font-weight: 600; margin: 0; color: var(--wp-text); }
 .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--wp-text3); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.15s; }
-.modal-close:hover { background: #f0f0f1; color: var(--wp-text); }
+.modal-close:hover { background: #e8e8ed; color: var(--wp-text); }
 .modal-overlay .modal > *:not(.modal-header):not(:first-child) { margin: 18px 20px; }
 
 /* Loading & Empty */
@@ -509,7 +520,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--wp-accent); box-
 /* Print */
 @media print {
   #wpadminbar, #sidebar, .modal, .detail-modal, .controls, .sort-bar, .back-btn { display: none !important; }
-  .kpi-card, .table-card, .chart-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+  .kpi-card, .table-card, .chart-card { break-inside: avoid; box-shadow: none; border: 1px solid var(--wp-border); }
 }
 </style>
 </head>
@@ -524,10 +535,6 @@ input:focus, textarea:focus, select:focus { border-color: var(--wp-accent); box-
 <!-- Left Sidebar -->
 <div id="sidebar">
   <div class="sidebar-inner">
-    <div class="s-hd">
-      <div class="s-hd-icon"><i class="fa-solid fa-chart-pie"></i></div>
-      <div class="s-hd-title">经营分析</div>
-    </div>
     <ul class="s-menu">
       <li><button class="tab-btn active" data-tab="product"><i class="fa-solid fa-chart-line"></i> <span>整体情况</span></button></li>
       <li><button class="tab-btn" data-tab="business"><i class="fa-solid fa-building"></i> <span>产品线</span></button></li>
@@ -629,7 +636,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--wp-accent); box-
           <span style="font-size:12px;color:var(--green)"><i class="fa-solid fa-circle-check"></i> 管理员</span>
         </div>
         <div id="budgetLogin" style="display:flex;gap:6px">
-          <input type="password" id="adminPwd" placeholder="管理员密码" style="padding:7px 14px;border:1.5px solid #e5e5e5;border-radius:10px;font-size:12px;outline:0">
+          <input type="password" id="adminPwd" placeholder="管理员密码" style="padding:7px 14px;border:1.5px solid var(--wp-border);border-radius:10px;font-size:12px;outline:0;background:var(--wp-bg);color:var(--wp-text)">
           <button class="admin-btn" id="loginBtn"><i class="fa-solid fa-lock"></i> 登录</button>
         </div>
       </div>
@@ -658,8 +665,8 @@ input:focus, textarea:focus, select:focus { border-color: var(--wp-accent); box-
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
         <div style="font-size:14px;font-weight:600"><i class="fa-solid fa-list" style="color:var(--accent);margin-right:6px"></i>疗程记录列表</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="text" id="vipSearch" placeholder="搜索客户/产品..." style="padding:7px 14px;border:1.5px solid #e5e5e5;border-radius:10px;font-size:12px;outline:0;width:180px">
-          <select id="vipProductFilter" style="padding:7px 12px;border:1.5px solid #e5e5e5;border-radius:10px;font-size:12px;outline:0">
+          <input type="text" id="vipSearch" placeholder="搜索客户/产品..." style="padding:7px 14px;border:1.5px solid var(--wp-border);border-radius:10px;font-size:12px;outline:0;width:180px;background:var(--wp-bg);color:var(--wp-text)">
+          <select id="vipProductFilter" style="padding:7px 12px;border:1.5px solid var(--wp-border);border-radius:10px;font-size:12px;outline:0;background:var(--wp-bg);color:var(--wp-text)">
             <option value="">全部产品</option>
           </select>
         </div>
@@ -682,14 +689,14 @@ input:focus, textarea:focus, select:focus { border-color: var(--wp-accent); box-
       <button class="modal-close" id="vipModalClose"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div style="display:grid;gap:14px">
-      <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">健康管理产品 *</label><select id="vipFormProduct" style="width:100%;padding:10px 14px;border:1.5px solid #e5e5e5;border-radius:12px;font-size:13px;outline:0" required><option value="">请选择产品</option></select></div>
-      <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">客户姓名 *</label><input type="text" id="vipFormName" placeholder="请输入客户姓名" style="width:100%;padding:10px 14px;border:1.5px solid #e5e5e5;border-radius:12px;font-size:13px;outline:0" required></div>
+      <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">健康管理产品 *</label><select id="vipFormProduct" style="width:100%;padding:10px 14px;border:1.5px solid var(--wp-border);border-radius:12px;font-size:13px;outline:0;background:var(--wp-bg);color:var(--wp-text)" required><option value="">请选择产品</option></select></div>
+      <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">客户姓名 *</label><input type="text" id="vipFormName" placeholder="请输入客户姓名" style="width:100%;padding:10px 14px;border:1.5px solid var(--wp-border);border-radius:12px;font-size:13px;outline:0;background:var(--wp-bg);color:var(--wp-text)" required></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">开始日期 *</label><input type="date" id="vipFormStart" style="width:100%;padding:10px 14px;border:1.5px solid #e5e5e5;border-radius:12px;font-size:13px;outline:0" required></div>
-        <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">结束日期</label><input type="date" id="vipFormEnd" style="width:100%;padding:10px 14px;border:1.5px solid #e5e5e5;border-radius:12px;font-size:13px;outline:0"></div>
+        <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">开始日期 *</label><input type="date" id="vipFormStart" style="width:100%;padding:10px 14px;border:1.5px solid var(--wp-border);border-radius:12px;font-size:13px;outline:0;background:var(--wp-bg);color:var(--wp-text)" required></div>
+        <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">结束日期</label><input type="date" id="vipFormEnd" style="width:100%;padding:10px 14px;border:1.5px solid var(--wp-border);border-radius:12px;font-size:13px;outline:0;background:var(--wp-bg);color:var(--wp-text)"></div>
       </div>
       <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">服务进度: <span id="vipFormProgressVal">0</span>%</label><input type="range" id="vipFormProgress" min="0" max="100" value="0" step="5" style="width:100%;accent-color:var(--accent)"></div>
-      <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">备注</label><textarea id="vipFormNotes" placeholder="可选" style="width:100%;padding:10px 14px;border:1.5px solid #e5e5e5;border-radius:12px;font-size:13px;outline:0;min-height:60px;resize:vertical"></textarea></div>
+      <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px">备注</label><textarea id="vipFormNotes" placeholder="可选" style="width:100%;padding:10px 14px;border:1.5px solid var(--wp-border);border-radius:12px;font-size:13px;outline:0;min-height:60px;resize:vertical;background:var(--wp-bg);color:var(--wp-text)"></textarea></div>
     </div>
     <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
       <button class="admin-btn" id="vipModalCancel" style="padding:10px 24px">取消</button>
@@ -972,24 +979,14 @@ async function loadKPIProduct() {
       
       if (isBalanceRate) {
         if (isSingle) {
-          const yoyRef = 'vs ' + (prevYear % 100) + '年同期 ' + (yoyPrevFmt || (yoyPrev != null ? (Math.round(yoyPrev * 10) / 10) + '%' : '-'));
-          const momRef = 'vs 上月 ' + (momPrevFmt || (momPrev != null ? (Math.round(momPrev * 10) / 10) + '%' : '-'));
-          cardHtml += buildKpiSub('同比', yoyPct, yoyRef, true);
-          cardHtml += buildKpiSub('环比', momPct, momRef, true);
+          cardHtml += buildKpiSub('同比', yoyPct, '', true);
+          cardHtml += buildKpiSub('环比', momPct, '', true);
         } else if (d.cumulative) {
-          const yoyRef = 'vs ' + (prevYear % 100) + '年同期 ' + (yoyPrevFmt || (yoyPrev != null ? (Math.round(yoyPrev * 10) / 10) + '%' : '-'));
-          cardHtml += buildKpiSub('同比', yoyPct, yoyRef, true);
+          cardHtml += buildKpiSub('同比', yoyPct, '', true);
           const growthKey = yoyKey + '_growth';
           const growthPct = d.cumulative[growthKey + '_pct'];
           const prevRangeLabel = d.cumulative.prev_range_label || momLabel;
-          const contribution = d.month_contribution;
-          let secondRef = '';
-          if (contribution) {
-            const contribVal = contribution[yoyKey] || 0;
-            const contribSign = contribVal >= 0 ? '+' : '';
-            secondRef = '其中' + contribution.month + '月 ' + contribSign + fmt(contribVal) + '万';
-          }
-          cardHtml += buildKpiSub('较' + prevRangeLabel, growthPct, secondRef);
+          cardHtml += buildKpiSub('较' + prevRangeLabel, growthPct, '');
         }
       } else {
         if (isSingle) {
@@ -1066,26 +1063,16 @@ async function loadKPITeam() {
       cardHtml += '<div class="kpi-value">' + valDisplay + valUnit + '</div>';
       
       if (isBalanceRate) {
-        // 结余率：保持百分点差值
+        // 结余率：保持百分点差值，不显示辅助文字
         if (isSingle) {
-          const yoyRef = 'vs ' + (prevYear % 100) + '年同期 ' + (yoyPrevFmt || (yoyPrev != null ? Math.round(yoyPrev * 10) / 10 + '%' : '-'));
-          const momRef = 'vs 上月 ' + (momPrevFmt || (momPrev != null ? Math.round(momPrev * 10) / 10 + '%' : '-'));
-          cardHtml += buildKpiSub('同比', yoyPct, yoyRef, true);
-          cardHtml += buildKpiSub('环比', momPct, momRef, true);
+          cardHtml += buildKpiSub('同比', yoyPct, '', true);
+          cardHtml += buildKpiSub('环比', momPct, '', true);
         } else if (d.cumulative) {
-          const yoyRef = 'vs ' + (prevYear % 100) + '年同期 ' + (yoyPrevFmt || (yoyPrev != null ? Math.round(yoyPrev * 10) / 10 + '%' : '-'));
-          cardHtml += buildKpiSub('同比', yoyPct, yoyRef, true);
+          cardHtml += buildKpiSub('同比', yoyPct, '', true);
           const growthKey = yoyKey + '_growth';
           const growthPct = d.cumulative[growthKey + '_pct'];
           const prevRangeLabel = d.cumulative.prev_range_label || momLabel;
-          const contribution = d.month_contribution;
-          let secondRef = '';
-          if (contribution) {
-            const contribVal = contribution[yoyKey] || 0;
-            const contribSign = contribVal >= 0 ? '+' : '';
-            secondRef = '其中' + contribution.month + '月 ' + contribSign + fmt(contribVal) + '万';
-          }
-          cardHtml += buildKpiSub('较' + prevRangeLabel, growthPct, secondRef);
+          cardHtml += buildKpiSub('较' + prevRangeLabel, growthPct, '');
         }
       } else {
         // 收入/支出/结余：显示绝对值 +-X万
@@ -1158,27 +1145,27 @@ async function loadChartsProduct() {
       chart.setOption({
         tooltip: {
           trigger: 'axis',
-          backgroundColor: 'rgba(255,255,255,0.98)',
-          borderColor: '#e0e0e0',
+          backgroundColor: 'rgba(17,24,39,0.98)',
+          borderColor: '#1e293b',
           borderWidth: 1,
           padding: [8, 12],
-          textStyle: { color: '#333', fontSize: isMobile ? 10 : 11 }
+          textStyle: { color: '#e6edf3', fontSize: isMobile ? 10 : 11 }
         },
         grid: { left: isMobile ? 35 : 50, right: 15, top: 8, bottom: 24, containLabel: false },
         xAxis: {
           type: 'category',
           data: allMonths,
-          axisLabel: { fontSize: isMobile ? 8 : 10, color: '#888' },
-          axisLine: { lineStyle: { color: '#e0e0e0' } },
+          axisLabel: { fontSize: isMobile ? 8 : 10, color: '#8b949e' },
+          axisLine: { lineStyle: { color: '#1e293b' } },
           axisTick: { show: false }
         },
         yAxis: {
           type: 'value',
           name: '万元',
-          nameTextStyle: { fontSize: 10, color: '#bbb' },
-          axisLabel: { fontSize: isMobile ? 8 : 10, color: '#888', formatter: '{value}' },
+          nameTextStyle: { fontSize: 10, color: '#57606a' },
+          axisLabel: { fontSize: isMobile ? 8 : 10, color: '#8b949e', formatter: '{value}' },
           axisLine: { show: false },
-          splitLine: { lineStyle: { color: '#f5f5f5', type: 'dashed' } }
+          splitLine: { lineStyle: { color: '#151d2c', type: 'dashed' } }
         },
         legend: { show: false },
         series: [
@@ -1316,9 +1303,9 @@ function renderTeamAnnotations() {
   let html = '';
   for (const key of Object.keys(teamAnnotations)) {
     const ann = teamAnnotations[key];
-    html += '<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start"><div><span style="font-weight:600">' + (ann.team || key) + ':</span> ' + (ann.text || '') + '</div><div style="font-size:12px;color:#999">' + (ann.updated_at || '') + '</div></div>';
+    html += '<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start"><div><span style="font-weight:600">' + (ann.team || key) + ':</span> ' + (ann.text || '') + '</div><div style="font-size:12px;color:var(--wp-text2)">' + (ann.updated_at || '') + '</div></div>';
   }
-  el.innerHTML = html || '<div style="color:#999;font-size:13px">暂无注释</div>';
+  el.innerHTML = html || '<div style="color:var(--wp-text2);font-size:13px">暂无注释</div>';
 }
 
 async function saveTeamAnnotation() {
@@ -1559,7 +1546,7 @@ window.showTeamDetailMatrix = async function(teamName) {
     const summary = data.summary || {};
     const analysis = data.analysis || [];
     if (rows.length === 0) {
-      document.querySelector('#teamDetailModal .detail-modal-body').innerHTML = '<div style="padding:30px;text-align:center;color:#999"><i class="fa-solid fa-inbox"></i> 暂无数据</div>';
+      document.querySelector('#teamDetailModal .detail-modal-body').innerHTML = '<div style="padding:30px;text-align:center;color:var(--wp-text2)"><i class="fa-solid fa-inbox"></i> 暂无数据</div>';
       return;
     }
     let html = '';
@@ -1627,7 +1614,7 @@ window.showTeamDetailMatrix = async function(teamName) {
 
     // 行渲染函数
     const renderPivotRow = (row, stype) => {
-      let nameStyle = row.level === 'total' ? 'font-weight:700' : (row.indent ? 'padding-left:24px;font-weight:400;color:#555' : 'font-weight:500');
+      let nameStyle = row.level === 'total' ? 'font-weight:700' : (row.indent ? 'padding-left:24px;font-weight:400;color:var(--wp-text2)' : 'font-weight:500');
       const totalVal = row.total || 0;
       const sum312Val = sum312(row);
       const incRatio = (stype === 'income' && totalIncome > 0) ? Math.round(totalVal / totalIncome * 100) + '%' : '-';
@@ -1891,7 +1878,7 @@ function generateTeamDetailHTML(name, row, momData, parentTotals, level, detailD
             <td class="num-cell highlight-cell"><div class="cell-value">${fmt(item.金额)}</div></td>
           </tr>`;
           }).join('')}
-          ${(!detailData || !detailData.income_items || detailData.income_items.length === 0) ? '<tr class="data-row"><td class="sticky-col" colspan="16" style="text-align:center;color:#999;">暂无收入数据</td></tr>' : ''}
+          ${(!detailData || !detailData.income_items || detailData.income_items.length === 0) ? '<tr class="data-row"><td class="sticky-col" colspan="16" style="text-align:center;color:var(--wp-text2);">暂无收入数据</td></tr>' : ''}
         </tbody>
         <tbody>
           <!-- 支出部分 - 可收起 -->
@@ -1917,7 +1904,7 @@ function generateTeamDetailHTML(name, row, momData, parentTotals, level, detailD
             <td class="num-cell highlight-cell"><div class="cell-value">${fmt(item.金额)}</div></td>
           </tr>`;
           }).join('')}
-          ${(!detailData || !detailData.expense_items || detailData.expense_items.length === 0) ? '<tr class="data-row"><td class="sticky-col" colspan="16" style="text-align:center;color:#999;">暂无支出数据</td></tr>' : ''}
+          ${(!detailData || !detailData.expense_items || detailData.expense_items.length === 0) ? '<tr class="data-row"><td class="sticky-col" colspan="16" style="text-align:center;color:var(--wp-text2);">暂无支出数据</td></tr>' : ''}
         </tbody>
         <tbody>
           <!-- 管理费部分 - 可收起 -->
@@ -2157,7 +2144,7 @@ async function loadTableProduct() {
     // 获取环比数据
     const momDataMap = await getProductMomData(boardData);
     
-    let html = '<table><thead><tr>';
+    let html = '<table class="tree-table"><thead><tr>';
     html += '<th>业务板块</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th>';
     html += '</tr></thead><tbody>';
     
@@ -2186,7 +2173,7 @@ async function loadTableProduct() {
       const totalFee = boardData.reduce((sum, r) => sum + (r.平台管理费 || 0), 0);
       const totalBalance = totalIncome - totalExpense - totalFee; // 结余 = 收入 - 支出 - 管理费
       const totalBalanceColor = totalBalance >= 0 ? '#34C759' : '#FF3B30';
-      html += '<tr style="background:#f8f9fa;font-weight:700;border-top:2px solid #dee2e6">';
+      html += '<tr style="background:#f0f0f5;font-weight:700;border-top:2px solid var(--wp-border)">';
       html += '<td>合计</td>';
       html += `<td class="num-cell"><div class="num-main">${fmt(totalIncome)}</div></td>`;
       html += `<td class="num-cell"><div class="num-main">${fmt(totalExpense)}</div></td>`;
@@ -2364,7 +2351,7 @@ window.doSortProductTree = async function() {
   const totalFee = data.reduce((sum, r) => sum + (r.平台管理费 || 0), 0);
   const totalBalance = totalIncome - totalExpense - totalFee; // 结余 = 收入 - 支出 - 管理费
   const totalBalanceColor = totalBalance >= 0 ? '#34C759' : '#FF3B30';
-  html += '<tr style="background:#f8f9fa;font-weight:700;border-top:2px solid #dee2e6">';
+  html += '<tr style="background:#f0f0f5;font-weight:700;border-top:2px solid var(--wp-border)">';
   html += '<td>合计</td>';
   html += `<td class="num-cell"><div class="num-main">${fmt(totalIncome)}</div></td>`;
   html += `<td class="num-cell"><div class="num-main">${fmt(totalExpense)}</div></td>`;
@@ -2446,8 +2433,8 @@ async function loadTableTeam() {
       '05.住家照护': 7, '住家照护': 7,
       '06.体验中心': 8, '体验中心': 8,
       '机构养老': 9,
-      '07.银杏舍': 10, '银杏舍': 10,
-      '07.上京和园': 11, '上京和园': 11,
+      '07.银杏舍': 11, '银杏舍': 11,
+      '07.上京和园': 10, '上京和园': 10,
       '培训学校': 12,
       '15.校企合作': 13, '校企合作': 13,
       '15.培训学校': 14,
@@ -2483,7 +2470,7 @@ async function loadTableTeam() {
 
     const wrap = document.getElementById('tableWrapTeam');
     const title = document.getElementById('tableTitleTeam');
-    title.innerHTML = '<i class="fa-solid fa-table-cells-large"></i> 创业团队经营透视 <span style="font-size:14px;font-weight:400;color:#888;margin-left:8px">按 H团队线性质分组</span>';
+    title.innerHTML = '<i class="fa-solid fa-table-cells-large"></i> 创业团队经营透视 <span style="font-size:14px;font-weight:400;color:var(--wp-text2);margin-left:8px">按 H团队线性质分组</span>';
     title.style.display = 'none';  // 隐藏标题行
     title.parentElement.style.marginBottom = '0';  // 移除标题区域间距
 
@@ -2675,7 +2662,7 @@ window.doSortTeamTree = async function() {
   const totalFee = data.reduce((sum, r) => sum + (r.平台管理费 || 0), 0);
   const totalBalance = totalIncome - totalExpense - totalFee; // 结余 = 收入 - 支出 - 管理费
   const totalBalanceColor = totalBalance >= 0 ? '#34C759' : '#FF3B30';
-  html += '<tr style="background:#f8f9fa;font-weight:700;border-top:2px solid #dee2e6">';
+  html += '<tr style="background:#f0f0f5;font-weight:700;border-top:2px solid var(--wp-border)">';
   html += '<td>合计</td>';
   html += `<td class="num-cell"><div class="num-main">${fmt(totalIncome)}</div></td>`;
   html += `<td class="num-cell"><div class="num-main">${fmt(totalExpense)}</div></td>`;
@@ -2707,7 +2694,7 @@ async function openTeamShare(parentName) {
     html += '<th>1-12月</th><th>3-12月</th><th>占比</th></tr></thead><tbody>';
     for (const row of d.rows) {
       const lvl = row.level;
-      const bold = lvl === 'major' ? 'font-weight:700;background:#fafafa;' : lvl === 'balance' ? 'font-weight:700;background:var(--accent-light);' : '';
+      const bold = lvl === 'major' ? 'font-weight:700;background:var(--wp-bg);' : lvl === 'balance' ? 'font-weight:700;background:var(--accent-light);' : '';
       html += '<tr style="' + bold + '"><td>' + row.科目 + '</td>';
       for (let m = 1; m <= 12; m++) html += '<td>' + fmt(row[m + '月']) + '</td>';
       html += '<td style="font-weight:600">' + fmt(row['1-12月']) + '</td>';
@@ -3159,7 +3146,7 @@ function renderVipTable() {
       <td><b>${r.customer_name || '-'}</b></td>
       <td>${r.start_date || '-'}</td>
       <td>${r.end_date || '-'}</td>
-      <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:6px;background:#e5e5e5;border-radius:3px"><div style="width:${r.progress}%;height:100%;background:${progressColor};border-radius:3px"></div></div><span style="font-size:11px;color:${progressColor};min-width:35px">${r.progress}%</span></div></td>
+      <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:6px;background:#1e293b;border-radius:3px"><div style="width:${r.progress}%;height:100%;background:${progressColor};border-radius:3px"></div></div><span style="font-size:11px;color:${progressColor};min-width:35px">${r.progress}%</span></div></td>
       <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.notes || ''}">${r.notes || '-'}</td>
       <td><button class="admin-btn" style="padding:4px 10px;font-size:11px" onclick="openVipModal(${r.id})"><i class="fa-solid fa-pen"></i></button> <button class="admin-btn" style="padding:4px 10px;font-size:11px;color:var(--red)" onclick="openVipDelModal(${r.id})"><i class="fa-solid fa-trash"></i></button></td>
     </tr>`;
