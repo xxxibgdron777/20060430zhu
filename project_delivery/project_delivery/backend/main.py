@@ -1027,6 +1027,83 @@ def _fallback_ai_analysis(team_name, inc_w, exp_w, fee_w, bal_w, income_items, e
     }
 
 
+# ==================== 行动建议 ====================
+
+@app.post("/api/team/action_suggestions")
+def api_team_action_suggestions(
+    year: int = Body(...),
+    months: List[int] = Body(...),
+):
+    """基于当前经营数据生成北京市场可落地行动建议（1-2条）"""
+    _refresh_if_needed()
+    if team_df is None or team_df.empty:
+        raise HTTPException(500, "团队数据未加载")
+
+    df_f = filter_team(team_df, year, months)
+    if df_f.empty:
+        return {"suggestions": []}
+
+    inc, exp, fee = _team_calc(df_f)
+    bal = inc - exp - fee
+
+    # 按性质汇总
+    nature_agg = df_f.groupby("H团队线性质").apply(
+        lambda g: pd.Series({"收入": g["金额g"].sum() if "金额g" in g.columns else 0, "行数": len(g)})
+    ).to_dict("index")
+
+    # 按部门收支分组
+    income_rows = []
+    expense_rows = []
+    if "部门收支" in df_f.columns and "金额g" in df_f.columns:
+        for name, grp in df_f.groupby("部门收支"):
+            amt = grp["金额g"].sum()
+            if amt > 0:
+                income_rows.append({"name": name, "amt": round(amt)})
+            elif amt < 0:
+                expense_rows.append({"name": name, "amt": round(-amt)})
+
+    # 构建 prompt
+    summary = f"2026年{months[0]}-{months[-1]}月，创业团队总收入{to_wan(inc)}万元，支出{to_wan(exp)}万元，结余{to_wan(bal)}万元"
+    nature_str = "、".join([f"{k}({v['收入']:.0f}万)" for k, v in list(nature_agg.items())[:5]])
+    inc_str = "、".join([f"{r['name']}{r['amt']}万" for r in income_rows[:3]])
+    exp_str = "、".join([f"{r['name']}{r['amt']}万" for r in expense_rows[:3]])
+
+    prompt = f"""你是北京养老行业专家顾问。根据以下经营数据，给出1-2条在北京市场可立即落地的行动建议。
+要求：每条≤60字，具体可操作，不谈资金/管理费，结合北京养老政策环境。
+
+数据：{summary}。性质分布：{nature_str}。收入来源：{inc_str}。支出方向：{exp_str}。
+
+返回JSON格式：{{"suggestions":[{{"title":"标题","detail":"具体建议"}}]}}"""
+
+    try:
+        api_key = os.environ.get("DEEPSEEK_API_KEY", "")
+        if not api_key:
+            raise Exception("no key")
+
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com/v1")
+        resp = client.chat.completions.create(
+            model="deepseek-chat", messages=[{"role": "user", "content": prompt}],
+            temperature=0.7, max_tokens=400
+        )
+        text = resp.choices[0].message.content.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1].rsplit("\n```", 1)[0]
+        data = json.loads(text)
+        return _ensure_native(data)
+    except Exception as e:
+        print(f"[Action] AI失败: {e}")
+        # 兜底规则建议
+        suggestions = []
+        if inc > 0 and bal / inc < 0.05:
+            suggestions.append({"title": "提升结余率", "detail": "当前结余率偏低，建议聚焦高毛利服务品类，优化低效支出结构"})
+        if len(income_rows) <= 2:
+            suggestions.append({"title": "拓展收入来源", "detail": "收入结构较集中，建议试点社区增值服务或企业合作拓展第二收入曲线"})
+        if not suggestions:
+            suggestions.append({"title": "精细化管理", "detail": "按月度追踪各团队结余率变化，对持续亏损团队进行专项复盘和业务调整"})
+        return _ensure_native({"suggestions": suggestions})
+
+
 # ==================== 创业团队经营明细透视（pivot_flat）====================
 
 @app.post("/api/team/pivot_flat")

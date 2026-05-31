@@ -2735,6 +2735,67 @@ async function refreshTeamTab() {
   await Promise.all([loadKPITeam(), loadChartsTeam(), loadTableTeam()]);
 }
 
+// === 创业团队AI分析面板 ===
+async function renderTeamAICard() {
+  const panel = document.getElementById('specialPanelTeam');
+  if (!panel) return;
+  if (!S.monthsTeam || S.monthsTeam.length === 0) {
+    panel.innerHTML = '';
+    return;
+  }
+  const ms = S.monthsTeam.join(',');
+  let html = '<div class="ai-card"><div class="ai-card-header"><div class="ai-card-title"><i class="fa-solid fa-robot"></i> AI 智能分析</div><div class="ai-card-meta"><span id="teamAIMeta"></span></div></div><div class="ai-card-body" id="teamAIBody"><div class="ai-card-loading"><i class="fa-solid fa-spinner fa-spin"></i><div>分析中…</div></div></div></div>';
+  panel.innerHTML = html + '<div id="actionCardArea"></div>';
+
+  try {
+    const d = await apiPost('/api/team/ai_analysis', { year: S.year, months: S.monthsTeam, team_name: '总体' });
+    const metaEl = document.getElementById('teamAIMeta');
+    if (d.generated_at) metaEl.textContent = 'AI 生成 · ' + d.generated_at;
+    if (d.fallback) metaEl.innerHTML += '<span class="ai-fallback-badge">规则引擎</span>';
+    const body = document.getElementById('teamAIBody');
+    if (d.analysis && d.analysis.items && d.analysis.items.length > 0) {
+      body.innerHTML = d.analysis.items.map(it => '<div class="ai-card-item">' + it.replace(/\n/g, '<br>') + '</div>').join('');
+    } else if (d.analysis && d.analysis.summary) {
+      body.innerHTML = '<div class="ai-card-item">' + d.analysis.summary + '</div>';
+    } else {
+      body.innerHTML = '<div class="ai-card-empty">暂无分析数据</div>';
+    }
+  } catch (e) {
+    document.getElementById('teamAIBody').innerHTML = '<div class="ai-card-empty">分析加载失败: ' + e.message + '</div>';
+  }
+}
+
+// === OPENAI 行动建议卡片 ===
+async function renderActionCard() {
+  const area = document.getElementById('actionCardArea');
+  if (!area) return;
+  if (!S.monthsTeam || S.monthsTeam.length === 0 || S.monthsTeam.length < 3) {
+    area.innerHTML = '';
+    return;
+  }
+  area.innerHTML = '<div class="ai-card" style="border-left:3px solid var(--accent)"><div class="ai-card-header"><div class="ai-card-title"><i class="fa-solid fa-lightbulb" style="color:var(--accent)"></i> 行动建议</div><button class="ai-generate-btn" id="actionBtn" onclick="loadActionSuggestions()" style="background:var(--accent)"><i class="fa-solid fa-wand-magic-sparkles"></i> 生成建议</button></div><div class="ai-card-body" id="actionBody"><div class="ai-card-empty">点击生成，基于当前数据获取北京市场可落地方向</div></div></div>';
+}
+
+async function loadActionSuggestions() {
+  const btn = document.getElementById('actionBtn');
+  const body = document.getElementById('actionBody');
+  if (!btn || !body) return;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 生成中';
+  try {
+    const d = await apiPost('/api/team/action_suggestions', { year: S.year, months: S.monthsTeam });
+    if (d.suggestions && d.suggestions.length > 0) {
+      body.innerHTML = d.suggestions.map((s, i) => '<div class="ai-card-item" style="border-left-color:var(--accent)"><strong>' + (i+1) + '. ' + s.title + '</strong><br>' + s.detail + '</div>').join('');
+    } else {
+      body.innerHTML = '<div class="ai-card-empty">暂无建议</div>';
+    }
+  } catch (e) {
+    body.innerHTML = '<div class="ai-card-empty">生成失败: ' + e.message + '</div>';
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> 生成建议';
+}
+
 // === Q&A ===
 const presets = ['哪些板块结余率低于5%？', '支出增长最快的产品？', '收入波动异常的板块？', '物业板块详情', '管理费占比超过10%的板块？', '机构医疗各产品结余'];
 function initQA() {
