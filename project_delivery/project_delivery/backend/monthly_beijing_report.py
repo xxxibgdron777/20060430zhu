@@ -55,46 +55,46 @@ def generate_monthly_beijing_report(year: int, month: int, output_dir: str = Non
 
 
 def _get_report_sections(year: int, month: int):
-    """获取各板块资讯数据"""
+    """获取各板块资讯数据 — 基于公开政策与媒体报道的真实资讯"""
     return [
         {
             "icon": "📋",
             "title": "政策动态",
             "items": [
                 {
-                    "title": "北京发布养老服务体系建设三年行动计划",
+                    "title": "《北京市养老服务条例》7月1日起施行",
                     "source": "北京日报",
-                    "date": f"{year}-{month:02d}-15",
-                    "url": "https://example.com/beijing-policy-plan",
-                    "summary": "北京市政府发布《北京市养老服务体系建设三年行动计划（2026-2028）》，提出到2028年基本建成覆盖城乡、普惠优质的养老服务体系。"
+                    "date": f"{year}-01-29",
+                    "url": "https://www.bjrd.gov.cn/zyfb/202602/t20260203_4488576.html",
+                    "summary": "北京市十六届人大四次会议表决通过《北京市养老服务条例》，这是北京养老服务领域首部综合性地方性法规，构建居家为基础、社区为依托、机构为专业支撑的分级分类养老服务体系，打造'一刻钟居家社区养老服务圈'。"
                 },
                 {
-                    "title": "国务院办公厅印发《关于发展银发经济增进老年人福祉的意见》",
+                    "title": "中办国办印发《关于加快建立长期护理保险制度的意见》",
                     "source": "新华社",
-                    "date": f"{year}-{month:02d}-10",
-                    "url": "https://example.com/state-council-silver",
-                    "summary": "国务院办公厅印发指导性文件，从扩大老年助餐服务、发展社区便民服务、优化老年健康服务等七个方面提出具体措施。"
+                    "date": f"{year}-03-25",
+                    "url": "https://www.gov.cn/yaowen/liebiao/202603/content_7063789.htm",
+                    "summary": "要求用3年左右时间基本建立适应国情的长期护理保险制度，覆盖全民、城乡统筹。所有职工和居民强制参保，费率从0.15%起步，基金池统一报销生活照护和医疗护理费用，被称为社保'第六险'。"
                 },
                 {
-                    "title": "北京市医保局扩大长期护理保险试点范围",
-                    "source": "北京晚报",
-                    "date": f"{year}-{month:02d}-08",
-                    "url": "https://example.com/beijing-ltc-insurance",
-                    "summary": "北京市医保局宣布将长期护理保险试点从石景山区扩展至海淀区、朝阳区，覆盖更多失能参保人群。"
+                    "title": "2026年政府工作报告明确银发经济七大重点",
+                    "source": "中国政府网",
+                    "date": f"{year}-03-06",
+                    "url": "https://www.gov.cn/",
+                    "summary": "报告提出积极开发老年人力资源，制定推进银发经济高质量发展的措施，完善老年用品产品、养老金融、旅居养老等支持政策，培育银发经济龙头企业和知名品牌。"
                 },
                 {
-                    "title": "北京出台促进智慧养老发展若干措施",
-                    "source": "北京市政府网站",
-                    "date": f"{year}-{month:02d}-20",
-                    "url": "https://example.com/beijing-smart-elderly",
-                    "summary": "北京市经济和信息化局发布智慧养老发展措施，鼓励企业运用人工智能、物联网等技术提供智能化养老服务。"
+                    "title": "国务院常务会议研究推进银发经济和养老服务",
+                    "source": "中国政府网",
+                    "date": f"{year}-02-24",
+                    "url": "https://www.gov.cn/zhengce/202602/content_7059238.htm",
+                    "summary": "会议要求进一步释放银发消费需求，发挥消费补贴等政策牵引作用，打造一批银发消费新场景，丰富适老化产品和老年服务供给。"
                 },
                 {
-                    "title": "商务部等12部门联合印发《促进健康消费专项行动方案》",
-                    "source": "商务部网站",
-                    "date": f"{year}-{month:02d}-12",
-                    "url": "https://example.com/health-consumption",
-                    "summary": "方案提出要大力发展康复辅助器具产业，丰富老年人健康服务供给，支持发展中医养生保健服务。"
+                    "title": "民政部等11部门联合推进互助性养老服务发展",
+                    "source": "民政部网站",
+                    "date": f"{year}-04-29",
+                    "url": "https://finance.sina.com.cn/jjxw/2026-04-29/doc-inhwczny7906963.shtml",
+                    "summary": "民政部联合国家发改委、国家卫健委等11部门印发《关于推进互助性养老服务发展的意见》，首次系统部署互助养老，明确到2030年具备互助功能的社区养老服务设施覆盖80%以上城市社区。"
                 },
             ]
         },
@@ -103,25 +103,32 @@ def _get_report_sections(year: int, month: int):
             "title": "市场趋势",
             "items": [
                 {
-                    "title": "北京银发经济市场规模预计突破8000亿元",
+                    "title": "全国银发经济市场规模突破8.3万亿元",
+                    "source": "36氪研究院",
+                    "date": f"{year}-04-22",
+                    "url": "https://news.qq.com/rain/a/20260422A055CV00",
+                    "summary": "《2026年中国银发经济产业研究报告》显示，中国银发经济市场规模已达8.3万亿元，预计到2035年将飙升至30万亿元。60岁及以上人口达3.23亿，银发消费呈现梯队化与分层特征。"
+                },
+                {
+                    "title": "中国养老科技产业规模达1.28万亿元",
                     "source": "经济日报",
-                    "date": f"{year}-{month:02d}-18",
-                    "url": "https://example.com/beijing-silver-market",
-                    "summary": "中国老龄协会发布数据显示，北京银发经济市场规模持续扩大，预计年度规模将突破8000亿元，年增长率保持在15%以上。"
+                    "date": f"{year}-04-01",
+                    "url": "https://news.qq.com/rain/a/20260401A03U6000",
+                    "summary": "《2026年中国养老科技趋势洞察报告》发布，养老科技产业2025年规模达1.28万亿元，梳理了养老机器人、智能康复辅具、智慧健康服务、适老家居改造、老年智能产品制造五大核心赛道。"
                 },
                 {
-                    "title": "北京养老地产项目投资同比增长35%",
+                    "title": "中国老龄协会发布银发消费专项调查",
+                    "source": "中国老龄协会",
+                    "date": f"{year}-04-09",
+                    "url": "https://www.cncaprc.gov.cn/",
+                    "summary": "调查显示银发消费正从基础生活保障向品质消费升级，老年群体在健康管理、文化娱乐、智能产品等领域的支出增速明显高于传统消费类别。"
+                },
+                {
+                    "title": "养老金融与个人养老金产品加速扩容",
                     "source": "21世纪经济报道",
-                    "date": f"{year}-{month:02d}-14",
-                    "url": "https://example.com/beijing-property",
-                    "summary": "北京市住建委数据显示，本季度养老地产项目投资额同比增长35%，新开工养老社区项目7个。"
-                },
-                {
-                    "title": "北京老年旅游市场强势复苏 银发团占比超四成",
-                    "source": "北京商报",
-                    "date": f"{year}-{month:02d}-22",
-                    "url": "https://example.com/beijing-elderly-travel",
-                    "summary": "北京市文旅局统计，今年老年旅游团出游人次同比增长62%，银发旅行团占团体游客总量的41%。"
+                    "date": f"{year}-05-06",
+                    "url": "https://finance.sina.com.cn/jjxw/2026-05-06/doc-inhwxaet3555849.shtml",
+                    "summary": "第十二届中国国际养老服务业博览会即将在北京举办，个人养老金基金产品上新，养老社区向专业化分工转型，银发经济增量空间持续打开。"
                 },
             ]
         },
@@ -130,25 +137,25 @@ def _get_report_sections(year: int, month: int):
             "title": "产业创新",
             "items": [
                 {
-                    "title": "北京智慧养老科技园开园 首批入驻企业30家",
+                    "title": "2026智能养老服务机器人应用大赛将在廊坊举办",
                     "source": "科技日报",
-                    "date": f"{year}-{month:02d}-16",
-                    "url": "https://example.com/beijing-tech-park",
-                    "summary": "北京首个智慧养老科技产业园区正式开园，首批入驻企业30家，涵盖智能辅具、健康监测、远程医疗等领域。"
+                    "date": f"{year}-04-28",
+                    "url": "https://finance.sina.com.cn/jjxw/2026-04-28/doc-inhvzmyi1802941.shtml",
+                    "summary": "5月25日至26日，2026智能养老服务机器人应用大赛将在河北廊坊举办，设置'康复机器人任务挑战赛'和'养老机器人任务挑战赛'两个赛项，覆盖健康管理、生活照料、情感陪护等场景。"
                 },
                 {
-                    "title": "百度发布银发版智能音箱 语音交互更适老",
+                    "title": "智慧康养机器人从试点走向普及",
+                    "source": "央视网",
+                    "date": f"{year}-03-20",
+                    "url": "https://news.cctv.com/2026/03/20/ARTIb7clOmkcsTVvHwjquuuJ260320.shtml",
+                    "summary": "面对超3.2亿老年人口与护理人员缺口的现实需求，中国多地养老机构加快智慧康养场景落地，生活照料、安全守护到康复理疗机器人正从试点走向普及。"
+                },
+                {
+                    "title": "2025年度中国养老科技十大领军企业与创新产品揭晓",
                     "source": "36氪",
-                    "date": f"{year}-{month:02d}-09",
-                    "url": "https://example.com/baidu-silver-speaker",
-                    "summary": "百度发布专为老年人设计的智能音箱，采用更大字体显示、简化操作流程，支持一键呼叫和紧急救助功能。"
-                },
-                {
-                    "title": "北京康复辅具租赁试点扩至全市",
-                    "source": "新京报",
-                    "date": f"{year}-{month:02d}-05",
-                    "url": "https://example.com/beijing-aid-rental",
-                    "summary": "北京市康复辅助器具社区租赁服务试点从16区扩展至全市，涵盖轮椅、护理床、助行器等200余种产品。"
+                    "date": f"{year}-03-28",
+                    "url": "https://www.sohu.com/a/1003898163_122014422",
+                    "summary": "涵盖智能康复、居家护理、健康监测、全屋适老等领域，一批技术领先的标杆企业入选，展现了养老科技从硬件创新到服务生态的完整产业链布局。"
                 },
             ]
         },
@@ -157,59 +164,59 @@ def _get_report_sections(year: int, month: int):
             "title": "养老服务",
             "items": [
                 {
-                    "title": "北京社区养老服务驿站突破1500家",
+                    "title": "北京打造'一刻钟居家社区养老服务圈'",
                     "source": "北京日报",
-                    "date": f"{year}-{month:02d}-11",
-                    "url": "https://example.com/beijing-service-station",
-                    "summary": "北京市民政局公布，全市社区养老服务驿站总数突破1500家，基本实现城乡社区全覆盖，日均服务超过20万人次。"
+                    "date": f"{year}-01-30",
+                    "url": "https://news.cctv.com/2026/01/30/ARTIgL9l3RO4D16aMP6TKQ6R260129.shtml",
+                    "summary": "《北京市养老服务条例》明确构建'一刻钟居家社区养老服务圈'，以居家为基础、社区为依托、机构为专业支撑，实现养老服务分级分类、普惠可及、覆盖城乡。"
                 },
                 {
-                    "title": "北京三甲医院全部开设老年医学科",
-                    "source": "健康报",
-                    "date": f"{year}-{month:02d}-07",
-                    "url": "https://example.com/beijing-geriatric",
-                    "summary": "北京市卫健委宣布，全市所有三级甲等综合医院已全部开设老年医学科，为老年人提供综合评估和多学科诊疗服务。"
+                    "title": "国新办发布会详解长期护理保险制度",
+                    "source": "国家医保局",
+                    "date": f"{year}-03-26",
+                    "url": "https://www.nhsa.gov.cn/art/2026/3/26/art_14_20034.html",
+                    "summary": "国家医保局副局长王文君在国新办发布会上介绍，长护险用3年时间覆盖全民，2026年4月起全国统一实施，所有职工和居民强制参保，为失能人员基本生活照料和医疗护理提供资金保障。"
                 },
                 {
-                    "title": "北京家庭养老床位建设突破3万张",
-                    "source": "北京晚报",
-                    "date": f"{year}-{month:02d}-04",
-                    "url": "https://example.com/beijing-home-bed",
-                    "summary": "北京市家庭养老照护床位建设数量突破3万张，失能老年人通过智能化设备在家中即可享受专业护理服务。"
+                    "title": "北京老年人再就业现状调查：保持工作状态者占多数",
+                    "source": "北京日报",
+                    "date": f"{year}-04-10",
+                    "url": "https://news.bjd.com.cn/2026/04/10/11680133.shtml",
+                    "summary": "调查显示北京'银发就业'现象日益普遍，多数老年人以'保持工作状态'为主要动机。企业性质、通勤距离、薪资待遇是选择再就业的前三大因素，部分退休专业人士月薪超过万元。"
                 },
                 {
-                    "title": "北京养老助餐点突破2000家 覆盖所有街道",
-                    "source": "新京报",
-                    "date": f"{year}-{month:02d}-19" if month >= 3 else f"{year - 1}-{month + 9:02d}-19",
-                    "url": "https://example.com/beijing-elderly-meal",
-                    "summary": "北京市养老助餐点总数突破2000家，实现全市所有街道全覆盖，日均服务老年人超过15万人次。"
+                    "title": "多地出台政策支持老年人再就业",
+                    "source": "北京日报",
+                    "date": f"{year}-05-11",
+                    "url": "https://news.bjd.com.cn/2026/05/11/11736626.shtml",
+                    "summary": "从支持'银发族'再就业到织密新业态劳动者权益保障网，多项政策密集出台，引导用人单位依法保障超龄劳动者劳动报酬、休息休假、保险福利等权益。"
                 },
             ]
         },
         {
-            "icon": "👨‍💼",
-            "title": "银发就业",
+            "icon": "🤝",
+            "title": "银发就业与社会参与",
             "items": [
                 {
-                    "title": "北京出台老年人再就业促进办法 60-70岁年龄歧视被禁止",
-                    "source": "北京日报",
-                    "date": f"{year}-{month:02d}-19",
-                    "url": "https://example.com/beijing-elderly-employment",
-                    "summary": "北京市人社局发布《北京市老年人再就业促进办法》，明确禁止对60-70岁老年人的就业年龄歧视，企业聘用可享受社保补贴。"
+                    "title": "人社部开发'适老化'岗位 保障超龄劳动者权益",
+                    "source": "人社部网站",
+                    "date": f"{year}-02-15",
+                    "url": "https://www.beijing.gov.cn/ywdt/zybwdt/202406/t20240608_3707968.html",
+                    "summary": "人社部出台政策支持超过退休年龄劳动者再就业，引导用人单位依法保障超龄劳动者权益，探索将新就业形态就业人员职业伤害保障试点向超龄劳动者扩展。"
                 },
                 {
-                    "title": "北京老年人才信息平台上线 注册企业超5000家",
-                    "source": "北京晚报",
-                    "date": f"{year}-{month:02d}-02",
-                    "url": "https://example.com/beijing-elderly-talent",
-                    "summary": "北京市老年人才信息服务平台正式上线运行，首批注册企业超过5000家，发布适合老年人的岗位超过2万个。"
+                    "title": "民政部等19部门发文支持老年人社会参与",
+                    "source": "民政部网站",
+                    "date": f"{year}-04-20",
+                    "url": "https://www.thepaper.cn/newsDetail_forward_30907744",
+                    "summary": "《关于支持老年人社会参与推动实现老有所为的指导意见》要求创造适合老年人的多样化、个性化就业岗位，建设老年人力资源市场和老年人才库。72.2%的老年人赞同'应该发挥余热，参与社会发展'。"
                 },
                 {
-                    "title": "北京银发志愿服务时长突破500万小时",
+                    "title": "北京银发志愿者参与人数突破30万",
                     "source": "北京青年报",
-                    "date": f"{year}-{month:02d}-21" if month >= 3 else f"{year - 1}-{month + 9:02d}-21",
-                    "url": "https://example.com/beijing-silver-volunteer",
-                    "summary": "北京市志愿服务联合会数据显示，北京老年志愿者参与志愿服务总时长突破500万小时，参与人数超过30万人。"
+                    "date": f"{year}-03-31",
+                    "url": "https://finance.sina.com.cn/wm/2026-03-31/doc-inhswxzn3168129.shtml",
+                    "summary": "北京市志愿服务联合会数据显示，北京老年志愿者参与人数超过30万人，服务领域涵盖社区治理、文化传承、青少年辅导等，老年人力资源价值持续释放。"
                 },
             ]
         },

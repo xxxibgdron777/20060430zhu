@@ -55,3 +55,21 @@ Thumbs.db
 *.cer
 *.p12
 *.pfx
+
+# 飞书密钥配置
+**/feishu_config.py
+
+# Excel临时文件
+~$*.xlsx
+
+# 调试脚本
+**/check_html*.py
+
+# 输出目录
+output/
+
+# 无用的根目录脚本
+verify_*.py
+verify_*.sh
+weekly_check.sh
+setup_cron.sh

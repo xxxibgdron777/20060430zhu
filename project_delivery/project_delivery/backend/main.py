@@ -3,7 +3,7 @@
 三模块: 经营分析 / 智能问答 / 预算对比
 数据源: 管理报表.xlsx（产品Sheet + 创业团队Sheet）
 """
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Body
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Body, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,13 +11,16 @@ from contextlib import asynccontextmanager
 import pandas as pd
 import numpy as np
 import io
+import json
 import os
 import re
+import threading
 import time
 from typing import List, Optional
 import datetime
 
-from data_loader import load_product_df, load_team_df, get_meta, filter_product, filter_team, load_budget_df, get_budget_comparison_data
+from data_loader import load_product_df, load_team_df, get_meta, filter_product, filter_team, load_budget_df, get_budget_comparison_data, is_file_updated, mark_loaded
+from feishu_sync import sync as feishu_sync
 from calculators import (
     to_wan, to_wan_f, calc_pct, format_pct,
     aggregate_board, aggregate_product, aggregate_project,
@@ -100,11 +103,13 @@ def _ensure_native(obj):
 
 def _refresh_if_needed():
     global product_df, team_df, _load_time
-    if time.time() - _load_time > CACHE_SECONDS:
+    # 检查文件是否被更新（飞书同步），或缓存超时
+    if is_file_updated() or time.time() - _load_time > CACHE_SECONDS:
         try:
             product_df = load_product_df()
             team_df = load_team_df()
             _load_time = time.time()
+            mark_loaded()
         except Exception:
             pass
 
@@ -1648,6 +1653,52 @@ def api_vip_products():
     # 从医养板块提取产品
     yi_product = product_df[product_df["业务板块"] == "医养板块"]["产品"].dropna().unique()
     return {"success": True, "data": sorted([str(p) for p in yi_product])}
+
+
+# ==================== 飞书 Webhook ====================
+
+@app.post("/api/feishu/webhook")
+async def feishu_webhook(request: Request):
+    """接收飞书 Webhook 通知，触发数据同步"""
+    global _load_time
+    # 读取原始 body
+    raw = await request.body()
+    print(f"[webhook] raw body: {raw[:200]}")
+
+    try:
+        body = json.loads(raw)
+    except:
+        body = None
+
+    # 飞书首次配置时会发 challenge，需要原样返回
+    if body and "challenge" in body:
+        print(f"[webhook] challenge: {body['challenge']}")
+        return JSONResponse({"challenge": body["challenge"]})
+
+    # 收到表格变更通知 → 后台同步
+    if body and body.get("type") == "url_verification":
+        return JSONResponse({"challenge": body["challenge"]})
+
+    print("[webhook] 收到飞书通知，开始同步...")
+    def _do_sync():
+        global _load_time
+        ok, msg = feishu_sync()
+        if ok:
+            _load_time = 0
+        print(f"[webhook] {msg}")
+
+    threading.Thread(target=_do_sync, daemon=True).start()
+    return {"code": 0, "msg": "sync triggered"}
+
+
+@app.post("/api/feishu/sync")
+async def feishu_manual_sync():
+    """手动触发飞书同步（调试用）"""
+    global _load_time
+    ok, msg = feishu_sync()
+    if ok:
+        _load_time = 0
+    return {"code": 0 if ok else 1, "msg": msg}
 
 
 # ==================== 前端 ====================

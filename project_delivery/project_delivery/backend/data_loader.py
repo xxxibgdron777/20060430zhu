@@ -8,6 +8,31 @@ import os
 
 EXCEL_PATH = os.path.join(os.path.dirname(__file__), "管理报表.xlsx")
 
+# ==================== 文件变更检测 ====================
+_last_mtime = 0.0
+
+def is_file_updated():
+    """检测 Excel 文件是否已被外部更新（如飞书同步脚本写入）"""
+    global _last_mtime
+    try:
+        current = os.path.getmtime(EXCEL_PATH)
+        if current > _last_mtime:
+            _last_mtime = current
+            return True
+    except OSError:
+        pass
+    return False
+
+def mark_loaded():
+    """标记文件已加载，重置检测时间"""
+    global _last_mtime
+    try:
+        _last_mtime = os.path.getmtime(EXCEL_PATH)
+    except OSError:
+        _last_mtime = time.time()
+
+import time  # 用于 mark_loaded 的时间戳回退
+
 def _clean_cols(df):
     df.columns = [str(c).strip() for c in df.columns]
     return df

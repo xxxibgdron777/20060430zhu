@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 20260509-apple-0509carrie -->
+<!-- VERSION: 20260509-pivot-column-colors -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -163,8 +163,8 @@ body.business-view #tab-product #trendChartCard { display: none; }
 
 /* Data Table */
 table.detail-table, table.data-table, .table-wrap table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: clamp(11px, 1.1vw, 14px); table-layout: fixed; }
-table.detail-table th, table.data-table th, .table-wrap table thead th { position: sticky; top: 0; background: #f0f0f5; color: var(--wp-text); font-weight: 600; font-size: clamp(10px, 1vw, 13px); text-transform: none; letter-spacing: 0; padding: 10px 8px; text-align: right; border-bottom: 1px solid var(--wp-border); white-space: nowrap; z-index: 6; }
-table.detail-table th:first-child, table.data-table th:first-child, .table-wrap table thead th:first-child { text-align: left; padding-left: 8px; position: sticky; left: 0; top: 0; z-index: 7; background: #f0f0f5; border-right: 1px solid var(--wp-border); width: 28%; }
+table.detail-table th, table.data-table th, .table-wrap table thead th { position: sticky; top: 0; background: #f0f0f5; color: var(--wp-text); font-weight: 600; font-size: clamp(10px, 1vw, 13px); text-transform: none; letter-spacing: 0; padding: 10px 8px; text-align: right; border-bottom: 2px solid var(--wp-divider); white-space: nowrap; z-index: 6; }
+table.detail-table th:first-child, table.data-table th:first-child, .table-wrap table thead th:first-child { text-align: left; padding-left: 8px; position: sticky; left: 0; top: 0; z-index: 7; background: #f0f0f5; border-right: 1px solid var(--wp-divider); width: 28%; }
 .table-wrap table thead th:nth-child(2), .table-wrap table thead th:nth-child(3), .table-wrap table thead th:nth-child(4) { width: 16%; }
 .table-wrap table thead th:nth-child(5) { width: 14%; }
 .table-wrap table thead th:nth-child(6) { width: 10%; }
@@ -188,16 +188,16 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 
 /* Frozen first column */
 .table-wrap .tree-table { border-collapse: separate; }
-.table-wrap .tree-table thead th:first-child { position: sticky; left: 0; top: 0; z-index: 10; background: #f0f0f5; border-right: 1px solid var(--wp-border); }
+.table-wrap .tree-table thead th:first-child { position: sticky; left: 0; top: 0; z-index: 10; background: #f0f0f5; border-right: 1px solid var(--wp-divider); }
 .table-wrap .tree-table tbody td:first-child { position: sticky; left: 0; z-index: 1; background: var(--wp-card); border-right: 1px solid var(--wp-divider); }
 .table-wrap .tree-table tbody tr:hover td:first-child { background: rgba(79,143,247,0.06); }
 .table-wrap .tree-table .tree-parent td:first-child { background: #f0f0f5; font-weight: 600; }
 .table-wrap .tree-table .tree-parent:hover td:first-child { background: #e0e0e5; }
-.table-wrap .tree-table .tree-parent td { background: #f0f0f5; border-bottom: 1px solid var(--wp-border); }
+.table-wrap .tree-table .tree-parent td { background: #f0f0f5; border-bottom: 1px solid var(--wp-divider); }
 .table-wrap .tree-table .tree-parent:hover td { background: #e0e0e5; }
 
 /* Product Tab */
-#tab-product .tree-table .tree-parent td { background: rgba(204,236,251,0.5); border-bottom: 2px solid var(--wp-border); font-weight: 700; padding: 10px 8px; }
+#tab-product .tree-table .tree-parent td { background: rgba(204,236,251,0.5); border-bottom: 2px solid var(--wp-divider); font-weight: 700; padding: 10px 8px; }
 #tab-product .tree-table .tree-parent td:first-child { background: rgba(204,236,251,0.5); font-weight: 700; }
 #tab-product .tree-table .tree-parent:hover td { background: rgba(204,236,251,0.65); }
 #tab-product .tree-table .tree-parent:hover td:first-child { background: rgba(204,236,251,0.65); }
@@ -211,20 +211,25 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 /* Team Tab */
 #tab-team .table-card { border: none; border-radius: var(--radius); box-shadow: var(--shadow-premium-sm); }
 #tab-team .table-wrap { border: none; border-radius: 0; background: transparent; box-shadow: none; margin: 0; }
-#tab-team .tree-table thead th { background: #f0f0f5; font-weight: 600; padding: 10px 8px; border-bottom: 1px solid var(--wp-border); color: var(--wp-text); text-shadow: none; font-size: clamp(10px, 1vw, 13px); }
-#tab-team .tree-table thead th:first-child { background: #f0f0f5; border-right: 1px solid var(--wp-border); }
+/* 统一表格边框：只用一种颜色、一种粗细，整洁一致 */
+#tab-team .tree-table { border-collapse: separate; border-spacing: 0; border: 1px solid var(--wp-divider); border-radius: 6px; overflow: hidden; }
+#tab-team .tree-table thead th { background: #f0f0f5; font-weight: 600; padding: 10px 8px; border-bottom: 2px solid var(--wp-divider); color: var(--wp-text); text-shadow: none; font-size: clamp(10px, 1vw, 13px); }
+#tab-team .tree-table thead th:first-child { background: #f0f0f5; border-right: 1px solid var(--wp-divider); }
 #tab-team .tree-table tbody td { background: transparent; box-shadow: none; border-bottom: 1px solid var(--wp-divider); color: var(--wp-text); padding: 8px 8px; }
 #tab-team .tree-table tbody td:first-child { background: transparent; font-weight: 400; border-right: 1px solid var(--wp-divider); box-shadow: none; }
-#tab-team .tree-table .tree-parent td { background: #f0f0f5; cursor: pointer; }
+#tab-team .tree-table .tree-parent td { background: #f0f0f5; cursor: pointer; border-bottom: 1px solid var(--wp-divider); }
 #tab-team .tree-table .tree-parent td:first-child { background: #f0f0f5; font-weight: 600; }
 #tab-team .tree-table .tree-child td { background: transparent; }
+#tab-team .tree-table tbody tr:last-child td { border-bottom: none; }
 #tab-team .tree-table tbody tr:hover td { background: rgba(79,143,247,0.04); }
 #tab-team .tree-table tbody tr:hover td:first-child { background: rgba(79,143,247,0.06); }
 #tab-team .tree-table .tree-parent:hover td { background: #e0e0e5; }
+#tab-team .tree-table .tree-parent:hover td:first-child { background: #e0e0e5; }
 #tab-team .tree-table .num-cell .num-main { font-weight: 600; font-size: clamp(12px, 1.3vw, 16px); color: var(--wp-text); }
 #tab-team .tree-table .num-cell .positive { color: var(--green); }
 #tab-team .tree-table .num-cell .negative { color: var(--red); }
 #tab-team .tree-table .tree-label { color: var(--wp-text); font-weight: 400; }
+
 
 /* Detail Button */
 .detail-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 4px 10px; font-size: 11px; font-weight: 400; font-family: var(--font); color: var(--wp-accent); background: var(--wp-card); border: 1px solid var(--wp-accent); border-radius: 3px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
@@ -339,23 +344,30 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .pivot-summary-card .ps-label { font-size: 10px; color: var(--wp-text3); font-weight: 400; letter-spacing: 0.3px; text-transform: uppercase; margin-bottom: 2px; white-space: nowrap; }
 .pivot-summary-card .ps-value { font-size: 15px; font-weight: 600; color: var(--wp-text); font-variant-numeric: tabular-nums; line-height: 1.3; }
 .pivot-summary-card .ps-unit { font-size: 10px; font-weight: 400; margin-left: 1px; color: var(--wp-text3); }
-.pivot-table-wrap { overflow-x: auto; overflow-y: auto; max-height: 55vh; border: 1px solid var(--wp-border); border-radius: var(--radius-sm); }
+.pivot-table-wrap { overflow-x: auto; overflow-y: auto; max-height: 55vh; border: 0.8px solid rgba(0,0,0,0.12); border-radius: var(--radius-sm); }
 .pivot-detail-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
 .pivot-detail-table thead { position: sticky; top: 0; z-index: 2; }
-.pivot-detail-table th { background: #f0f0f5; padding: 12px 8px; text-align: right; border-bottom: 1px solid var(--wp-border); font-weight: 600; color: var(--wp-text2); white-space: nowrap; font-size: 11px; text-transform: none; letter-spacing: 0.3px; }
-.pivot-detail-table th.pivot-sticky-col { text-align: left; width: 120px; left: 0; z-index: 3; border-right: 1px solid var(--wp-border); background: #f0f0f5; }
-.pivot-detail-table td { padding: 9px 8px; border-bottom: 1px solid var(--wp-divider); text-align: right; font-variant-numeric: tabular-nums; color: var(--wp-text); font-size: 12px; }
-.pivot-detail-table td.pivot-sticky-col { text-align: left; position: sticky; left: 0; z-index: 1; border-right: 1px solid var(--wp-divider); background: var(--wp-card); white-space: nowrap; }
+.pivot-detail-table th { background: #f0f0f5; padding: 12px 8px; text-align: right; border-bottom: 0.8px solid rgba(0,0,0,0.12); font-weight: 600; color: var(--wp-text2); white-space: nowrap; font-size: 11px; text-transform: none; letter-spacing: 0.3px; }
+.pivot-detail-table th.pivot-sticky-col { text-align: left; width: 120px; left: 0; z-index: 3; border-right: 0.8px solid rgba(0,0,0,0.12); background: #f0f0f5; }
+.pivot-detail-table td { padding: 9px 8px; border-bottom: 0.8px solid rgba(0,0,0,0.12); text-align: right; font-variant-numeric: tabular-nums; color: var(--wp-text); font-size: 12px; }
+.pivot-detail-table td.pivot-sticky-col { text-align: left; position: sticky; left: 0; z-index: 1; border-right: 0.8px solid rgba(0,0,0,0.12); background: var(--wp-card); white-space: nowrap; }
+.pivot-detail-table tbody tr:last-child td { border-bottom: none; }
 .pivot-detail-table tbody tr:hover td { background: rgba(79,143,247,0.04) !important; }
 .pivot-detail-table tbody tr:hover td.pivot-sticky-col { background: rgba(79,143,247,0.06) !important; }
 .pivot-detail-table .pivot-ratio { color: var(--wp-text2); font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
-.pivot-detail-table .pivot-highlight { background: var(--wp-accent-light); font-weight: 600; }
-.pivot-detail-table .pivot-level-total td { background: #f0f0f5 !important; }
-.pivot-detail-table .pivot-level-total td.pivot-sticky-col { background: #e5e5ea !important; }
-.pivot-detail-table .pivot-level-total:hover td { background: #e0e0e5 !important; }
-.pivot-detail-table .pivot-level-total:hover td.pivot-sticky-col { background: #dcdce2 !important; }
-.pivot-detail-table .pivot-section-expense td { border-top: 2px solid var(--wp-divider); }
-.pivot-detail-table .pivot-section-fee td { border-top: 2px solid var(--wp-divider); }
+.pivot-detail-table .pivot-highlight { font-weight: 600; }
+/* 一级行（total）：浅灰色填充 */
+.pivot-detail-table .pivot-level-total td { background: #f5f5f7 !important; }
+.pivot-detail-table .pivot-level-total td.pivot-sticky-col { background: #ededf0 !important; }
+.pivot-detail-table .pivot-level-total:hover td { background: #eeeef1 !important; }
+.pivot-detail-table .pivot-level-total:hover td.pivot-sticky-col { background: #e8e8ec !important; }
+/* 1-12月合计列：淡绿色 */
+.pivot-detail-table .pivot-annual { background: rgba(48,177,88,0.08) !important; }
+/* 3-12月合计列：淡蓝色 */
+.pivot-detail-table .pivot-q312 { background: rgba(0,113,227,0.06) !important; }
+.pivot-detail-table .pivot-section-expense td { border-top: 0.8px solid rgba(0,0,0,0.18); }
+.pivot-detail-table .pivot-section-fee td { border-top: 0.8px solid rgba(0,0,0,0.18); }
+
 .pivot-analysis { margin-top: 14px; padding: 16px 18px; background: var(--wp-card); border-radius: var(--radius-sm); border: 1px solid var(--wp-border); box-shadow: 0 1px 2px rgba(0,0,0,0.04); border-left: 3px solid var(--wp-accent); }
 .pivot-analysis-title { font-size: 13px; font-weight: 600; color: var(--wp-text); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
 .pivot-analysis-title i { color: var(--wp-accent); }
@@ -379,11 +391,12 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .detail-table td:first-child { text-align: left; }
 .detail-table tbody tr:hover { background: rgba(79,143,247,0.04); }
 .detail-summary { display: flex; gap: 12px; flex-wrap: wrap; }
-.detail-monthly-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11px; table-layout: fixed; }
-.detail-monthly-table th { background: #f0f0f5; padding: 4px 3px; text-align: right; font-size: 10px; color: var(--wp-text2); font-weight: 600; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
-.detail-monthly-table th:first-child { text-align: left; position: sticky; left: 0; z-index: 3; border-right: 2px solid var(--wp-border); }
+.detail-monthly-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11px; table-layout: fixed; border: 1px solid var(--wp-divider); border-radius: 6px; overflow: hidden; }
+.detail-monthly-table th { background: #f0f0f5; padding: 4px 3px; text-align: right; font-size: 10px; color: var(--wp-text2); font-weight: 600; position: sticky; top: 0; z-index: 2; white-space: nowrap; border-bottom: 2px solid var(--wp-divider); }
+.detail-monthly-table th:first-child { text-align: left; position: sticky; left: 0; z-index: 3; border-right: 1px solid var(--wp-divider); }
 .detail-monthly-table td { padding: 4px 3px; border-bottom: 1px solid var(--wp-divider); text-align: right; color: var(--wp-text); font-size: 11px; }
 .detail-monthly-table td:first-child { text-align: left; position: sticky; left: 0; z-index: 1; background: var(--wp-card); border-right: 1px solid var(--wp-divider); font-weight: 500; }
+.detail-monthly-table tbody tr:last-child td { border-bottom: none; }
 .detail-monthly-table tbody tr:hover td:first-child { background: rgba(79,143,247,0.06); }
 .detail-analysis-section { margin-bottom: 12px; }
 .detail-analysis-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--wp-text); }
@@ -597,10 +610,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--wp-accent); box-
 <!-- Tab3: 政策延申 - 北京市银发经营月报 -->
 <div id="tab-policy" class="tab-panel">
   <div class="content">
-    <div class="card" id="reportListCard">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <span style="font-size:14px;font-weight:600"><i class="fa-solid fa-newspaper"></i> 北京市银发经营月报</span>
-      </div>
+    <div class="card" id="reportListCard" style="padding:10px">
       <div id="reportListWrap" style="max-height:none;overflow-y:visible"></div>
     </div>
   </div>
@@ -878,13 +888,12 @@ function renderGlobalMonths() {
   const isCum = isTeam ? S.isCumulativeTeam : S.isCumulativeProduct;
   const isYtd = isTeam ? S.isYtdTeam : S.isYtdProduct;
   const activeMs = new Set(months);
-  let h = '';
+  let h = '<button class="month-pill special ' + (isCum ? 'active' : '') + '" data-cum="1">累计</button>';
+  h += '<button class="month-pill special ' + (isYtd ? 'active' : '') + '" data-ytd="1">3-12月</button>';
   for (let m = 1; m <= 12; m++) {
     const cls = activeMs.has(m) ? 'active' : '';
     h += '<button class="month-pill ' + cls + '" data-m="' + m + '">' + m + '月</button>';
   }
-  h += '<button class="month-pill special ' + (isCum ? 'active' : '') + '" data-cum="1">累计</button>';
-  h += '<button class="month-pill special ' + (isYtd ? 'active' : '') + '" data-ytd="1">3-12月</button>';
   c.innerHTML = h;
   c.querySelectorAll('.month-pill').forEach(p => p.addEventListener('click', () => {
     if (p.dataset.cum) {
@@ -1573,8 +1582,8 @@ window.showTeamDetailMatrix = async function(teamName) {
     for (const m of months) {
       html += '<th class="pivot-num-col">' + m + '月</th>';
     }
-    html += '<th class="pivot-num-col pivot-highlight">1-12月合计</th>';
-    html += '<th class="pivot-num-col pivot-highlight">3-12月合计</th>';
+    html += '<th class="pivot-num-col pivot-highlight pivot-annual">1-12月合计</th>';
+    html += '<th class="pivot-num-col pivot-highlight pivot-q312">3-12月合计</th>';
     html += '<th class="pivot-num-col">收入结构</th>';
     html += '<th class="pivot-num-col">支出结构</th>';
     html += '</tr></thead><tbody>';
@@ -1633,8 +1642,8 @@ window.showTeamDetailMatrix = async function(teamName) {
         const v = (row.values && row.values[m]) || 0;
         tr += '<td class="pivot-num-col">' + displayVal(v) + '</td>';
       }
-      tr += '<td class="pivot-num-col pivot-highlight" style="font-weight:700">' + fmt(Math.abs(totalVal)) + '</td>';
-      tr += '<td class="pivot-num-col pivot-highlight">' + fmt(Math.abs(sum312Val)) + '</td>';
+      tr += '<td class="pivot-num-col pivot-highlight pivot-annual" style="font-weight:700">' + fmt(Math.abs(totalVal)) + '</td>';
+      tr += '<td class="pivot-num-col pivot-highlight pivot-q312">' + fmt(Math.abs(sum312Val)) + '</td>';
       // 收入结构
       if (stype === 'income') {
         tr += '<td class="pivot-num-col pivot-ratio">' + incRatio + '</td>';
@@ -1663,8 +1672,8 @@ window.showTeamDetailMatrix = async function(teamName) {
       for (const v of bVals) {
         html += '<td class="pivot-num-col" style="font-weight:700;color:' + (v >= 0 ? '#34C759' : '#FF3B30') + '">' + fmt(v) + '</td>';
       }
-      html += '<td class="pivot-num-col pivot-highlight" style="font-weight:700;color:' + balColor + '">' + fmt(bTotal) + '</td>';
-      html += '<td class="pivot-num-col pivot-highlight" style="color:' + balColor + '">' + fmt(b312) + '</td>';
+      html += '<td class="pivot-num-col pivot-highlight pivot-annual" style="font-weight:700;color:' + balColor + '">' + fmt(bTotal) + '</td>';
+      html += '<td class="pivot-num-col pivot-highlight pivot-q312" style="color:' + balColor + '">' + fmt(b312) + '</td>';
       html += '<td class="pivot-num-col pivot-ratio">-</td>';
       html += '<td class="pivot-num-col pivot-ratio">-</td>';
       html += '</tr>';
@@ -2398,11 +2407,11 @@ function renderTeamRow(row, level, prevData) {
   
   let html = `<tr class="${rowClass}" data-name="${name}" data-level="${level}">`;
   html += `<td class="${indentClass}"><div class="tree-row"><span class="tree-toggle-area">${toggleBtn}</span><span class="tree-label" style="font-weight:${level === 0 ? 600 : 500}">${name}</span></div></td>`;
-  html += `<td style="text-align:center"><button class="detail-btn" onclick="showTeamDetail('${name}', ${level}, '${nature}')"><i class="fa-solid fa-eye"></i> 查看明细</button></td>`;
   html += `<td class="num-cell"><div class="num-main">${fmt(row.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momIncome)}</span></div></td>`;
   html += `<td class="num-cell"><div class="num-main">${fmt(row.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momExpense)}</span></div></td>`;
   html += `<td class="num-cell"><div class="num-main">${fmt(row.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momFee)}</span></div></td>`;
   html += `<td class="num-cell balance-cell"><div class="num-main" style="${balanceColor}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value ${momBalance >= 0 ? 'positive' : 'negative'}">${fmtYoy(momBalance)}</span></div></td>`;
+  html += `<td style="text-align:center"><button class="detail-btn" onclick="showTeamDetail('${name}', ${level}, '${nature}')"><i class="fa-solid fa-eye"></i> 查看明细</button></td>`;
   html += '</tr>';
   return html;
 }
@@ -2476,11 +2485,11 @@ async function loadTableTeam() {
 
     let html = '<table class="tree-table"><thead><tr>';
     html += '<th style="text-align:left;width:100px">团队</th>';
-    html += '<th style="text-align:center;width:80px">明细</th>';
     html += '<th class="num-cell-th">收入</th>';
     html += '<th class="num-cell-th">支出</th>';
     html += '<th class="num-cell-th">管理费</th>';
     html += '<th class="num-cell-th">结余</th>';
+    html += '<th style="text-align:center;width:80px">明细</th>';
     html += '</tr></thead><tbody>';
 
     for (const natureRow of natureData) {
@@ -2500,15 +2509,15 @@ async function loadTableTeam() {
       html += '<tr class="tree-parent">';
       html += '<td><div class="tree-row">';
       html += '<span class="tree-label" style="font-weight:600">' + natureName + '</span></div></td>';
+      html += '<td class="num-cell"><div class="num-main">' + fmt(inc) + '</div></td>';
+      html += '<td class="num-cell"><div class="num-main">' + fmt(exp) + '</div></td>';
+      html += '<td class="num-cell"><div class="num-main">' + fmt(fee) + '</div></td>';
+      html += '<td class="num-cell balance-cell"><div class="num-main ' + balCls + '">' + fmt(bal) + '</div></td>';
       if (natureName === '三里屯医疗诊所') {
         html += '<td style="text-align:center"></td>';
       } else {
         html += '<td style="text-align:center"><button class="detail-btn" onclick="showTeamDetailMatrix(\x27' + encodeURIComponent(natureName) + '\x27)"><i class="fa-solid fa-eye"></i> 查看明细</button></td>';
       }
-      html += '<td class="num-cell"><div class="num-main">' + fmt(inc) + '</div></td>';
-      html += '<td class="num-cell"><div class="num-main">' + fmt(exp) + '</div></td>';
-      html += '<td class="num-cell"><div class="num-main">' + fmt(fee) + '</div></td>';
-      html += '<td class="num-cell balance-cell"><div class="num-main ' + balCls + '">' + fmt(bal) + '</div></td>';
       html += '</tr>';
 
       // Parent 子行（只有当有多于1个孩子时才显示parent层级）
@@ -2530,11 +2539,11 @@ async function loadTableTeam() {
           html += '<tr class="' + (hasMultiChildren ? 'tree-child' : 'tree-parent') + '" data-level="1" data-nature="' + natureName + '" style="display:' + (hasMultiChildren ? '' : 'none') + '">';
           html += '<td class="' + (hasMultiChildren ? 'tree-indent-1' : '') + '"><div class="tree-row">';
           html += '<span class="tree-label" style="font-weight:500">' + pName + '</span></div></td>';
-          html += '<td style="text-align:center"><button class="detail-btn" onclick="showTeamDetail(\x27' + encodeURIComponent(pName) + '\x27, 1, \x27' + encodeURIComponent(natureName) + '\x27)"><i class="fa-solid fa-eye"></i> 查看明细</button></td>';
           html += '<td class="num-cell"><div class="num-main">' + fmt(pInc) + '</div></td>';
           html += '<td class="num-cell"><div class="num-main">' + fmt(pExp) + '</div></td>';
           html += '<td class="num-cell"><div class="num-main">' + fmt(pFee) + '</div></td>';
           html += '<td class="num-cell balance-cell"><div class="num-main ' + pBalCls + '">' + fmt(pBal) + '</div></td>';
+          html += '<td style="text-align:center"><button class="detail-btn" onclick="showTeamDetail(\x27' + encodeURIComponent(pName) + '\x27, 1, \x27' + encodeURIComponent(natureName) + '\x27)"><i class="fa-solid fa-eye"></i> 查看明细</button></td>';
           html += '</tr>';
         }
       }
@@ -2645,7 +2654,7 @@ window.doSortTeamTree = async function() {
   const totalExpense = data.reduce((sum, r) => sum + (r.支出 || 0), 0);
   
   let html = '<table class="tree-table"><thead><tr>';
-  html += '<th>团队</th><th class="num-col">明细</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th>';
+  html += '<th>团队</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th><th class="num-col">明细</th>';
   html += '</tr></thead><tbody>';
   
   // 获取环比数据
