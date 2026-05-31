@@ -92,15 +92,33 @@ def sync():
             all_data[sheet_title] = values
 
         # 4. 生成 Excel 文件（先写临时文件，避免中断时损坏原文件）
+        import re
+        def _eval_formula(s):
+            """安全计算简单数学表达式，如 '865521.6/3'、'327490-3700'、'-630000/12'"""
+            if not isinstance(s, str):
+                return s
+            s = s.strip()
+            # 只允许数字、小数点、括号、四则运算符号
+            if not re.match(r'^[\d\+\-\*\/\(\)\.\s]+$', s):
+                return s
+            try:
+                result = eval(s, {"__builtins__": {}}, {})
+                if isinstance(result, (int, float)):
+                    return result
+            except:
+                pass
+            return s
+
         def _clean_value(v):
             """转换飞书单元格值为 openpyxl 兼容格式"""
             if v is None:
                 return None
             if isinstance(v, dict):
-                return str(v.get('type', ''))  # 不支持的格式转为字符串
+                return str(v.get('type', ''))
             if isinstance(v, (int, float, bool)):
                 return v
-            return str(v)
+            # 尝试计算公式字符串
+            return _eval_formula(str(v))
 
         wb = openpyxl.Workbook()
         wb.remove(wb.active)  # 删除默认 Sheet
