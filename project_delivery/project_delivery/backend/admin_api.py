@@ -11,7 +11,20 @@ import tempfile
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
-EXCEL_PATH = os.path.join(os.path.dirname(__file__), "管理报表.xlsx")
+def _resolve_excel():
+    """多路径查找管理报表.xlsx（支持本地开发与Docker部署）"""
+    for p in [
+        os.path.join(os.path.dirname(__file__), "管理报表.xlsx"),            # backend/ (Docker: /app/)
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "管理报表.xlsx"),  # project_delivery/
+        "/app/管理报表.xlsx",
+    ]:
+        if os.path.exists(p):
+            return p
+    # 写入优先用父目录（Docker中即/app/）
+    parent = os.path.join(os.path.dirname(os.path.dirname(__file__)), "管理报表.xlsx")
+    return parent if os.path.exists(os.path.dirname(parent)) else os.path.join(os.path.dirname(__file__), "管理报表.xlsx")
+
+EXCEL_PATH = _resolve_excel()
 
 # ---------- Excel 内存缓存（避免每次请求重复读文件）----------
 _excel_cache: Dict[str, pd.DataFrame] = {}

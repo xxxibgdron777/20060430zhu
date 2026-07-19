@@ -14,7 +14,7 @@ from calculators import (
     get_support_team_balance, get_kpi, get_monthly_trend, get_pie_data,
     analyze_trends, _team_calc,
 )
-from agent import FinancialAgent, VolcEngineAgent
+from agent import FinancialAgent
 
 
 def ensure_native(obj):
@@ -50,9 +50,7 @@ def filter_team(team_df, year, months):
 
 def enhanced_query(product_df, team_df, question: str, year: int, months: List[int]) -> dict:
     """
-    增强版智能问答接口（规则匹配优先 + DeepSeek AI 补充）
-    - 优先使用 FinancialAgent（规则匹配）
-    - 规则未命中时，使用 DeepSeek V3.2 进行数据分析和回答
+    增强版智能问答接口（纯规则匹配，不调用 AI 大模型）
     """
     # 关键词别名映射（将非标准名称映射为数据中实际名称）
     alias_map = {
@@ -63,25 +61,10 @@ def enhanced_query(product_df, team_df, question: str, year: int, months: List[i
         if alias in question and target:
             question = question.replace(alias, target)
     
-    # 1. 规则匹配优先
+    # 规则匹配
     rule_agent = FinancialAgent(product_df, team_df)
     rule_agent.set_context(year, months)
     rule_result = rule_agent.query(question)
-    
-    # 默认回复含 suggestions 字段，表示未命中规则
-    is_default = "suggestions" in rule_result
-    if is_default:
-        # 规则未命中，使用 DeepSeek AI 补充
-        try:
-            ai_agent = VolcEngineAgent(product_df, team_df)
-            ai_agent.set_context(year, months)
-            ai_result = ai_agent.query(question)
-            if ai_result and ai_result.get("answer") and "抱歉" not in ai_result.get("answer", ""):
-                ai_result["source"] = "rule+ai"
-                return ensure_native(ai_result)
-        except Exception:
-            import traceback
-            traceback.print_exc()
     
     rule_result["source"] = "rule"
     return ensure_native(rule_result)

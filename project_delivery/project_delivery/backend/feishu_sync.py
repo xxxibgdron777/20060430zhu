@@ -18,8 +18,21 @@ except ImportError:
     # 部署前请复制 feishu_config.example.py 为 feishu_config.py 并填入真实值
     raise ImportError("未找到 feishu_config.py，请从 feishu_config.example.py 复制并填写")
 
+def _resolve_excel():
+    """多路径查找管理报表.xlsx（支持本地开发与Docker部署）"""
+    for p in [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "管理报表.xlsx"),  # backend/ (Docker: /app/)
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "管理报表.xlsx"),  # project_delivery/
+        "/app/管理报表.xlsx",
+    ]:
+        if os.path.exists(p):
+            return p
+    # 写入优先用父目录
+    parent = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "管理报表.xlsx")
+    return parent if os.path.exists(os.path.dirname(parent)) else os.path.join(os.path.dirname(os.path.abspath(__file__)), "管理报表.xlsx")
+
 # 目标文件路径（与 data_loader.py 共享同一文件）
-TARGET_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "管理报表.xlsx")
+TARGET_FILE = _resolve_excel()
 
 
 def _get_token():

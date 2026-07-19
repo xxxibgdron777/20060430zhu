@@ -3,6 +3,9 @@ AI 经营分析建议代理
 基于 OpenAI/DeepSeek 模型，结合行业知识生成深度分析建议
 """
 import os
+
+# AI API Key fallback（容器无环境变量时使用硬编码）
+_DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "") or "sk-f51bfc8f60f34a2f86b42fe3614ecdb9"
 import json
 from typing import List, Dict, Optional
 from openai import OpenAI
@@ -83,7 +86,7 @@ def generate_analysis(team_name: str, data: Dict) -> List[Dict]:
     调用 AI 模型生成经营分析建议
     返回: [{"id": "hash", "category": "...", "type": "...", "content": "..."}, ...]
     """
-    api_key = os.environ.get("DEEPSEEK_API_KEY", "")
+    api_key = _DEEPSEEK_API_KEY
     if not api_key:
         return _fallback_analysis(team_name, data)
 
@@ -98,11 +101,11 @@ def generate_analysis(team_name: str, data: Dict) -> List[Dict]:
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[
-                {"role": "system", "content": "你是一位资深的养老服务行业财务顾问。请严格按JSON格式回复，不要输出任何其他内容。"},
+                {"role": "system", "content": "资深养老财务顾问。严格按JSON回复，不输出其他内容。"},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
-            max_tokens=2000,
+            max_tokens=400,
         )
         content = response.choices[0].message.content.strip()
 

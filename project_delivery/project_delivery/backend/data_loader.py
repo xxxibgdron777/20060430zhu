@@ -6,7 +6,18 @@ Sheet: 产品（1255行）、创业团队（11863行）
 import pandas as pd
 import os
 
-EXCEL_PATH = os.path.join(os.path.dirname(__file__), "管理报表.xlsx")
+def _resolve_excel():
+    """多路径查找管理报表.xlsx（支持目录迁移）"""
+    for p in [
+        os.path.join(os.path.dirname(__file__), "管理报表.xlsx"),            # backend/
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "管理报表.xlsx"),  # project_delivery/
+        "/app/管理报表.xlsx",
+    ]:
+        if os.path.exists(p):
+            return p
+    return os.path.join(os.path.dirname(__file__), "管理报表.xlsx")
+
+EXCEL_PATH = _resolve_excel()
 
 # ==================== 文件变更检测 ====================
 _last_mtime = 0.0

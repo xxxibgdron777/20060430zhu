@@ -3,10 +3,10 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>财务报告 Agent</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<script src="/echarts.min.js"></script>
+<script src="./echarts.min.js"></script>
 <style>
 /* ===== WordPress Admin Variables & Reset ===== */
 :root {
@@ -21,14 +21,14 @@
   --bg: #f5f5f7; --bg2: #e8e8ed; --card: #ffffff;
   --text: #1d1d1f; --text2: #6e6e73; --text3: #aeaeb2;
   --border: #d2d2d7; --divider: #e5e5ea;
-  --radius-sm: 6px; --radius: 10px; --radius-lg: 12px; --radius-xl: 16px;
+  --radius-sm: 6px; --radius: 8px; --radius-md: 8px; --radius-lg: 10px; --radius-xl: 12px;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
-  --shadow: 0 2px 12px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.1);
-  --shadow-xl: 0 12px 48px rgba(0,0,0,0.12);
-  --shadow-premium: 0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07);
-  --shadow-premium-sm: 0 1px 2px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.05);
+  --shadow: 0 2px 8px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.07);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.09);
+  --shadow-xl: 0 12px 36px rgba(0,0,0,0.10);
+  --shadow-premium: 0 1px 3px rgba(0,0,0,0.04), 0 3px 12px rgba(0,0,0,0.05);
+  --shadow-premium-sm: 0 1px 2px rgba(0,0,0,0.03);
   --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   --content-max: none;
   --sidebar-width: 220px;
@@ -47,14 +47,23 @@ body { font-family: var(--font); background: var(--wp-bg); color: var(--wp-text)
 /* ===== WP Admin Bar ===== */
 #wpadminbar {
   position: fixed; top: 0; left: 0; right: 0; height: var(--adminbar-height);
-  background: rgba(255,255,255,0.72); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: var(--wp-card); box-shadow: 0 1px 0 rgba(0,0,0,0.05);
   color: var(--wp-text); z-index: 1000;
   display: flex; align-items: center; padding: 0 16px; gap: 12px;
-  font-size: 12px; box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+  font-size: 12px;
   border-bottom:1px solid var(--wp-border);
 }
 #wpadminbar .wpadminbar-brand { font-weight: 600; display: flex; align-items: center; gap: 6px; color: var(--wp-text); font-size: 13px; flex-shrink: 0; letter-spacing:0.3px; }
 #wpadminbar .wpadminbar-brand i { color: var(--wp-accent); }
+/* Maintenance Banner */
+#maintenance-banner {
+  position: fixed; top: var(--adminbar-height); left: 0; right: 0; z-index: 999;
+  background: #ff453a; color: #fff; text-align: center; padding: 6px 16px;
+  font-size: 13px; font-weight: 500; letter-spacing: 0.5px;
+  display: none; /* default hidden, shown by JS on 1st-5th */
+}
+body.has-maintenance { padding-top: calc(var(--adminbar-height) + 32px); }
+body.has-maintenance #sidebar { top: calc(var(--adminbar-height) + 32px); }
 #wpadminbar .subtitle { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 3px; background: var(--wp-accent); color: #fff; margin-left: 2px; }
 #collapse-btn { background: none; border: none; color: var(--wp-text2); cursor: pointer; font-size: 15px; padding: 4px 8px; border-radius: 6px; margin: 0 4px; display: flex; align-items: center; transition:all .2s; }
 #collapse-btn:hover { background: var(--wp-accent-light); color: var(--wp-accent); }
@@ -66,7 +75,7 @@ body { font-family: var(--font); background: var(--wp-bg); color: var(--wp-text)
 /* ===== Sidebar ===== */
 #sidebar {
   position: fixed; top: var(--adminbar-height); left: 0; bottom: 0;
-  width: var(--sidebar-width); background: rgba(250,250,252,0.8); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  width: var(--sidebar-width); background: var(--wp-card);
   z-index: 900; display: flex; flex-direction: column;
   overflow: hidden; transition: width .25s cubic-bezier(0.4,0,0.2,1);
   border-right:1px solid var(--wp-border);
@@ -123,10 +132,9 @@ body.sidebar-collapsed .s-menu .tab-btn { justify-content: center; padding: 10px
 /* ===== WordPress Admin CSS Part 2 ===== */
 /* KPI Cards */
 .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
-.kpi-card { background: var(--wp-card); border: none; border-radius: var(--radius); padding: 16px 20px 12px; box-shadow: var(--shadow-premium-sm); transition: all 0.2s; position: relative; overflow: hidden; cursor: default; }
-.kpi-card:hover { box-shadow: var(--shadow-premium); transform: translateY(-1px); }
-.kpi-card::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--wp-accent), transparent); opacity:0; transition:opacity .3s; }
-.kpi-card:hover::after { opacity:0.4; }
+.kpi-card { background: var(--wp-card); border: none; border-radius: var(--radius); padding: 16px 20px 12px; box-shadow: var(--shadow-sm); transition: all 0.2s; position: relative; overflow: hidden; cursor: default; }
+.kpi-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+/* removed: KPI 渐变光条装饰（与极简商务风格冲突） */
 .kpi-card .kpi-header { font-size: 11px; font-weight: 400; color: var(--wp-text3); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
 .kpi-value { font-size: 32px; font-weight: 600; line-height: 1.0; margin-bottom: 4px; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; color: var(--wp-text); }
 .kpi-value .unit { font-size: 13px; font-weight: 400; color: var(--wp-text3); margin-left: 2px; }
@@ -145,12 +153,12 @@ body.sidebar-collapsed .s-menu .tab-btn { justify-content: center; padding: 10px
 .mode-btn:hover:not(.active) { color: var(--wp-text); }
 
 /* Table Card */
-.table-card { background: var(--wp-card); border: none; border-radius: var(--radius); padding: 12px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.04); margin-bottom: 16px; transition: box-shadow 0.15s; overflow: hidden; }
-.table-card:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.table-card { background: var(--wp-card); border: none; border-radius: var(--radius); padding: 12px 0; box-shadow: var(--shadow-sm); margin-bottom: 16px; transition: box-shadow 0.15s; overflow: hidden; }
+.table-card:hover { box-shadow: var(--shadow); }
 .sort-bar { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 12px 8px; }
-.sort-bar .month-pill { padding: 3px 12px; font-size: 12px; min-height: 30px; border-radius: 3px; border: 1px solid var(--wp-border); box-shadow: none; }
-.sort-bar .month-pill.active { background: var(--wp-accent); color: #fff; border-color: var(--wp-accent); }
-.sort-bar .month-pill:hover:not(.active) { border-color: var(--wp-accent); color: var(--wp-accent); }
+.sort-bar .month-pill { padding: 3px 12px; font-size: 12px; min-height: 30px; border-radius: 3px; border: none; box-shadow: none; }
+.sort-bar .month-pill.active { background: var(--wp-accent); color: #fff; }
+.sort-bar .month-pill:hover:not(.active) { color: var(--wp-accent); }
 .table-wrap { width: 100%; overflow: hidden; margin-bottom: 0; border-radius: 0; border: none; border-top: 1px solid var(--wp-divider); }
 #tableWrapProduct, #tableWrapTeam { overflow: auto; }
 /* 产品线视图：仅展示业务板块表格，隐藏KPI/趋势 */
@@ -196,40 +204,146 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .table-wrap .tree-table .tree-parent td { background: #f0f0f5; border-bottom: 1px solid var(--wp-divider); }
 .table-wrap .tree-table .tree-parent:hover td { background: #e0e0e5; }
 
-/* Product Tab */
-#tab-product .tree-table .tree-parent td { background: rgba(204,236,251,0.5); border-bottom: 2px solid var(--wp-divider); font-weight: 700; padding: 10px 8px; }
-#tab-product .tree-table .tree-parent td:first-child { background: rgba(204,236,251,0.5); font-weight: 700; }
-#tab-product .tree-table .tree-parent:hover td { background: rgba(204,236,251,0.65); }
-#tab-product .tree-table .tree-parent:hover td:first-child { background: rgba(204,236,251,0.65); }
-#tab-product .tree-table .tree-child td { background: rgba(204,236,251,0.25); }
-#tab-product .tree-table .tree-child td:first-child { background: rgba(204,236,251,0.25); }
-#tab-product .tree-table .tree-child:hover td { background: rgba(204,236,251,0.4); }
-#tab-product .tree-table .tree-child:hover td:first-child { background: rgba(204,236,251,0.4); }
+/* Product Tab — 极简商务灰度体系 */
+#tab-product .tree-table .tree-parent td { background: #f2f2f5; border-bottom: 1.5px solid #e4e4ea; font-weight: 600; padding: 10px 8px; }
+#tab-product .tree-table .tree-parent td:first-child { background: #f2f2f5; font-weight: 600; }
+#tab-product .tree-table .tree-parent:hover td { background: #e8e8ed; }
+#tab-product .tree-table .tree-parent:hover td:first-child { background: #e8e8ed; }
+#tab-product .tree-table .tree-child td { background: #fafafa; }
+#tab-product .tree-table .tree-child td:first-child { background: #fafafa; }
+#tab-product .tree-table .tree-child:hover td { background: rgba(0,113,227,0.03); }
+#tab-product .tree-table .tree-child:hover td:first-child { background: rgba(0,113,227,0.04); }
 #tab-product .tree-table .num-cell .num-main { color: var(--wp-text); font-weight: 600; }
 #tab-product .tree-table .num-cell .yoy-row, #tab-product .tree-table .num-cell .yoy-label { color: var(--wp-text3); }
+/* 固定布局 + 百分比列宽 */
+#tab-product .tree-table { table-layout:fixed; width:100%; border:none; }
+#tab-product .tree-table th:nth-child(1),
+#tab-product .tree-table td:nth-child(1) { width:28%; }
+#tab-product .tree-table th:nth-child(2),
+#tab-product .tree-table td:nth-child(2) { width:18%; }
+#tab-product .tree-table th:nth-child(3),
+#tab-product .tree-table td:nth-child(3) { width:14%; }
+#tab-product .tree-table th:nth-child(4),
+#tab-product .tree-table td:nth-child(4) { width:14%; }
+#tab-product .tree-table th:nth-child(5),
+#tab-product .tree-table td:nth-child(5) { width:13%; }
+#tab-product .tree-table th:nth-child(6),
+#tab-product .tree-table td:nth-child(6) { width:13%; }
+#tab-product .tree-table th:nth-child(2) { text-align:right; }
+#tab-product .tree-table th:nth-child(6) { text-align: right; }
+#tab-product .num-col { min-width:80px; }
 
-/* Team Tab */
-#tab-team .table-card { border: none; border-radius: var(--radius); box-shadow: var(--shadow-premium-sm); }
-#tab-team .table-wrap { border: none; border-radius: 0; background: transparent; box-shadow: none; margin: 0; }
-/* 统一表格边框：只用一种颜色、一种粗细，整洁一致 */
-#tab-team .tree-table { border-collapse: separate; border-spacing: 0; border: 1px solid var(--wp-divider); border-radius: 6px; overflow: hidden; }
-#tab-team .tree-table thead th { background: #f0f0f5; font-weight: 600; padding: 10px 8px; border-bottom: 2px solid var(--wp-divider); color: var(--wp-text); text-shadow: none; font-size: clamp(10px, 1vw, 13px); }
-#tab-team .tree-table thead th:first-child { background: #f0f0f5; border-right: 1px solid var(--wp-divider); }
-#tab-team .tree-table tbody td { background: transparent; box-shadow: none; border-bottom: 1px solid var(--wp-divider); color: var(--wp-text); padding: 8px 8px; }
-#tab-team .tree-table tbody td:first-child { background: transparent; font-weight: 400; border-right: 1px solid var(--wp-divider); box-shadow: none; }
-#tab-team .tree-table .tree-parent td { background: #f0f0f5; cursor: pointer; border-bottom: 1px solid var(--wp-divider); }
-#tab-team .tree-table .tree-parent td:first-child { background: #f0f0f5; font-weight: 600; }
-#tab-team .tree-table .tree-child td { background: transparent; }
+/* 产品线预算进度条 */
+.budget-col { text-align:left; }
+.budget-cell { vertical-align:middle; text-align:center; }
+.budget-inner { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:1px; white-space:nowrap; width:100%; height:100%; }
+#tab-product .tree-table .tree-parent td.budget-cell { background:#f2f2f5; }
+#tab-product .tree-table .tree-parent:hover td.budget-cell { background:#e8e8ed; }
+#tab-product .tree-table .tree-child td.budget-cell { background:#fafafa; }
+#tab-product .tree-table .tree-child:hover td.budget-cell { background:rgba(0,113,227,0.03); }
+.budget-inner .empty-hint { display:inline-block; padding:3px 8px; color:var(--wp-text3); }
+.bf-bar-row { display:flex; align-items:center; gap:4px; width:100%; min-width:0; flex-wrap:nowrap; white-space:nowrap; }
+.bf-bar { display:inline-flex; align-items:center; flex:0 1 auto; min-width:0; }
+.bf-bar-bg { width:50px; min-width:30px; flex-shrink:1; height:7px; background:#e0e0e5; border-radius:4px; overflow:hidden; display:block; }
+.bf-bar-fill { display:block; height:100%; border-radius:4px; }
+.bf-bar-fill.time { background:#aeaeb2; opacity:0.5; }
+.bf-bar-fill.done { background:linear-gradient(90deg,#22c55e,#34d399); }
+.bf-bar-fill.undone { background:linear-gradient(90deg,#ef4444,#f87171); }
+.bf-bar-pct { font-size:10px; font-weight:600; color:var(--wp-text); flex:0 0 auto; flex-shrink:0; white-space:nowrap; }
+.bf-year { font-size:11px; color:var(--wp-text3); line-height:1.2; white-space:nowrap; display:flex; align-items:center; justify-content:space-between; width:100%; min-width:0; gap:6px; }
+.bf-year .bf-bar-status { font-size:10px; margin-left:0; flex-shrink:0; }
+.bf-time-head { font-size:11px; color:var(--wp-text3); font-weight:400; display:inline-flex; align-items:center; gap:6px; }
+.bf-time-head .bf-bar-bg { width:70px; height:6px; }
+.bf-time-head .bf-bar-fill.time { background: var(--wp-accent); opacity: 0.7; }
+.time-progress-header { font-size:14px; font-weight:700; color:var(--wp-accent); display:flex; align-items:center; justify-content:center; gap:5px; white-space:nowrap; margin-bottom:2px; }
+.time-progress-header .bf-bar-bg { width:50px; height:5px; }
+@media(max-width:600px){
+  /* 产品线手机端 — 无横向滚动，紧凑优化 */
+  #tab-product .tree-table{font-size:10px;}
+  #tab-product .tree-table thead th{padding:3px 2px;font-size:9px;}
+  #tab-product .tree-table tbody td{padding:2px 1px;}
+  /* 列宽重平衡：第一列28%确保展开文字完整显示 */
+  #tab-product .tree-table th:nth-child(1),
+  #tab-product .tree-table td:nth-child(1){width:28%;}
+  #tab-product .tree-table th:nth-child(2),
+  #tab-product .tree-table td:nth-child(2){width:18%;}
+  #tab-product .tree-table th:nth-child(3),
+  #tab-product .tree-table td:nth-child(3){width:14%;}
+  #tab-product .tree-table th:nth-child(4),
+  #tab-product .tree-table td:nth-child(4){width:14%;}
+  #tab-product .tree-table th:nth-child(5),
+  #tab-product .tree-table td:nth-child(5){width:13%;}
+  #tab-product .tree-table th:nth-child(6),
+  #tab-product .tree-table td:nth-child(6){width:13%;}
+  /* 去掉数列最小宽度限制，释放给第一列 */
+  #tab-product .num-col{min-width:0;}
+  /* 父行紧凑 */
+  #tab-product .tree-table .tree-parent td{padding:5px 2px;}
+  /* 预算列极致压缩 */
+  .bf-bar-bg{width:32px;min-width:24px;height:5px;}
+  .bf-bar-pct{font-size:8px;}
+  .bf-year{font-size:9px;}
+  .bf-year .bf-bar-status{display:none;}
+  .bf-bar-row{gap:2px;}
+  .time-progress-header{font-size:10px;gap:2px;}
+  .time-progress-header .bf-bar-bg{width:30px;height:4px;}
+  .budget-cell{padding:2px 2px;}
+  .budget-inner{gap:0;}
+  .tree-indent-1{padding-left:14px !important;}
+  .tree-indent-2{padding-left:22px !important;}
+}
+
+/* ===== Team Tab — 经营明细：极简商务 ===== */
+#tab-team .table-card { border: none; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 2px 12px rgba(0,0,0,0.05); background: #fff; }
+#tab-team .table-wrap { border: none; border-radius: 0; background: transparent; box-shadow: none; margin: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+#tab-team .tree-table { border-collapse: separate; border-spacing: 0; border: 1px solid #e8e8ed; border-radius: 6px; overflow: hidden; width: 100%; min-width: 600px; font-size: clamp(11px, 1.1vw, 13px); }
+/* 表头 */
+#tab-team .tree-table thead th { background: #f5f5f7; font-weight: 550; padding: 10px 12px; border-bottom: 1.5px solid #dcdce0; color: #6e6e73; font-size: clamp(10px, 0.95vw, 11px); text-transform: none; letter-spacing: 0.02em; position: sticky; top: 0; z-index: 3; }
+#tab-team .tree-table thead th:first-child { padding-left: 16px; }
+/* 数据行 */
+#tab-team .tree-table tbody td { background: #fff; box-shadow: none; border-bottom: 1px solid #f0f0f2; color: #1d1d1f; padding: 8px 12px; transition: background 0.15s; }
+#tab-team .tree-table tbody td:first-child { font-weight: 430; padding-left: 16px; }
+/* 父级行 */
+#tab-team .tree-table .tree-parent td { background: #f2f2f5; cursor: pointer; border-bottom: 1px solid #e4e4ea; }
+#tab-team .tree-table .tree-parent td:first-child { font-weight: 600; color: #1d1d1f; }
+/* 子级行 */
+#tab-team .tree-table .tree-child td { background: #fafafa; }
+#tab-team .tree-table .tree-grandchild td { background: #fefefe; }
+/* hover */
+#tab-team .tree-table tbody tr:hover td { background: rgba(0,113,227,0.03); }
+#tab-team .tree-table tbody tr:hover td:first-child { background: rgba(0,113,227,0.04); }
+#tab-team .tree-table .tree-parent:hover td { background: #e8e8ed; }
+#tab-team .tree-table .tree-parent:hover td:first-child { background: #e8e8ed; }
+/* 收入列 — 淡蓝 */
+#tab-team .tree-table td.income-cell { background: rgba(0,122,255,0.025); }
+#tab-team .tree-table tr:hover td.income-cell { background: rgba(0,122,255,0.05); }
+/* 支出列 — 暖灰 */
+#tab-team .tree-table td.expense-cell { background: rgba(142,142,147,0.02); }
+#tab-team .tree-table tr:hover td.expense-cell { background: rgba(142,142,147,0.04); }
+/* 结余列 — 加粗强调 */
+#tab-team .tree-table td.balance-cell { font-weight: 600; }
+#tab-team .tree-table td.balance-cell .num-main { font-size: clamp(12px, 1.35vw, 15px); }
+/* 数值 */
+#tab-team .tree-table .num-cell .num-main { font-weight: 510; font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; color: #1d1d1f; font-size: clamp(11px, 1.1vw, 13px); }
+#tab-team .tree-table .num-cell .positive { color: #30b158; font-weight: 650; }
+#tab-team .tree-table .num-cell .negative { color: #ff453a; font-weight: 650; }
+/* 同比行 */
+#tab-team .tree-table .num-cell .yoy-row { font-size: clamp(8px, 0.7vw, 10px); color: #aeaeb2; margin-top: 2px; display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
+#tab-team .tree-table .num-cell .yoy-label { color: #aeaeb2; }
+/* 标签 */
+#tab-team .tree-table .tree-label { color: #1d1d1f; font-weight: 430; }
+/* 合计行 */
+#tab-team .tree-table tr.total-row td { border-top: 1.5px solid #d2d2d7; font-weight: 600; background: #f5f5f7; }
+/* 末行 */
 #tab-team .tree-table tbody tr:last-child td { border-bottom: none; }
-#tab-team .tree-table tbody tr:hover td { background: rgba(79,143,247,0.04); }
-#tab-team .tree-table tbody tr:hover td:first-child { background: rgba(79,143,247,0.06); }
-#tab-team .tree-table .tree-parent:hover td { background: #e0e0e5; }
-#tab-team .tree-table .tree-parent:hover td:first-child { background: #e0e0e5; }
-#tab-team .tree-table .num-cell .num-main { font-weight: 600; font-size: clamp(12px, 1.3vw, 16px); color: var(--wp-text); }
-#tab-team .tree-table .num-cell .positive { color: var(--green); }
-#tab-team .tree-table .num-cell .negative { color: var(--red); }
-#tab-team .tree-table .tree-label { color: var(--wp-text); font-weight: 400; }
-
+/* 明细按钮 */
+#tab-team .detail-btn { padding: 5px 14px; font-size: 11px; font-weight: 500; border-radius: 5px; border: 1px solid #c7c7cc; color: #0071e3; background: #fff; transition: all 0.15s; letter-spacing: 0.01em; }
+#tab-team .detail-btn:hover { background: #0071e3; color: #fff; border-color: #0071e3; }
+#tab-team .analysis-btn { color: #5856D6; border-color: #c7c3e8; font-size: 10px; padding: 3px 10px; }
+#tab-team .analysis-btn:hover { background: #5856D6; color: #fff; border-color: #5856D6; }
+#tab-team .analysis-btn i { font-size: 10px; }
+#tab-team .analysis-btn.disabled { color: #c0c0c8; border-color: #e0e0e5; background: #f5f5f7; cursor: not-allowed; opacity: 0.6; }
+#tab-team .analysis-btn.disabled:hover { background: #f5f5f7; color: #c0c0c8; border-color: #e0e0e5; }
 
 /* Detail Button */
 .detail-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 4px 10px; font-size: 11px; font-weight: 400; font-family: var(--font); color: var(--wp-accent); background: var(--wp-card); border: 1px solid var(--wp-accent); border-radius: 3px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
@@ -265,14 +379,14 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 /* ===== WordPress Admin CSS Part 3 ===== */
 /* Charts */
 .charts-row { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 8px; }
-.chart-card { background: var(--wp-card); border: none; border-radius: var(--radius); padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); transition: box-shadow 0.15s; }
-.chart-card:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.chart-card { background: var(--wp-card); border: none; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm); transition: box-shadow 0.15s; }
+.chart-card:hover { box-shadow: var(--shadow); }
 .chart-title { font-size: 15px; font-weight: 600; color: var(--wp-text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
 .chart-title i { color: var(--wp-accent); font-size: 16px; }
 .chart-box { width: 100%; }
 .trend-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.trend-sub-chart { background: var(--wp-card); border: none; border-radius: var(--radius-sm); padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); transition: all 0.15s; }
-.trend-sub-chart:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.trend-sub-chart { background: var(--wp-card); border: none; border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow-sm); transition: all 0.15s; }
+.trend-sub-chart:hover { box-shadow: var(--shadow); }
 .trend-sub-title { font-size: 12px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
 .trend-legend-row { display: flex; gap: 6px; margin-bottom: 8px; font-size: 10px; }
 .trend-legend-item { display: flex; align-items: center; gap: 3px; font-weight: 500; padding: 2px 8px; border-radius: 3px; background: #f0f0f5; border: 1px solid var(--wp-border); }
@@ -291,11 +405,11 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .upload-label:hover { background: var(--wp-accent-hover); }
 
 /* Cards */
-.card { background: var(--wp-card); border-radius: var(--radius); padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); border: none; }
+.card { background: var(--wp-card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm); border: none; }
 .card.special-panel { margin-top: 12px; }
 
 /* Analysis */
-.analysis-item { padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 6px; border-left: 4px solid var(--wp-accent); background: var(--wp-card); box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+.analysis-item { padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 6px; border-left: 4px solid var(--wp-accent); background: var(--wp-card); box-shadow: var(--shadow-sm); }
 .analysis-item.warning { border-left-color: var(--amber); background: var(--wp-accent-light); }
 .analysis-item.info { border-left-color: var(--wp-accent); background: var(--wp-accent-light); }
 .analysis-item.danger { border-left-color: var(--red); background: var(--red-bg); }
@@ -310,17 +424,161 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .section-toggle { font-size: 10px; color: var(--wp-text3); width: 18px; flex-shrink: 0; transition: transform 0.2s; }
 .collapsible-body { padding: 12px 14px; border: 1px solid var(--wp-border); border-top: none; border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
 
-/* QA */
-.qa-search { display: flex; gap: 8px; margin-bottom: 16px; max-width: 600px; }
-.qa-input { flex: 1; padding: 8px 12px; border: 1px solid var(--wp-border); border-radius: var(--radius-sm); font-size: 14px; font-family: inherit; outline: none; transition: all 0.15s; background: var(--wp-card); color: var(--wp-text); }
-.qa-input:focus { border-color: var(--wp-accent); box-shadow: 0 0 0 1px var(--wp-accent); }
-.qa-btn { padding: 8px 20px; background: var(--wp-accent); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 400; min-height: 38px; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
-.qa-btn:hover { background: var(--wp-accent-hover); }
+/* Briefing */
+.briefing-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.briefing-btn { padding: 8px 18px; border: 1px solid var(--wp-border); background: var(--wp-card); color: var(--wp-text); border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 500; min-height: 36px; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+.briefing-btn:hover { border-color: var(--wp-accent); color: var(--wp-accent); }
+.briefing-btn-primary { background: var(--wp-accent); color: #fff; border-color: var(--wp-accent); }
+.briefing-btn-primary:hover { background: var(--wp-accent-hover); color: #fff; }
+.briefing-meta { font-size: 12px; color: var(--wp-text3); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.briefing-meta .source-tag { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
+.briefing-meta .source-cache { background: #e8f5e9; color: #2e7d32; }
+.briefing-meta .source-computed { background: #fff3e0; color: #e65100; }
+.briefing-module { background: var(--wp-card); border: none; border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; box-shadow: var(--shadow-sm); }
+.briefing-module-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: var(--wp-text); }
+.briefing-kpi-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+.briefing-kpi { text-align: center; min-width: 100px; }
+.briefing-kpi .val { font-size: 22px; font-weight: 700; color: var(--wp-text); }
+.briefing-kpi .label { font-size: 11px; color: var(--wp-text3); margin-top: 2px; }
+.briefing-kpi .yoy { font-size: 11px; margin-top: 2px; }
+.briefing-kpi .yoy.up { color: var(--green); }
+.briefing-kpi .yoy.down { color: var(--red); }
+.briefing-red-item { padding: 10px 14px; border-left: 3px solid var(--red); background: var(--red-bg); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin-bottom: 8px; font-size: 13px; }
+.briefing-red-item .name { font-weight: 600; }
+.briefing-red-item .metric { color: var(--red); font-weight: 600; }
+.briefing-warn-item { padding: 8px 14px; border-left: 3px solid var(--amber); background: #fffbf0; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin-bottom: 6px; font-size: 13px; }
+.briefing-warn-item.ok { border-left-color: var(--green); background: var(--green-bg); }
+.briefing-insight { padding: 12px 16px; border: 1px solid var(--wp-border); border-radius: var(--radius-sm); margin-bottom: 8px; }
+.briefing-insight .topic { font-weight: 600; font-size: 14px; margin-bottom: 4px; color: var(--wp-accent); }
+.briefing-insight .detail { font-size: 13px; color: var(--wp-text2); line-height: 1.6; }
+.briefing-insight .obs { font-size: 12px; color: var(--wp-text); margin-top: 6px; font-style: normal; }
+.briefing-data-table { margin-top: 8px; }
+.mini-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 4px 0; }
+.mini-table th { background: #f5f5f7; padding: 5px 8px; text-align: left; font-weight: 500; color: #6e6e73; border-bottom: 1px solid #e8e8ed; }
+.mini-table td { padding: 4px 8px; border-bottom: 1px solid #f0f0f2; }
+.mini-table td.r { text-align: right; font-variant-numeric: tabular-nums; }
 
-/* Presets */
-.preset-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; margin-bottom: 14px; }
-.preset-btn { padding: 8px 12px; border: 1px solid var(--wp-border); background: var(--wp-card); border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; color: var(--wp-text2); transition: all 0.15s; min-height: 38px; text-align: center; line-height: 1.3; font-weight: 400; font-family: inherit; }
-.preset-btn:hover { border-color: var(--wp-accent); color: var(--wp-accent); background: var(--wp-accent-light); }
+/* ===== 简报 — 仪表盘风格 ===== */
+.bf-card {
+  background: #fff; border-radius: 12px; padding: 24px 28px; margin-bottom: 22px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+  position: relative; overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.bf-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 6px 24px rgba(0,0,0,0.05); }
+/* 模块色系左侧 accent */
+.bf-mod-snap { border-left: 4px solid #0071e3; }
+.bf-mod-red  { border-left: 4px solid #ff453a; }
+.bf-mod-trend{ border-left: 4px solid #ff9f0a; }
+.bf-mod-insight{ border-left: 4px solid #5856D6; }
+.bf-mod-sugg { border-left: 4px solid #30b158; }
+/* 编号徽章 */
+.bf-badge { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px;
+  border-radius:6px; font-size:12px; font-weight:700; color:#fff; background:var(--wp-accent);
+  margin-right:8px; flex-shrink:0; }
+.bf-mod-red .bf-badge { background:#ff453a; }
+.bf-mod-trend .bf-badge { background:#ff9f0a; }
+.bf-mod-insight .bf-badge { background:#5856D6; }
+.bf-mod-sugg .bf-badge { background:#30b158; }
+/* 卡片头 */
+.bf-card-hd { font-size:14px; font-weight:650; color:#1d1d1f; margin-bottom:16px; padding-bottom:10px;
+  border-bottom:1px solid #f0f0f3; display:flex; align-items:center; gap:6px; }
+.bf-period { font-size:11px; font-weight:400; color:#aeaeb2; margin-left:auto; }
+.bf-snap-summary { font-size:13px; color:#6e6e73; margin-bottom:18px; padding:12px 16px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #fafbfe 100%); border-radius:8px; }
+/* KPI */
+.bf-kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:24px; }
+.bf-kpi { text-align:center; padding:12px 8px; border-radius:8px; background:#fafbfc; }
+.bf-kpi-val { font-size:28px; font-weight:700; color:#1d1d1f; font-variant-numeric:tabular-nums; line-height:1.15; }
+.bf-kpi-val em { font-size:12px; font-weight:400; color:#aeaeb2; font-style:normal; margin-left:3px; }
+.bf-kpi-lbl { font-size:10px; color:#aeaeb2; margin-top:4px; text-transform:uppercase; letter-spacing:.5px; }
+.bf-kpi .yoy { font-size:10px; margin-top:3px; font-weight:550; }
+.bf-kpi .yoy.up { color:#30b158; }
+.bf-kpi .yoy.down { color:#ff453a; }
+/* 表格 */
+.bf-tbl { width:100%; border-collapse:collapse; font-size:12px; margin:10px 0 14px; border-radius:6px; overflow:hidden; }
+.bf-tbl th { background:#f5f6f8; padding:8px 12px; text-align:left; font-weight:600; color:#6e6e73;
+  border-bottom:2px solid #e4e6ea; font-size:10px; text-transform:uppercase; letter-spacing:.5px; }
+.bf-tbl td { padding:8px 12px; border-bottom:1px solid #f0f0f2; color:#1d1d1f; }
+.bf-tbl tr:nth-child(even) td { background:#fafbfd; }
+.bf-tbl tr:hover td { background:#eef3ff; }
+.bf-tbl td.r { text-align:right; font-variant-numeric:tabular-nums; }
+.bf-tbl td.neg { color:#ff453a; font-weight:650; }
+.bf-tbl-total td { font-weight:650; border-top:2px solid #d2d2d7; background:#f8f9fb; }
+.bf-tbl-key td { font-weight:650; color:#0071e3; background:#f0f4ff; }
+/* 标签 */
+.bf-tag { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:600; }
+.bf-tag.team { background:#ffe8e6; color:#cc0000; }
+.bf-tag.board { background:#fff3e0; color:#cc6600; }
+.bf-tag.proj { background:#e8e8f0; color:#6e6e73; }
+/* 子标题 */
+.bf-sub-hd { font-size:11px; font-weight:650; color:#6e6e73; margin:16px 0 8px; letter-spacing:.5px; text-transform:uppercase; }
+.bf-sub-hd::after { content:''; display:block; width:24px; height:2px; background:var(--wp-accent); margin-top:4px; border-radius:1px; }
+/* 趋势 */
+.bf-trend { padding:10px 14px; border-left:4px solid #ff9f0a; background:#fffcf5;
+  border-radius:0 8px 8px 0; margin-bottom:8px; font-size:12px; color:#1d1d1f; font-weight:500; }
+.bf-trend.ok { border-left-color:#30b158; background:#f0faf4; }
+/* 洞察 */
+.bf-insight { padding:14px 0; }
+.bf-insight.bt { border-top:1px solid #f0f0f3; }
+.bf-insight-hd { font-size:14px; font-weight:650; color:#1d1d1f; margin-bottom:6px; }
+/* 观察 */
+.bf-obs { font-size:12px; color:#1d1d1f; margin-top:12px; padding:12px 16px;
+  background:linear-gradient(135deg,#f8f9fb 0%,#f0f2f5 100%); border-radius:8px;
+  display:flex; align-items:flex-start; gap:10px; border:1px solid #e8e8ed; }
+.bf-obs i { color:var(--wp-accent); flex-shrink:0; margin-top:2px; font-size:13px; }
+/* 脚注 */
+.bf-footnote { font-size:10px; color:#aeaeb2; margin-top:4px; }
+.bf-yoy { font-size:10px; color:#aeaeb2; margin-top:4px; }
+.bf-empty { color:#aeaeb2; font-size:12px; padding:12px 0; font-style:italic; }
+/* 建议 */
+.bf-sugg { padding:10px 14px; border-radius:6px; margin-bottom:6px; display:flex; align-items:center; gap:8px; font-size:12px; }
+.bf-sugg i { flex-shrink:0; }
+.bf-sugg.p-高 { background:#fff0f0; border:1px solid #ffcccc; }
+.bf-sugg.p-高 i { color:#ff453a; }
+.bf-sugg.p-中 { background:#fffbf0; border:1px solid #ffe6b3; }
+.bf-sugg.p-中 i { color:#ff9f0a; }
+.bf-sugg.p-低 { background:#f5f6f8; border:1px solid #e8e8ed; }
+.bf-sugg-text { flex:1; font-weight:500; }
+.bf-sugg-target { font-size:11px; color:#aeaeb2; white-space:nowrap; }
+@media(max-width:782px){.bf-kpi-row{grid-template-columns:repeat(2,1fr);}.bf-card{padding:18px 14px;}.bf-badge{width:20px;height:20px;font-size:10px;}}
+.briefing-suggestion { padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 8px; display: flex; gap: 10px; align-items: flex-start; }
+.briefing-suggestion.high { background: #fff0f0; border: 1px solid #ffcccc; }
+.briefing-suggestion.mid { background: #fffbf0; border: 1px solid #ffe8b0; }
+.briefing-suggestion.low { background: #f0f8ff; border: 1px solid #cce5ff; }
+.briefing-suggestion .prio { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; white-space: nowrap; flex-shrink: 0; }
+.briefing-suggestion .prio.high { background: #FF3B30; color: #fff; }
+.briefing-suggestion .prio.mid { background: #FF9500; color: #fff; }
+.briefing-suggestion .prio.low { background: #007AFF; color: #fff; }
+.briefing-suggestion .text { font-size: 13px; line-height: 1.6; color: var(--wp-text); }
+.briefing-summary { font-size: 14px; color: var(--wp-text2); line-height: 1.8; margin-bottom: 8px; }
+
+/* 专项报告目录卡片 */
+.report-index { display: flex; flex-direction: column; gap: 12px; }
+.report-card {
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 20px; background: var(--wp-card);
+  border-radius: var(--radius-sm); border: 1px solid var(--wp-border);
+  text-decoration: none; color: var(--wp-text);
+  transition: all 0.15s; cursor: pointer;
+}
+.report-card:hover { border-color: var(--wp-accent); box-shadow: var(--shadow-sm); }
+.report-card.disabled { opacity: 0.5; cursor: default; }
+.report-card.disabled:hover { border-color: var(--wp-border); box-shadow: none; }
+.report-card-icon { font-size: 28px; flex-shrink: 0; }
+.report-card-body { flex: 1; min-width: 0; }
+.report-card-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.report-card-desc { font-size: 12px; color: var(--wp-text3); }
+.report-card-arrow { font-size: 18px; color: var(--wp-text3); flex-shrink: 0; }
+.report-card-badge {
+  font-size: 11px; padding: 3px 10px; border-radius: 10px;
+  background: var(--wp-divider); color: var(--wp-text3); flex-shrink: 0;
+}
+@media(max-width: 600px) {
+  .report-card { padding: 14px 12px; gap: 10px; }
+  .report-card-icon { font-size: 22px; }
+  .report-card-title { font-size: 13px; }
+}
 
 /* Budget */
 .budget-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
@@ -368,7 +626,7 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .pivot-detail-table .pivot-section-expense td { border-top: 0.8px solid rgba(0,0,0,0.18); }
 .pivot-detail-table .pivot-section-fee td { border-top: 0.8px solid rgba(0,0,0,0.18); }
 
-.pivot-analysis { margin-top: 14px; padding: 16px 18px; background: var(--wp-card); border-radius: var(--radius-sm); border: 1px solid var(--wp-border); box-shadow: 0 1px 2px rgba(0,0,0,0.04); border-left: 3px solid var(--wp-accent); }
+.pivot-analysis { margin-top: 14px; padding: 16px 18px; background: var(--wp-card); border-radius: var(--radius-sm); border: 1px solid var(--wp-border);   box-shadow: var(--shadow-sm); border-left: 3px solid var(--wp-accent); }
 .pivot-analysis-title { font-size: 13px; font-weight: 600; color: var(--wp-text); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
 .pivot-analysis-title i { color: var(--wp-accent); }
 .pivot-analysis-item { font-size: 12px; color: var(--wp-text2); padding: 6px 0; border-bottom: 1px solid var(--wp-divider); line-height: 1.6; }
@@ -415,10 +673,10 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .detail-note-hint { font-size: 11px; color: var(--wp-text3); margin-top: 6px; }
 
 /* Team Tip */
-.team-tip-section { margin-top: 14px; padding: 16px 18px; background: var(--wp-card); border-radius: var(--radius-sm); border: 1px solid var(--wp-border); box-shadow: 0 1px 2px rgba(0,0,0,0.04); border-left: 3px solid var(--wp-accent); }
+.team-tip-section { margin-top: 14px; padding: 16px 18px; background: var(--wp-card); border-radius: var(--radius-sm); border: 1px solid var(--wp-border);   box-shadow: var(--shadow-sm); border-left: 3px solid var(--wp-accent); }
 .team-tip-header { font-size: 13px; font-weight: 600; color: var(--wp-text); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
 .team-tip-header i { color: var(--wp-accent); }
-.team-tip-textarea { width: 100%; min-height: 80px; padding: 10px; border: 1px solid var(--wp-border); border-radius: var(--radius-sm); font-size: 12px; font-family: var(--font); color: var(--wp-text); background: var(--wp-card); resize: vertical; line-height: 1.6; outline: none; transition: border-color 0.15s, box-shadow 0.15s; box-sizing: border-box; }
+.team-tip-textarea { width: 100%; min-height: 80px; padding: 10px; border: 1px solid var(--wp-border); border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font); color: var(--wp-text); background: var(--wp-card); resize: vertical; line-height: 1.6; outline: none; transition: border-color 0.15s, box-shadow 0.15s; box-sizing: border-box; }
 .team-tip-textarea:focus { border-color: var(--wp-accent); box-shadow: 0 0 0 1px var(--wp-accent); }
 .team-tip-actions { margin-top: 8px; display: flex; align-items: center; gap: 8px; }
 .team-tip-save-btn { padding: 5px 14px; background: var(--wp-accent); color: #fff; border: none; border-radius: 3px; font-size: 12px; font-weight: 400; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s; font-family: var(--font); }
@@ -427,7 +685,7 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .team-tip-status { font-size: 11px; color: var(--wp-text3); }
 
 /* AI Card */
-.ai-card { margin-top: 12px; padding: 16px 18px; background: linear-gradient(135deg, rgba(123,52,157,0.04) 0%, rgba(46,156,150,0.04) 100%); border-radius: var(--radius-sm); border: 1px solid rgba(123,52,157,0.1); box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+.ai-card { margin-top: 12px; padding: 16px 18px; background: var(--wp-card); border-radius: var(--radius); border: 1px solid var(--wp-divider); box-shadow: var(--shadow-sm); }
 .ai-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .ai-card-title { font-size: 13px; font-weight: 600; color: var(--wp-text); display: flex; align-items: center; gap: 6px; }
 .ai-card-title i { color: var(--purple); font-size: 14px; }
@@ -443,6 +701,40 @@ table.detail-table tbody tr:hover, table.data-table tbody tr:hover, .table-wrap 
 .ai-card-loading i { font-size: 18px; color: var(--purple); margin-bottom: 6px; }
 .ai-card-empty { text-align: center; padding: 14px; color: var(--wp-text3); font-size: 12px; }
 
+/* Policy Cards */
+.sl-card{background:var(--wp-card);border-radius:var(--radius);padding:20px 24px;margin-bottom:14px;box-shadow:var(--shadow-sm);border:1px solid var(--wp-divider)}
+.sl-card-header{font-size:15px;font-weight:600;color:#1D1D1F;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.sl-card-header i{color:#007AFF;font-size:16px}
+.sl-card-desc{font-size:12px;color:#86868B;margin-bottom:10px}
+.sl-item{padding:9px 0;border-bottom:1px solid rgba(0,0,0,0.04)}
+.sl-item:last-child{border-bottom:none}
+.sl-title{font-size:13.5px;color:#0066CC;text-decoration:none;font-weight:500;line-height:1.5}
+.sl-title:hover{text-decoration:underline;color:#004499}
+.sl-meta{font-size:11px;color:#86868B;margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+.sl-deadline{color:#FF9500;font-weight:600}
+.sl-summary{font-size:12px;color:#6E6E73;margin-top:3px;line-height:1.5}
+.sl-subcat{margin-bottom:14px}
+.sl-subcat-title{font-size:13px;font-weight:600;color:#1D1D1F;padding:5px 10px;background:#F5F5F7;border-radius:6px;margin-bottom:6px}
+
+/* Policy Card Grid */
+.policy-grid{display:flex;flex-direction:column;gap:16px;padding:4px 0;max-width:720px}
+.policy-card{background:var(--wp-card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--wp-divider);display:flex;flex-direction:column}
+.policy-card-head{display:flex;align-items:center;gap:10px;padding:16px 20px 12px;border-bottom:1px solid rgba(0,0,0,0.05)}
+.policy-card-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;flex-shrink:0}
+.policy-card-name{font-size:16px;font-weight:600;color:var(--wp-text)}
+.policy-card-count{font-size:11px;color:var(--text2);margin-left:auto}
+.policy-card-body{padding:10px 20px 16px;flex:1;display:flex;flex-direction:column;gap:8px}
+.policy-section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:2px;display:flex;align-items:center;gap:4px}
+.policy-section-label i{font-size:11px}
+.policy-item{padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.03)}
+.policy-item:last-child{border-bottom:none}
+.policy-item-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.policy-item-title{font-size:13px;color:#0066CC;text-decoration:none;font-weight:500;line-height:1.45;flex:1 1 60%;min-width:200px}
+.policy-item-title:hover{color:#004499;text-decoration:underline}
+.policy-item-meta{font-size:10.5px;color:#86868B;display:flex;gap:8px;flex-shrink:0;white-space:nowrap}
+.policy-item-summary{font-size:11.5px;color:#6E6E73;margin-top:3px;line-height:1.45}
+@media (max-width:600px){.policy-item-title{flex:1 1 100%;min-width:0}.policy-item-meta{margin-top:1px}}
+.policy-empty{text-align:center;padding:12px 0;font-size:12px;color:var(--text2)}
 /* General Modals */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; padding: 24px; }
 .modal-overlay.show, .modal-overlay[style*="display: flex"], .modal-overlay[style*="display:flex"] { display: flex; }
@@ -492,42 +784,218 @@ input:focus, textarea:focus, select:focus { border-color: var(--wp-accent); box-
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 782px) {
-  body { padding-left: 50px; }
-  #sidebar { width: 50px; }
-  .s-hd-title, .s-ft { display: none; }
-  .s-hd { justify-content: center; padding: 12px 0; }
-  .s-menu .tab-btn { justify-content: center; padding: 10px 6px; }
-  .s-menu .tab-btn span { display: none; }
-  .s-menu .tab-btn i { margin: 0; }
-  #wpcontent { padding: 12px 12px 24px; }
+  /* ── Bottom tab bar ── */
+  body { padding-left: 0; padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); background: #f7f9fc; }
+
+  /* Sidebar: full-height flex column, fixed to viewport — 透明背景，不遮挡内容 */
+  #sidebar {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%; height: 100vh; height: 100dvh;
+    display: flex; flex-direction: column;
+    overflow: hidden; border-right: none;
+    background: transparent; box-shadow: none;
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+    pointer-events: none;
+  }
+
+  /* Inner: fills space, scrollable, transparent */
+  #sidebar .sidebar-inner {
+    flex: 1; min-height: 0;
+    overflow-y: auto; overflow-x: hidden;
+    display: flex; flex-direction: column;
+    background: transparent;
+    pointer-events: none;
+  }
+
+  /* Tab menu as bottom bar → fixed to viewport, completely independent */
+  .s-menu {
+    position: fixed !important; bottom: 0; left: 0; right: 0;
+    height: 58px;
+    display: flex; flex-direction: row;
+    align-items: center; justify-content: space-around;
+    padding: 0 4px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    width: 100%;
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-top: 0.5px solid rgba(0,0,0,0.1);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+    z-index: 1005;
+    pointer-events: auto;
+  }
+  .s-menu li { flex: 1; margin: 0; }
+  .s-menu .tab-btn {
+    flex-direction: column; justify-content: center; align-items: center;
+    padding: 6px 2px; margin: 0; border-radius: 0;
+    border-left: none; border-bottom: 2px solid transparent;
+    font-size: 11px; gap: 3px; width: 100%;
+  }
+  .s-menu .tab-btn span { display: block; font-size: 11px; line-height: 1.2; }
+  .s-menu .tab-btn i { margin: 0; font-size: 20px; }
+  .s-menu .tab-btn.active { background: transparent; border-left: none; border-bottom-color: var(--wp-accent); color: var(--wp-accent); }
+  .s-menu .tab-btn.active i { color: var(--wp-accent); }
+
+  .s-hd, .s-hd-title, .s-ft { display: none; }
+
+  body.sidebar-collapsed { padding-left: 0; padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
+  body.sidebar-collapsed #sidebar { width: 100%; height: 100vh; }
+  body.sidebar-collapsed .s-menu .tab-btn span { display: block; }
+  body.sidebar-collapsed .s-menu .tab-btn { flex-direction: column; justify-content: center; padding: 6px 2px; }
+
+  #wpcontent { padding: 14px 16px 32px; }
+  #wpadminbar { padding: 0 12px; gap: 8px; }
+  #wpadminbar .wpadminbar-brand { display: none; }
+  #wpadminbar .month-pills { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; }
+  #wpadminbar .month-pills::-webkit-scrollbar { display: none; }
+  #wpadminbar .month-pills .month-pill { border-radius: 12px; padding: 3px 10px; font-size: 11px; flex-shrink: 0; }
+  .kpi-card, .card, .table-card, .chart-card { box-shadow: 0 1px 6px rgba(0,0,0,0.04); }
+  .wrap-header h1 { font-size: 19px; }
+  button:active, .month-pill:active, .tab-btn:active,
+  .sync-btn:active, .share-btn:active, .briefing-btn:active,
+  .detail-btn:active, .upload-label:active { transform: scale(0.97); transition: transform 0.08s ease; }
 }
 @media (max-width: 600px) {
-  .trend-grid { grid-template-columns: 1fr; }
-  .detail-kpi-grid { grid-template-columns: 1fr; }
-  .detail-modal-content { width: 100vw; max-height: 100vh; border-radius: 0; }
-  .detail-modal-body { padding: 14px; }
-  .detail-modal-header { padding: 12px 14px; }
+  /* ── Layout ── */
+  body { background: #f7f9fc; }
+  #wpcontent { padding: 12px 12px 28px; }
+  .wrap-header h1 { font-size: 18px; }
+  .wrap-header { margin-bottom: 12px; }
+
+  /* ── KPI: 1-col, premium cards ── */
+  .kpi-grid { grid-template-columns: 1fr; gap: 10px; margin-bottom: 14px; }
+  .kpi-card {
+    border-radius: var(--radius); padding: 14px 16px 12px;
+    box-shadow: var(--shadow-sm);
+    border: none;
+  }
+  .kpi-card .kpi-header { font-size: 12px; margin-bottom: 5px; }
+  .kpi-value { font-size: 28px; letter-spacing: -0.3px; }
+  .kpi-card .kpi-sub { font-size: 12px; margin-top: 4px; }
+
+  /* ── All cards: rounded, soft shadow, no border ── */
+  .card, .table-card, .chart-card,
+  .briefing-module, .sl-card, .policy-card,
+  .trend-sub-chart, .ai-card, .team-tip-section,
+  .pivot-analysis, .detail-kpi-card, .detail-note-section,
+  .analysis-item, .suggestion-item, .comparison-card {
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    border: none;
+  }
+  .card { padding: 16px; }
+  .chart-card { padding: 14px; }
+  .table-card { padding: 4px 0; border-radius: var(--radius); }
+  .sort-bar { padding: 0 8px 4px; gap: 4px; }
+  #tableCardProduct > div:first-child { margin-bottom:8px !important; gap:6px !important; }
+  #tableTitleProduct { font-size:14px !important; }
+  /* 产品线数字列适配 */
+  #tab-product .num-cell .num-main { font-size:11px; }
+  #tab-product .num-cell .yoy-row { font-size:8px; }
+
+  /* ── Month pills: capsule ── */
+  .month-pill, .sort-bar .month-pill,
+  #wpadminbar .month-pills .month-pill {
+    border-radius: 6px; padding: 5px 12px;
+    min-height: 30px; font-size: 12px;
+  }
+  #wpadminbar .month-pills {
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; flex-wrap: nowrap; gap: 4px;
+  }
+  #wpadminbar .month-pills::-webkit-scrollbar { display: none; }
+
+  /* ── Controls ── */
+  .controls { gap: 10px; margin-bottom: 14px; }
+  input[type="date"], input[type="month"], select { width: 100%; }
+
+  /* ── Mode switch: capsule ── */
+  .mode-switch { border-radius: 18px; padding: 2px; }
+  .mode-btn { border-radius: 16px; padding: 6px 14px; font-size: 13px; }
+
+  /* ── Data values: bold & readable ── */
+  .num-cell .num-main { font-size: 15px; font-weight: 600; }
+  .num-cell .yoy-row { font-size: 11px; }
+  .briefing-kpi .val { font-size: 22px; font-weight: 700; }
+  .briefing-kpi .label { font-size: 12px; }
+  .briefing-kpi .yoy { font-size: 12px; }
+  .detail-kpi-value { font-size: 24px; }
+
+  /* ── Charts: 2-col trend ── */
+  .trend-grid { grid-template-columns: 1fr; gap: 12px; }
+  .trend-sub-chart { padding: 12px; border-radius: 12px; }
+  .charts-row { gap: 12px; }
+
+  /* ── Tables: compact ── */
+  .detail-table { font-size: 13px; }
+  .detail-table th, .detail-table td { padding: 6px 5px; }
+  .detail-monthly-table th, .detail-monthly-table td { padding: 4px 3px; }
+  .detail-monthly-table th { font-size: 11px; }
+  .pivot-detail-table { font-size: 11px; }
+  .pivot-detail-table th { font-size: 10px; padding: 5px 3px; }
+  .pivot-detail-table td { padding: 4px 3px; font-size: 11px; }
+  .pivot-summary-bar { flex-wrap: wrap; }
+  .pivot-summary-card { min-width: 30%; }
+
+  /* ── Briefing ── */
+  .briefing-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .briefing-btn { border-radius: 12px; font-size: 13px; }
+\n\
+  /* --- 创业团队响应式 --- */\
+  #tab-team .tree-table { min-width: auto; width: 100%; font-size: 10px; table-layout: fixed; }\
+  #tab-team .tree-table thead th { padding: 4px 2px; font-size: 9px; }\
+  #tab-team .tree-table tbody td { padding: 4px 2px; font-size: 9px; }\
+  #tab-team .tree-table tbody td:first-child { padding-left: 4px; }\
+  /* 列宽分配：团队28% 收入16% 支出16% 管理费14% 结余14% 明细6% 分析6% */\
+  #tab-team .tree-table th:nth-child(1), #tab-team .tree-table td:nth-child(1) { width: 28%; }\
+  #tab-team .tree-table th:nth-child(2), #tab-team .tree-table td:nth-child(2) { width: 16%; }\
+  #tab-team .tree-table th:nth-child(3), #tab-team .tree-table td:nth-child(3) { width: 16%; }\
+  #tab-team .tree-table th:nth-child(4), #tab-team .tree-table td:nth-child(4) { width: 14%; }\
+  #tab-team .tree-table th:nth-child(5), #tab-team .tree-table td:nth-child(5) { width: 14%; }\
+  #tab-team .tree-table th:nth-child(6), #tab-team .tree-table td:nth-child(6) { width: 6%; }\
+  #tab-team .tree-table th:nth-child(7), #tab-team .tree-table td:nth-child(7) { width: 6%; }\
+  /* 取消 sticky 首列 */\
+  #tab-team .table-wrap .tree-table thead th:first-child,\
+  #tab-team .table-wrap .tree-table tbody td:first-child { position: static; background: inherit; }\
+  #tab-team .table-wrap { overflow-x: hidden; }\
+  #tab-team .tree-table .yoy-row { display: none; }\
+  /* 明细按钮：仅图标 */\
+  #tab-team .detail-btn:not(.analysis-btn) { font-size: 0; padding: 2px 4px; min-width: auto; }\
+  #tab-team .detail-btn:not(.analysis-btn) i { font-size: 10px; }\
+  #tab-team .detail-btn:not(.analysis-btn)::after { content: none; }\
+  /* 分析按钮：仅图标 */\
+  #tab-team .analysis-btn { font-size: 0; padding: 2px 4px; min-width: auto; }\
+  #tab-team .analysis-btn i { font-size: 10px; }
+  /* ── Modal: full-screen, zero waste ── */
+  .detail-modal { padding: 0; }
+  .detail-modal-content { width: 100vw !important; max-width: 100vw !important; max-height: 100vh !important; height: 100vh !important; border-radius: 0 !important; }
+  .detail-modal-header { padding: 10px 12px !important; }
+  .detail-modal-header h3 { font-size: 14px !important; }
+  .detail-modal-body { padding: 0 !important; height: calc(100% - 44px) !important; }
   .modal { width: 100vw; max-height: 100vh; border-radius: 0; }
   .modal > *:not(.modal-header):not(:first-child) { margin: 14px; }
-  .controls { gap: 8px; }
   .detail-modal { padding: 0; }
   .modal-overlay { padding: 0; }
+  .detail-kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .comparison-card { grid-template-columns: 1fr; }
-  .charts-row { gap: 12px; }
-  .chart-card { padding: 16px; }
-  .trend-sub-chart { padding: 12px; }
-  .detail-table { font-size: 12px; }
-  .detail-table th, .detail-table td { padding: 6px 6px; }
-  .detail-monthly-table th, .detail-monthly-table td { padding: 4px 3px; }
-  .detail-monthly-table th { font-size: 10px; }
-  .pivot-detail-table { font-size: 10px; }
-  .pivot-detail-table th { font-size: 9px; padding: 5px 3px; }
-  .pivot-detail-table td { padding: 4px 3px; font-size: 10px; }
-  .qa-search { flex-direction: column; }
+
+  /* ── Tree indent ── */
   .tree-indent-1 { padding-left: 14px !important; }
   .tree-indent-2 { padding-left: 22px !important; }
   .tree-indent-3 { padding-left: 32px !important; }
-  #wpadminbar .month-pills { overflow-x: auto; }
+
+  /* ── Policy cards ── */
+  .policy-grid { gap: 12px; }
+  .policy-card-head { padding: 14px 16px 10px; }
+  .policy-card-body { padding: 8px 16px 14px; }
+  .policy-item-title { font-size: 13px; }
+
+  /* ── Tap feedback ── */
+  button:active, .month-pill:active, .tab-btn:active,
+  .sync-btn:active, .share-btn:active, .briefing-btn:active,
+  .detail-btn:active, .upload-label:active,
+  .mode-btn:active, .back-btn:active, .admin-btn:active {
+    transform: scale(0.97); transition: transform 0.08s ease;
+  }
 }
 
 /* Print */
@@ -535,6 +1003,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--wp-accent); box-
   #wpadminbar, #sidebar, .modal, .detail-modal, .controls, .sort-bar, .back-btn { display: none !important; }
   .kpi-card, .table-card, .chart-card { break-inside: avoid; box-shadow: none; border: 1px solid var(--wp-border); }
 }
+
 </style>
 </head>
 <body>
@@ -545,6 +1014,9 @@ input:focus, textarea:focus, select:focus { border-color: var(--wp-accent); box-
   <div class="month-pills" id="monthPillsGlobal" style="flex-shrink:1"></div>
 </div>
 
+<!-- Maintenance Banner: 每月1-5号显示 -->
+<div id="maintenance-banner">⚠ 1~5号数据更新维护中</div>
+
 <!-- Left Sidebar -->
 <div id="sidebar">
   <div class="sidebar-inner">
@@ -552,8 +1024,8 @@ input:focus, textarea:focus, select:focus { border-color: var(--wp-accent); box-
       <li><button class="tab-btn active" data-tab="product"><i class="fa-solid fa-chart-line"></i> <span>整体情况</span></button></li>
       <li><button class="tab-btn" data-tab="business"><i class="fa-solid fa-building"></i> <span>产品线</span></button></li>
       <li><button class="tab-btn" data-tab="team"><i class="fa-solid fa-users-line"></i> <span>创业团队</span></button></li>
-      <li><button class="tab-btn" data-tab="policy"><i class="fa-solid fa-newspaper"></i> <span>政策延申</span></button></li>
-      <li><button class="tab-btn" data-tab="qa"><i class="fa-solid fa-flask"></i> <span>测试中</span></button></li>
+      <li><button class="tab-btn" data-tab="policy"><i class="fa-solid fa-newspaper"></i> <span>政策延伸</span></button></li>
+      <li><button class="tab-btn" data-tab="briefing"><i class="fa-solid fa-clipboard-list"></i> <span>管理简报</span></button></li>
     </ul>
     <div class="s-ft">© 2026 财务报告</div>
   </div>
@@ -582,9 +1054,9 @@ input:focus, textarea:focus, select:focus { border-color: var(--wp-accent); box-
         <div class="chart-title"><i class="fa-solid fa-chart-area"></i> 月度收入趋势</div>
         <div class="trend-grid" id="trendChartGrid">
           <div class="trend-sub-chart"><div class="trend-sub-title" style="color:#F6B43E"><i class="fa-solid fa-house-chimney"></i> 物业板块</div><div class="trend-legend-row"><span class="trend-legend-item" style="border-color:#F6B43E;color:#F6B43E"><i class="fa-solid fa-chart-line"></i> 同比 <span id="yoyWuYe">-</span></span><span class="trend-legend-item" style="border-color:#F6B43E;color:#F6B43E"><i class="fa-solid fa-chart-simple"></i> 环比 <span id="momWuYe">-</span></span></div><div id="trendChartWuYe" class="chart-box" style="height:200px"></div></div>
-          <div class="trend-sub-chart"><div class="trend-sub-title" style="color:#34C759"><i class="fa-solid fa-suitcase-medical"></i> 医养板块</div><div class="trend-legend-row"><span class="trend-legend-item" style="border-color:#34C759;color:#34C759"><i class="fa-solid fa-chart-line"></i> 同比 <span id="yoyYiYang">-</span></span><span class="trend-legend-item" style="border-color:#34C759;color:#34C759"><i class="fa-solid fa-chart-simple"></i> 环比 <span id="momYiYang">-</span></span></div><div id="trendChartYiYang" class="chart-box" style="height:200px"></div></div>
-          <div class="trend-sub-chart"><div class="trend-sub-title" style="color:#007AFF"><i class="fa-solid fa-utensils"></i> 餐饮板块</div><div class="trend-legend-row"><span class="trend-legend-item" style="border-color:#007AFF;color:#007AFF"><i class="fa-solid fa-chart-line"></i> 同比 <span id="yoyCanYin">-</span></span><span class="trend-legend-item" style="border-color:#007AFF;color:#007AFF"><i class="fa-solid fa-chart-simple"></i> 环比 <span id="momCanYin">-</span></span></div><div id="trendChartCanYin" class="chart-box" style="height:200px"></div></div>
-          <div class="trend-sub-chart"><div class="trend-sub-title" style="color:#FF6B6B"><i class="fa-solid fa-gift"></i> 美好生活</div><div class="trend-legend-row"><span class="trend-legend-item" style="border-color:#FF6B6B;color:#FF6B6B"><i class="fa-solid fa-chart-line"></i> 同比 <span id="yoyMeiHao">-</span></span><span class="trend-legend-item" style="border-color:#FF6B6B;color:#FF6B6B"><i class="fa-solid fa-chart-simple"></i> 环比 <span id="momMeiHao">-</span></span></div><div id="trendChartMeiHao" class="chart-box" style="height:200px"></div></div>
+          <div class="trend-sub-chart"><div class="trend-sub-title" style="color:#007AFF"><i class="fa-solid fa-suitcase-medical"></i> 医养板块</div><div class="trend-legend-row"><span class="trend-legend-item" style="border-color:#007AFF;color:#007AFF"><i class="fa-solid fa-chart-line"></i> 同比 <span id="yoyYiYang">-</span></span><span class="trend-legend-item" style="border-color:#007AFF;color:#007AFF"><i class="fa-solid fa-chart-simple"></i> 环比 <span id="momYiYang">-</span></span></div><div id="trendChartYiYang" class="chart-box" style="height:200px"></div></div>
+          <div class="trend-sub-chart"><div class="trend-sub-title" style="color:#FF6B6B"><i class="fa-solid fa-utensils"></i> 餐饮板块</div><div class="trend-legend-row"><span class="trend-legend-item" style="border-color:#FF6B6B;color:#FF6B6B"><i class="fa-solid fa-chart-line"></i> 同比 <span id="yoyCanYin">-</span></span><span class="trend-legend-item" style="border-color:#FF6B6B;color:#FF6B6B"><i class="fa-solid fa-chart-simple"></i> 环比 <span id="momCanYin">-</span></span></div><div id="trendChartCanYin" class="chart-box" style="height:200px"></div></div>
+          <div class="trend-sub-chart"><div class="trend-sub-title" style="color:#34C759"><i class="fa-solid fa-gift"></i> 美好生活</div><div class="trend-legend-row"><span class="trend-legend-item" style="border-color:#34C759;color:#34C759"><i class="fa-solid fa-chart-line"></i> 同比 <span id="yoyMeiHao">-</span></span><span class="trend-legend-item" style="border-color:#34C759;color:#34C759"><i class="fa-solid fa-chart-simple"></i> 环比 <span id="momMeiHao">-</span></span></div><div id="trendChartMeiHao" class="chart-box" style="height:200px"></div></div>
         </div>
       </div>
     </div>
@@ -593,7 +1065,12 @@ input:focus, textarea:focus, select:focus { border-color: var(--wp-accent); box-
 </div>
 
 <!-- Tab2: 创业团队经营分析 -->
-<div id="tab-team" class="tab-panel">
+<div id="tab-team" class="tab-panel" style="position:relative">
+  <div id="teamLoadingOverlay" style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.88);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px">
+    <style>@keyframes teamSpin{to{transform:rotate(360deg)}}</style>
+    <div style="width:32px;height:32px;border:3px solid #e8e8e8;border-top-color:var(--accent,#4f8ff7);border-radius:50%;animation:teamSpin 0.7s linear infinite"></div>
+    <span style="font-size:13px;color:#888">正在加载创业团队数据…</span>
+  </div>
   <div class="content">
     <div class="table-card" id="tableCardTeam">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
@@ -607,24 +1084,51 @@ input:focus, textarea:focus, select:focus { border-color: var(--wp-accent); box-
   </div>
 </div>
 
-<!-- Tab3: 政策延申 - 北京市银发经营月报 -->
+<!-- Tab3: 政策延伸 — 卡片式布局 -->
 <div id="tab-policy" class="tab-panel">
-  <div class="content">
-    <div class="card" id="reportListCard" style="padding:10px">
-      <div id="reportListWrap" style="max-height:none;overflow-y:visible"></div>
-    </div>
+  <div id="policyGrid" class="policy-grid">
+    <div class="empty-state"><div class="spinner"></div>加载政策数据…</div>
   </div>
 </div>
 
-<!-- Tab4: 测试中 / 智能问答 -->
-<div id="tab-qa" class="tab-panel">
+<!-- Tab4: 管理简报 — 专项报告目录 -->
+<div id="tab-briefing" class="tab-panel">
   <div class="content">
-    <div class="qa-search">
-      <input type="text" class="qa-input" id="qaInput" placeholder="输入财务问题，如：哪些板块结余率低于5%？">
-      <button class="qa-btn" id="qaBtn"><i class="fa-solid fa-paper-plane"></i> 提问</button>
+    <div class="briefing-header">
+      <h3 style="font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px"><i class="fa-solid fa-clipboard-list" style="color:var(--wp-accent)"></i> 专项报告目录</h3>
     </div>
-    <div class="preset-grid" id="presetGrid"></div>
-    <div class="card" id="qaResult"><div class="empty-state"><div class="spinner"></div><br>选择预设问题或输入查询开始分析</div></div>
+    <div id="briefingContent">
+      <div class="report-index">
+
+        <a href="/物业_分析报告.html" target="_blank" class="report-card">
+          <div class="report-card-icon">📊</div>
+          <div class="report-card-body">
+            <div class="report-card-title">物业板块专项分析报告</div>
+            <div class="report-card-desc">损益变动归因 · 业务线盈利能力 · 风险与行动建议</div>
+          </div>
+          <div class="report-card-arrow">→</div>
+        </a>
+
+        <a href="/销售排行榜.html" target="_blank" class="report-card">
+          <div class="report-card-icon">🏆</div>
+          <div class="report-card-body">
+            <div class="report-card-title">销售收入排名（全额自付费客户）</div>
+            <div class="report-card-desc">按网点聚合 · 双时段数据 · 个人排名</div>
+          </div>
+          <div class="report-card-arrow">→</div>
+        </a>
+
+        <a href="/平台支出专项分析报告.html" target="_blank" class="report-card">
+          <div class="report-card-icon">💰</div>
+          <div class="report-card-body">
+            <div class="report-card-title">平台支出专项分析报告</div>
+            <div class="report-card-desc">科目维度拆解 · 板块下钻 · 专项投入分析</div>
+          </div>
+          <div class="report-card-arrow">→</div>
+        </a>
+
+      </div>
+    </div>
   </div>
 </div>
 
@@ -830,6 +1334,24 @@ function fmt(v) {
     if (Math.abs(n) < 0.05) return '-';
     return Math.round(n).toLocaleString('zh-CN'); 
 }
+function fmtClear(v) { 
+    if (v == null || v === '' || v === 'NaN' || v === 'nan' || v === 'NULL' || v === 'null' || v === 'undefined' || (typeof v === 'number' && isNaN(v))) return ''; 
+    const n = Number(v); 
+    if (isNaN(n)) return '';
+    if (Math.abs(n) < 0.05) return '';
+    return Math.round(n).toLocaleString('zh-CN'); 
+}
+function fmtYoyClear(val) {
+    if (val == null || val === '' || isNaN(val)) return '';
+    const rounded = Math.round(val);
+    const sign = rounded >= 0 ? '+' : '';
+    return sign + rounded;
+}
+function fmtYoyPctClear(val) {
+    if (val == null || val === '' || isNaN(val)) return '';
+    const sign = val >= 0 ? '+' : '';
+    return sign + Math.round(val) + '%';
+}
 function fmtPct(v) { return v == null ? '-' : (v >= 0 ? '+' : '') + Math.round(v) + '%'; }
 function fmtPctSign(v) { return v == null ? '-' : (v >= 0 ? '+' : '') + Math.round(v) + '%'; }
 function fmtDiff(v) { return v == null ? '-' : (v >= 0 ? '+' : '') + Math.round(v * 10) / 10 + '个百分点'; }
@@ -873,11 +1395,10 @@ function switchTab(name) {
   // 根据Tab刷新对应内容
   if (name === 'product' || name === 'business') refreshProductTab();
   if (name === 'team') refreshTeamTab();
-  if (name === 'policy') loadReportList();
-  if (name === 'qa') initQA();
+  if (name === 'policy') initPolicy();
 }
 document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
-window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (['product', 'business', 'team', 'policy', 'qa'].includes(h)) switchTab(h); });
+window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (['product', 'business', 'team', 'policy', 'briefing'].includes(h)) switchTab(h); });
 
 // === Global Month Selector (in nav) ===
 function renderGlobalMonths() {
@@ -1135,9 +1656,9 @@ async function loadChartsProduct() {
     const trendData = await apiGet('/api/trend');
     const boardMap = [
       { name: '物业板块', key: '物业板块', idSuffix: 'WuYe', chartId: 'trendChartWuYe', color: '#F6B43E', colorLight: '#FFD180' },
-      { name: '医养板块', key: '医养板块', idSuffix: 'YiYang', chartId: 'trendChartYiYang', color: '#34C759', colorLight: '#81D9A5' },
-      { name: '餐饮板块', key: '餐饮板块', idSuffix: 'CanYin', chartId: 'trendChartCanYin', color: '#007AFF', colorLight: '#66B5FF' },
-      { name: '美好生活', key: '美好生活', idSuffix: 'MeiHao', chartId: 'trendChartMeiHao', color: '#FF6B6B', colorLight: '#FF9999' }
+      { name: '医养板块', key: '医养板块', idSuffix: 'YiYang', chartId: 'trendChartYiYang', color: '#007AFF', colorLight: '#66B5FF' },
+      { name: '餐饮板块', key: '餐饮板块', idSuffix: 'CanYin', chartId: 'trendChartCanYin', color: '#FF6B6B', colorLight: '#FF9999' },
+      { name: '美好生活', key: '美好生活', idSuffix: 'MeiHao', chartId: 'trendChartMeiHao', color: '#34C759', colorLight: '#81D9A5' }
     ];
     
     // 月度收入趋势：X轴固定1-12月，不与月份筛选联动
@@ -1559,22 +2080,9 @@ window.showTeamDetailMatrix = async function(teamName) {
       return;
     }
     let html = '';
-    // 1. KPI 汇总条
-    const bal = (summary.income || 0) - (summary.expense || 0);
+    const bal = summary.balance || 0;
     const balColor = bal >= 0 ? '#34C759' : '#FF3B30';
-    html += '<div class="pivot-summary-bar">';
-    html += '<div class="pivot-summary-card"><div class="ps-label">收入合计</div><div class="ps-value">' + fmt(summary.income) + '<span class="ps-unit">万</span></div></div>';
-    html += '<div class="pivot-summary-card"><div class="ps-label">支出合计</div><div class="ps-value">' + fmt(summary.expense) + '<span class="ps-unit">万</span></div></div>';
-    html += '<div class="pivot-summary-card"><div class="ps-label">净结余</div><div class="ps-value" style="color:' + balColor + '">' + fmt(bal) + '<span class="ps-unit">万</span></div></div>';
-    if (summary.income_yoy != null) {
-      const yoyC = summary.income_yoy >= 0 ? '#34C759' : '#FF3B30';
-      html += '<div class="pivot-summary-card"><div class="ps-label">收入环比</div><div class="ps-value" style="color:' + yoyC + '">' + (summary.income_yoy >= 0 ? '+' : '') + summary.income_yoy + '%</div></div>';
-    }
-    html += '</div>';
-    // 2. 透视表（Excel 压缩形式）
-    // 计算3-12月合计的月份
-    const months312 = months.filter(m => m >= 3);
-
+    // 透视表（Excel 压缩形式）
     html += '<div class="pivot-table-wrap">';
     html += '<table class="pivot-detail-table">';
     html += '<thead><tr>';
@@ -1602,19 +2110,11 @@ window.showTeamDetailMatrix = async function(teamName) {
     const expenseRows = rows.filter(r => r.type === 'expense');
     const balanceRows = rows.filter(r => r.type === 'balance' || r.level === 'balance');
 
-    // 计算3-12月合计
-    const sum312 = (row) => {
-      let s = 0;
-      for (const m of months312) {
-        s += (row.values && row.values[m]) || 0;
-      }
-      return s;
-    };
-
-    // 判断 pivot 行是否所有值都 < 0.05（跳过）
+    // 判断 pivot 行是否所有值都 < 0.05（跳过 total 行，子行不跳过以保证科目完整）
     const isPivotRowAllSmall = (row) => {
+      if (row.level !== 'total') return false;  // 子科目始终显示
       if (Math.abs(row.total || 0) >= 0.05) return false;
-      if (Math.abs(sum312(row)) >= 0.05) return false;
+      if (Math.abs(row.total_3_12 || 0) >= 0.05) return false;
       for (const m of months) {
         if (Math.abs((row.values && row.values[m]) || 0) >= 0.05) return false;
       }
@@ -1625,7 +2125,7 @@ window.showTeamDetailMatrix = async function(teamName) {
     const renderPivotRow = (row, stype) => {
       let nameStyle = row.level === 'total' ? 'font-weight:700' : (row.indent ? 'padding-left:24px;font-weight:400;color:var(--wp-text2)' : 'font-weight:500');
       const totalVal = row.total || 0;
-      const sum312Val = sum312(row);
+      const sum312Val = row.total_3_12 || 0;
       const incRatio = (stype === 'income' && totalIncome > 0) ? Math.round(totalVal / totalIncome * 100) + '%' : '-';
       const expRatio = (stype === 'expense' && totalExpense > 0) ? Math.round(totalVal / totalExpense * 100) + '%' : '-';
 
@@ -1666,14 +2166,14 @@ window.showTeamDetailMatrix = async function(teamName) {
       const br = balanceRows[0];
       const bVals = months.map(m => (br.values && br.values[m]) || 0);
       const bTotal = br.total || 0;
-      const b312 = sum312(br);
+      const b312 = br.total_3_12 || 0;
       html += '<tr class="pivot-section-balance" style="border-top:2px solid var(--border)">';
       html += '<td class="pivot-sticky-col" style="font-weight:700">' + (br.name || '结余') + '</td>';
       for (const v of bVals) {
         html += '<td class="pivot-num-col" style="font-weight:700;color:' + (v >= 0 ? '#34C759' : '#FF3B30') + '">' + fmt(v) + '</td>';
       }
       html += '<td class="pivot-num-col pivot-highlight pivot-annual" style="font-weight:700;color:' + balColor + '">' + fmt(bTotal) + '</td>';
-      html += '<td class="pivot-num-col pivot-highlight pivot-q312" style="color:' + balColor + '">' + fmt(b312) + '</td>';
+      html += '<td class="pivot-num-col pivot-highlight pivot-q312" style="color:' + (b312 >= 0 ? '#34C759' : '#FF3B30') + '">' + fmt(b312) + '</td>';
       html += '<td class="pivot-num-col pivot-ratio">-</td>';
       html += '<td class="pivot-num-col pivot-ratio">-</td>';
       html += '</tr>';
@@ -1696,6 +2196,8 @@ window.showTeamDetailMatrix = async function(teamName) {
     html += '<div class="team-tip-actions"><button class="team-tip-save-btn" id="teamTipSaveBtn"><i class="fa-solid fa-check"></i> 保存</button><span class="team-tip-status" id="teamTipStatus"></span></div>';
     html += '</div>';
     document.querySelector('#teamDetailModal .detail-modal-body').innerHTML = html;
+    // 加载行动建议
+    loadDetailActionSuggestions();
     // 加载已有 Tip & 绑定保存
     (async () => {
       const tipInput = document.getElementById('teamTipInput');
@@ -1781,24 +2283,20 @@ window.showTeamDetail = async function(name, level, nature) {
 
 // 生成团队详情HTML - 按月份分列的树形表格
 function generateTeamDetailHTML(name, row, momData, parentTotals, level, detailData) {
-  // 按公式计算各项金额
-  // 收入 = row.收入（后端已经转换为万元）
-  // 支出 = row.支出（后端已经转换为万元）
-  // 平台管理费 = row.平台管理费（后端已经转换为万元）
-  // 结余 = 收入 - 支出 - 平台管理费
+  // 结余直接使用后端返回字段，避免四舍五入累积误差
   const totalIncome = row.收入 || 0;
   const totalExpense = (row.支出 || 0);
   const totalFee = (row.平台管理费 || 0);
-  const totalBalance = totalIncome - totalExpense - totalFee; // 收入 - 支出 - 管理费
+  const totalBalance = row.结余 || 0;
   
   const balColor = totalBalance >= 0 ? 'positive' : 'negative';
   const balRate = totalIncome > 0 ? ((totalBalance / totalIncome * 100)).toFixed(1) : '0.0';
   
-  // 计算3-12月累计值（基于月份数据字段）
-  const sum312Income = totalIncome; // 汇总数据不区分月份，取全年值
+  // 3-12月累计也使用后端返回字段
+  const sum312Income = totalIncome;
   const sum312Expense = totalExpense;
   const sum312Fee = totalFee;
-  const sum312Balance = sum312Income - sum312Expense - sum312Fee;
+  const sum312Balance = row.结余 || 0;
   
   // 生成月份列HTML - 后端返回的是汇总数据，不含按月份分列，简化处理
   const genMonthCells = (field) => {
@@ -1932,8 +2430,8 @@ function generateTeamDetailHTML(name, row, momData, parentTotals, level, detailD
           <tr class="balance-row">
             <td class="sticky-col balance-label"><span class="row-code"></span><span class="row-name">结余</span></td>
             ${genMonthCells('结余', false)}
-            <td class="num-cell highlight-cell balance-cell"><div class="cell-value" style="color:${sum312Balance >= 0 ? '#34C759' : '#FF3B30'};font-weight:600">${fmt(sum312Balance)}</div></td>
-            <td class="num-cell highlight-cell balance-cell"><div class="cell-value" style="color:${totalBalance >= 0 ? '#34C759' : '#FF3B30'};font-weight:600">${fmt(totalBalance)}</div></td>
+            <td class="num-cell highlight-cell balance-cell"><div class="cell-value" style="color:${sum312Balance >= 0 ? '#30b158' : '#ff453a'};font-weight:600">${fmtClear(sum312Balance)}</div></td>
+            <td class="num-cell highlight-cell balance-cell"><div class="cell-value" style="color:${totalBalance >= 0 ? '#30b158' : '#ff453a'};font-weight:600">${fmtClear(totalBalance)}</div></td>
           </tr>
         </tbody>
       </table>
@@ -1944,6 +2442,22 @@ function generateTeamDetailHTML(name, row, momData, parentTotals, level, detailD
       <div class="detail-analysis-title"><i class="fa-solid fa-lightbulb"></i> 智能分析建议</div>
       <div class="detail-analysis-list">
         ${analysisSuggestions.map(s => `<div class="analysis-item ${s.type}"><i class="fa-solid ${s.icon}"></i><span>${s.text}</span></div>`).join('')}
+      </div>
+    </div>
+    
+    <!-- 行动建议区域 -->
+    <div class="detail-analysis-section" id="actionSection">
+      <div class="detail-analysis-title"><i class="fa-solid fa-rocket" style="color:var(--accent)"></i> 行动建议 <span style="font-weight:400;font-size:11px;color:var(--text3)">北京市场可落地方向</span></div>
+      <div class="detail-analysis-list" id="actionList">
+        <div class="analysis-item info"><i class="fa-solid fa-spinner fa-spin"></i><span>生成中…</span></div>
+      </div>
+    </div>
+    
+    <!-- 行动建议区域 -->
+    <div class="detail-analysis-section" id="actionSection">
+      <div class="detail-analysis-title"><i class="fa-solid fa-rocket" style="color:var(--accent)"></i> 行动建议 <span style="font-weight:400;font-size:11px;color:var(--text3)">北京市场可落地方向</span></div>
+      <div class="detail-analysis-list" id="actionList">
+        <div class="analysis-item info"><i class="fa-solid fa-spinner fa-spin"></i><span>生成中…</span></div>
       </div>
     </div>
     
@@ -2086,14 +2600,14 @@ window.showProductDetail = function(name, board, product) {
 window._productTreeCache = { products: {}, projects: {} };
 
 // 渲染单行函数
-function renderProductRow(row, level, prevData, momData, isParent) {
+function renderProductRow(row, level, prevData, momData, isParent, budgetData) {
   const name = row.业务板块 || row.产品 || row.项目 || '';
   const prev = prevData[name] || {};
   
-  // 计算结余：收入 - 支出 - 平台管理费
-  const balance = (row.收入 || 0) - (row.支出 || 0) - (row.平台管理费 || 0);
-  const prevBalance = (prev.收入 || 0) - (prev.支出 || 0) - (prev.平台管理费 || 0);
-  const momBalanceVal = momData ? ((momData.收入 || 0) - (momData.支出 || 0) - (momData.平台管理费 || 0)) : 0;
+  // 计算结余：直接取后端 raw相减后to_wan 的值，避免前端尾差
+  const balance = row.结余 || 0;
+  const prevBalance = prev.结余 || 0;
+  const momBalanceVal = momData ? (momData.结余 || 0) : 0;
   
   // 同比增长率 = (当期 - 去年同期) / |去年同期| × 100
   const yoyIncome = prev.收入 ? ((row.收入 - prev.收入) / Math.abs(prev.收入) * 100) : null;
@@ -2122,10 +2636,24 @@ function renderProductRow(row, level, prevData, momData, isParent) {
   
   let html = `<tr class="${rowClass}" data-name="${name}" data-level="${level}">`;
   html += `<td class="${indentClass}"><div class="tree-row"><span class="tree-toggle-area">${toggleBtn}</span><span class="tree-label" style="font-weight:${level === 0 ? 600 : 500}">${name}</span></div></td>`;
-  html += `<td class="num-cell"><div class="num-main">${fmt(row.收入)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyIncome)}">${fmtYoyPct(yoyIncome)}</span></div></td>`;
-  html += `<td class="num-cell"><div class="num-main">${fmt(row.支出)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyExpense)}">${fmtYoyPct(yoyExpense)}</span></div></td>`;
-  html += `<td class="num-cell"><div class="num-main">${fmt(row.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyFee)}">${fmtYoyPct(yoyFee)}</span></div></td>`;
-  html += `<td class="num-cell balance-cell"><div class="num-main" style="${balanceColor}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyBalance)}">${fmtYoyPct(yoyBalance)}</span></div></td>`;
+  // 预算进度列 → 第二列
+  html += '<td class="num-cell budget-cell">';
+  if (!budgetData || !budgetData.budget) {
+    html += '<div class="budget-inner"><span class="empty-hint">-</span></div>';
+  } else {
+    var bb = budgetData.budget || 0;
+    var bp = parseFloat(budgetData.progress) || 0;
+    var achieved = bp >= (budgetData.time_progress || 0);
+    html += '<div class="budget-inner">';
+    html += '<div class="bf-year">' + (bb/10000).toFixed(0) + '万 <span class="bf-bar-status">' + (achieved?'🟢':'🔴') + '</span></div>';
+    html += '<div class="bf-bar-row"><span class="bf-bar"><span class="bf-bar-bg"><span class="bf-bar-fill ' + (achieved?'done':'undone') + '" style="width:' + Math.round(Math.min(bp,1)*100) + '%"></span></span></span><span class="bf-bar-pct">' + Math.round(bp*100) + '%</span></div>';
+    html += '</div>';
+  }
+  html += '</td>';
+  html += `<td class="num-cell income-cell"><div class="num-main">${fmtClear(row.收入)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyIncome)}">${fmtYoyPctClear(yoyIncome)}</span></div></td>`;
+  html += `<td class="num-cell expense-cell"><div class="num-main">${fmtClear(row.支出)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyExpense)}">${fmtYoyPctClear(yoyExpense)}</span></div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmtClear(row.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyFee)}">${fmtYoyPctClear(yoyFee)}</span></div></td>`;
+  html += `<td class="num-cell balance-cell"><div class="num-main" style="${balanceColor}">${fmtClear(balance)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyBalance)}">${fmtYoyPctClear(yoyBalance)}</span></div></td>`;
   html += '</tr>';
   return html;
 }
@@ -2148,13 +2676,21 @@ async function loadTableProduct() {
     
     document.getElementById('tableTitleProduct').textContent = '';
     document.getElementById('backBtnAreaProduct').innerHTML = '';
-    document.getElementById('sortBtnsProduct').innerHTML = '<button class="month-pill" onclick="doSortProductTree()"><i class="fa-solid fa-sort"></i> 结余排序</button>';
     
-    // 获取环比数据
+    // 获取环比数据 + 预算数据
     const momDataMap = await getProductMomData(boardData);
+    let budgetTree = { boards: {} };
+    try { budgetTree = await apiPost('/api/product/budget', { year: S.year, months: S.monthsProduct }); } catch(e) {}
+    window._budgetTree = budgetTree;  // 供下钻展开使用
+    var timeP = 0;
+    var boards = budgetTree.boards || {};
+    for (var bn in boards) { timeP = boards[bn].time_progress || 0; break; }
+    var timeHeadHtml = '<div class="time-progress-header">年时间进度 <span class="bf-bar"><span class="bf-bar-bg"><span class="bf-bar-fill time" style="width:' + Math.round(timeP*100) + '%"></span></span></span> ' + Math.round(timeP*100) + '%</div>';
+    document.getElementById('sortBtnsProduct').innerHTML = timeHeadHtml + '<button class="month-pill" onclick="doSortProductTree()"><i class="fa-solid fa-sort"></i> 结余排序</button>';
+    document.getElementById('tableTitleProduct').innerHTML = '';
     
     let html = '<table class="tree-table"><thead><tr>';
-    html += '<th>业务板块</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th>';
+    html += '<th>业务板块</th><th class="budget-col">年收入预算</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th>';
     html += '</tr></thead><tbody>';
     
     // 渲染板块行（按指定顺序排列，缺失板块补0）
@@ -2172,7 +2708,7 @@ async function loadTableProduct() {
       const rInc = row.收入 || 0, rExp = row.支出 || 0, rFee = row.平台管理费 || 0;
       const rBal = rInc - rExp - rFee;
       if (Math.abs(rInc) < 0.05 && Math.abs(rExp) < 0.05 && Math.abs(rFee) < 0.05 && Math.abs(rBal) < 0.05) continue;
-      html += renderProductRow(row, 0, prevData, momDataMap[row.业务板块]);
+      html += renderProductRow(row, 0, prevData, momDataMap[row.业务板块], false, (budgetTree.boards || {})[row.业务板块]);
     }
     
     // 合计行
@@ -2180,12 +2716,13 @@ async function loadTableProduct() {
       const totalIncome = boardData.reduce((sum, r) => sum + (r.收入 || 0), 0);
       const totalExpense = boardData.reduce((sum, r) => sum + (r.支出 || 0), 0);
       const totalFee = boardData.reduce((sum, r) => sum + (r.平台管理费 || 0), 0);
-      const totalBalance = totalIncome - totalExpense - totalFee; // 结余 = 收入 - 支出 - 管理费
+      const totalBalance = boardData.reduce((sum, r) => sum + (r.结余 || 0), 0); // raw相减后to_wan
       const totalBalanceColor = totalBalance >= 0 ? '#34C759' : '#FF3B30';
       html += '<tr style="background:#f0f0f5;font-weight:700;border-top:2px solid var(--wp-border)">';
       html += '<td>合计</td>';
+      html += '<td class="num-cell budget-cell"><div class="budget-inner"><span style="font-size:10px;color:var(--wp-text3);font-weight:500">—</span></div></td>';
       html += `<td class="num-cell"><div class="num-main">${fmt(totalIncome)}</div></td>`;
-      html += `<td class="num-cell"><div class="num-main">${fmt(totalExpense)}</div></td>`;
+      html += `<td class="num-cell expense-cell"><div class="num-main">${fmtClear(totalExpense)}</div></td>`;
       html += `<td class="num-cell"><div class="num-main">${fmt(totalFee)}</div></td>`;
       html += `<td class="num-cell balance-cell"><div class="num-main" style="color:${totalBalanceColor}">${fmt(totalBalance)}</div></td>`;
       html += '</tr>';
@@ -2239,7 +2776,7 @@ function bindProductTreeEvents() {
         if (!window._productTreeCache.products[cacheKey]) {
           const loadingRow = document.createElement('tr');
           loadingRow.className = 'tree-loading-row';
-          loadingRow.innerHTML = '<td colspan="5" class="tree-loading">加载中...</td>';
+          loadingRow.innerHTML = '<td colspan="6" class="tree-loading">加载中...</td>';
           row.parentNode.insertBefore(loadingRow, row.nextSibling);
           
           const r = await apiPost('/api/product/drill', { year: S.year, months: S.monthsProduct, level: 'product', board: board });
@@ -2260,14 +2797,14 @@ function bindProductTreeEvents() {
         const frag = document.createDocumentFragment();
         for (const pRow of productData) {
           const pInc = pRow.收入 || 0, pExp = pRow.支出 || 0, pFee = pRow.平台管理费 || 0;
-          const balance = pInc - pExp - pFee;
+          const balance = pRow.结余 || 0; // raw相减后to_wan
           if (Math.abs(pInc) < 0.05 && Math.abs(pExp) < 0.05 && Math.abs(pFee) < 0.05 && Math.abs(balance) < 0.05) continue;
           const tr = document.createElement('tr');
           tr.className = 'tree-child';
           tr.dataset.level = '1';
           tr.dataset.name = pRow.产品 || '';
           tr.style.display = '';
-          const prevBalance = (prevData[pRow.产品]?.收入 || 0) - (prevData[pRow.产品]?.支出 || 0) - (prevData[pRow.产品]?.平台管理费 || 0);
+          const prevBalance = prevData[pRow.产品]?.结余 || 0;
           const prevInc = prevData[pRow.产品]?.收入 || 0;
           const prevExp = prevData[pRow.产品]?.支出 || 0;
           const prevFee = prevData[pRow.产品]?.平台管理费 || 0;
@@ -2276,7 +2813,19 @@ function bindProductTreeEvents() {
           const yoyFee = prevFee ? ((pRow.平台管理费 - prevFee) / Math.abs(prevFee) * 100) : null;
           const yoyBalance = prevBalance ? ((balance - prevBalance) / Math.abs(prevBalance) * 100) : null;
           const balColor = balance >= 0 ? 'color:#34C759' : 'color:#FF3B30';
-          tr.innerHTML = `<td class="tree-indent-1"><div class="tree-row"><span class="tree-toggle-area"><span class="tree-toggle" data-board="${board}" data-product="${pRow.产品 || ''}" data-level="1">▶</span></span><span class="tree-label">${pRow.产品 || ''}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.收入)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyIncome)}">${fmtYoyPct(yoyIncome)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.支出)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyExpense)}">${fmtYoyPct(yoyExpense)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyFee)}">${fmtYoyPct(yoyFee)}</span></div></td><td class="num-cell balance-cell"><div class="num-main" style="${balColor}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyBalance)}">${fmtYoyPct(yoyBalance)}</span></div></td>`;
+          // 产品级预算数据
+          var bdB = (window._budgetTree?.boards || {})[board];
+          var bdP = bdB?.products?.[pRow.产品];
+          var bdCell = '';
+          if (!bdP || !bdP.budget) {
+            bdCell = '<td class="num-cell budget-cell"><div class="budget-inner"><span class="empty-hint">-</span></div></td>';
+          } else {
+            var bp2 = parseFloat(bdP.progress) || 0;
+            var bb2 = bdP.budget || 0;
+            var ok2 = bp2 >= (bdP.time_progress || bdB?.time_progress || 0);
+            bdCell = '<td class="num-cell budget-cell"><div class="budget-inner"><div class="bf-year">' + (bb2/10000).toFixed(0) + '万 <span class="bf-bar-status">' + (ok2?'🟢':'🔴') + '</span></div><div class="bf-bar-row"><span class="bf-bar"><span class="bf-bar-bg"><span class="bf-bar-fill ' + (ok2?'done':'undone') + '" style="width:' + Math.round(Math.min(bp2,1)*100) + '%"></span></span></span><span class="bf-bar-pct">' + Math.round(bp2*100) + '%</span></div></div></td>';
+          }
+          tr.innerHTML = `<td class="tree-indent-1"><div class="tree-row"><span class="tree-toggle-area"><span class="tree-toggle" data-board="${board}" data-product="${pRow.产品 || ''}" data-level="1">▶</span></span><span class="tree-label">${pRow.产品 || ''}</span></div></td>${bdCell}<td class="num-cell income-cell"><div class="num-main">${fmtClear(pRow.收入)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyIncome)}">${fmtYoyPctClear(yoyIncome)}</span></div></td><td class="num-cell expense-cell"><div class="num-main">${fmtClear(pRow.支出)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyExpense)}">${fmtYoyPctClear(yoyExpense)}</span></div></td><td class="num-cell"><div class="num-main">${fmtClear(pRow.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyFee)}">${fmtYoyPctClear(yoyFee)}</span></div></td><td class="num-cell balance-cell"><div class="num-main" style="${balColor}">${fmtClear(balance)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyBalance)}">${fmtYoyPctClear(yoyBalance)}</span></div></td>`;
           frag.appendChild(tr);
         }
         row.parentNode.insertBefore(frag, insertBeforeRow);
@@ -2287,7 +2836,7 @@ function bindProductTreeEvents() {
         if (!window._productTreeCache.projects[cacheKey]) {
           const loadingRow = document.createElement('tr');
           loadingRow.className = 'tree-loading-row';
-          loadingRow.innerHTML = '<td colspan="5" class="tree-loading">加载中...</td>';
+          loadingRow.innerHTML = '<td colspan="6" class="tree-loading">加载中...</td>';
           row.parentNode.insertBefore(loadingRow, row.nextSibling);
           
           const r = await apiPost('/api/product/drill', { year: S.year, months: S.monthsProduct, level: 'project', product: product });
@@ -2308,7 +2857,7 @@ function bindProductTreeEvents() {
         const frag = document.createDocumentFragment();
         for (const pRow of projectData) {
           const pInc = pRow.收入 || 0, pExp = pRow.支出 || 0, pFee = pRow.平台管理费 || 0;
-          const balance = pInc - pExp - pFee;
+          const balance = pRow.结余 || 0; // raw相减后to_wan
           if (Math.abs(pInc) < 0.05 && Math.abs(pExp) < 0.05 && Math.abs(pFee) < 0.05 && Math.abs(balance) < 0.05) continue;
           const tr = document.createElement('tr');
           tr.className = 'tree-grandchild';
@@ -2318,13 +2867,25 @@ function bindProductTreeEvents() {
           const prevInc = prevData[pRow.项目]?.收入 || 0;
           const prevExp = prevData[pRow.项目]?.支出 || 0;
           const prevFee = prevData[pRow.项目]?.平台管理费 || 0;
-          const prevBalance = (prevData[pRow.项目]?.收入 || 0) - (prevData[pRow.项目]?.支出 || 0) - (prevData[pRow.项目]?.平台管理费 || 0);
+          const prevBalance = prevData[pRow.项目]?.结余 || 0;
           const yoyIncome = prevInc ? ((pRow.收入 - prevInc) / Math.abs(prevInc) * 100) : null;
           const yoyExpense = prevExp ? ((pRow.支出 - prevExp) / Math.abs(prevExp) * 100) : null;
           const yoyFee = prevFee ? ((pRow.平台管理费 - prevFee) / Math.abs(prevFee) * 100) : null;
           const yoyBal = prevBalance ? ((balance - prevBalance) / Math.abs(prevBalance) * 100) : null;
           const projBalColor = balance >= 0 ? 'color:#34C759' : 'color:#FF3B30';
-          tr.innerHTML = `<td class="tree-indent-2"><div class="tree-row"><span class="tree-toggle-area"><span class="tree-toggle empty">▶</span></span><span class="tree-label">${pRow.项目 || ''}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.收入)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyIncome)}">${fmtYoyPct(yoyIncome)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.支出)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyExpense)}">${fmtYoyPct(yoyExpense)}</span></div></td><td class="num-cell"><div class="num-main">${fmt(pRow.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyFee)}">${fmtYoyPct(yoyFee)}</span></div></td><td class="num-cell balance-cell"><div class="num-main" style="${projBalColor}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyBal)}">${fmtYoyPct(yoyBal)}</span></div></td>`;
+          // 项目级预算数据
+          var bdB3 = (window._budgetTree?.boards || {})[board];
+          var bdProj = bdB3?.products?.[product]?.projects?.[pRow.项目];
+          var bdCell3 = '';
+          if (!bdProj || !bdProj.budget) {
+            bdCell3 = '<td class="num-cell budget-cell"><div class="budget-inner"><span class="empty-hint">-</span></div></td>';
+          } else {
+            var bp3 = parseFloat(bdProj.progress) || 0;
+            var bb3 = bdProj.budget || 0;
+            var ok3 = bp3 >= (bdProj.time_progress || bdB3?.time_progress || 0);
+            bdCell3 = '<td class="num-cell budget-cell"><div class="budget-inner"><div class="bf-year">' + (bb3/10000).toFixed(0) + '万 <span class="bf-bar-status">' + (ok3?'🟢':'🔴') + '</span></div><div class="bf-bar-row"><span class="bf-bar"><span class="bf-bar-bg"><span class="bf-bar-fill ' + (ok3?'done':'undone') + '" style="width:' + Math.round(Math.min(bp3,1)*100) + '%"></span></span></span><span class="bf-bar-pct">' + Math.round(bp3*100) + '%</span></div></div></td>';
+          }
+          tr.innerHTML = `<td class="tree-indent-2"><div class="tree-row"><span class="tree-toggle-area"><span class="tree-toggle empty">▶</span></span><span class="tree-label">${pRow.项目 || ''}</span></div></td>${bdCell3}<td class="num-cell income-cell"><div class="num-main">${fmtClear(pRow.收入)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyIncome)}">${fmtYoyPctClear(yoyIncome)}</span></div></td><td class="num-cell expense-cell"><div class="num-main">${fmtClear(pRow.支出)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyExpense)}">${fmtYoyPctClear(yoyExpense)}</span></div></td><td class="num-cell"><div class="num-main">${fmtClear(pRow.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyFee)}">${fmtYoyPctClear(yoyFee)}</span></div></td><td class="num-cell balance-cell"><div class="num-main" style="${projBalColor}">${fmtClear(balance)}</div><div class="yoy-row"><span class="yoy-label">同比</span> <span class="yoy-value ${pctCls(yoyBal)}">${fmtYoyPctClear(yoyBal)}</span></div></td>`;
           frag.appendChild(tr);
         }
         row.parentNode.insertBefore(frag, insertBeforeRow);
@@ -2345,23 +2906,26 @@ window.doSortProductTree = async function() {
   
   const prevData = await getPrevYearDataProduct('board', null, null);
   const momDataMap = await getProductMomData(data);
+  let budgetTree2 = { boards: {} };
+  try { budgetTree2 = await apiPost('/api/product/budget', { year: S.year, months: S.monthsProduct }); } catch(e) {}
   
   let html = '<table class="tree-table"><thead><tr>';
-  html += '<th>业务板块</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th>';
+  html += '<th>业务板块</th><th class="budget-col">年收入预算</th><th class="num-col">收入</th><th class="num-col">支出</th><th class="num-col">管理费</th><th class="num-col">结余</th>';
   html += '</tr></thead><tbody>';
   
   for (const row of data) {
-    html += renderProductRow(row, 0, prevData, momDataMap[row.业务板块]);
+    html += renderProductRow(row, 0, prevData, momDataMap[row.业务板块], false, (budgetTree2.boards || {})[row.业务板块]);
   }
   
   // 合计行
   const totalIncome = data.reduce((sum, r) => sum + (r.收入 || 0), 0);
   const totalExpense = data.reduce((sum, r) => sum + (r.支出 || 0), 0);
   const totalFee = data.reduce((sum, r) => sum + (r.平台管理费 || 0), 0);
-  const totalBalance = totalIncome - totalExpense - totalFee; // 结余 = 收入 - 支出 - 管理费
+  const totalBalance = data.reduce((sum, r) => sum + (r.结余 || 0), 0); // raw相减后to_wan
   const totalBalanceColor = totalBalance >= 0 ? '#34C759' : '#FF3B30';
   html += '<tr style="background:#f0f0f5;font-weight:700;border-top:2px solid var(--wp-border)">';
   html += '<td>合计</td>';
+  html += '<td class="num-cell budget-cell"><div class="budget-inner"><span style="font-size:10px;color:var(--wp-text3);font-weight:500">—</span></div></td>';
   html += `<td class="num-cell"><div class="num-main">${fmt(totalIncome)}</div></td>`;
   html += `<td class="num-cell"><div class="num-main">${fmt(totalExpense)}</div></td>`;
   html += `<td class="num-cell"><div class="num-main">${fmt(totalFee)}</div></td>`;
@@ -2381,9 +2945,9 @@ function renderTeamRow(row, level, prevData) {
   const name = row['H团队线-上级'] || row['H团队线性质'] || '';
   const nature = row['H团队线性质'] || '';
   const prev = prevData[name] || {};
-  // 计算结余：收入 - 支出 - 平台管理费
-  const balance = (row.收入 || 0) - (row.支出 || 0) - (row.平台管理费 || 0);
-  const prevBalance = (prev.收入 || 0) - (prev.支出 || 0) - (prev.平台管理费 || 0);
+  // 结余直接使用后端返回字段
+  const balance = row.结余 || 0;
+  const prevBalance = prev.结余 || 0;
   
   const yoyIncome = (row.收入 || 0) - (prev.收入 || 0);
   const yoyExpense = (row.支出 || 0) - (prev.支出 || 0);
@@ -2403,14 +2967,14 @@ function renderTeamRow(row, level, prevData) {
   const momIncome = momData.收入 || 0;
   const momExpense = momData.支出 || 0;
   const momFee = momData.平台管理费 || 0;
-  const momBalance = momData ? ((momData.收入 || 0) - (momData.支出 || 0) - (momData.平台管理费 || 0)) : 0;
+  const momBalance = momData ? (momData.结余 || 0) : 0;
   
   let html = `<tr class="${rowClass}" data-name="${name}" data-level="${level}">`;
   html += `<td class="${indentClass}"><div class="tree-row"><span class="tree-toggle-area">${toggleBtn}</span><span class="tree-label" style="font-weight:${level === 0 ? 600 : 500}">${name}</span></div></td>`;
-  html += `<td class="num-cell"><div class="num-main">${fmt(row.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momIncome)}</span></div></td>`;
-  html += `<td class="num-cell"><div class="num-main">${fmt(row.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momExpense)}</span></div></td>`;
-  html += `<td class="num-cell"><div class="num-main">${fmt(row.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoy(momFee)}</span></div></td>`;
-  html += `<td class="num-cell balance-cell"><div class="num-main" style="${balanceColor}">${fmt(balance)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value ${momBalance >= 0 ? 'positive' : 'negative'}">${fmtYoy(momBalance)}</span></div></td>`;
+  html += `<td class="num-cell income-cell"><div class="num-main">${fmtClear(row.收入)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoyClear(momIncome)}</span></div></td>`;
+  html += `<td class="num-cell expense-cell"><div class="num-main">${fmtClear(row.支出)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoyClear(momExpense)}</span></div></td>`;
+  html += `<td class="num-cell"><div class="num-main">${fmtClear(row.平台管理费)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value">${fmtYoyClear(momFee)}</span></div></td>`;
+  html += `<td class="num-cell balance-cell"><div class="num-main" style="${balanceColor}">${fmtClear(balance)}</div><div class="yoy-row"><span class="yoy-label">环比</span> <span class="yoy-value ${momBalance >= 0 ? 'positive' : 'negative'}">${fmtYoyClear(momBalance)}</span></div></td>`;
   html += `<td style="text-align:center"><button class="detail-btn" onclick="showTeamDetail('${name}', ${level}, '${nature}')"><i class="fa-solid fa-eye"></i> 查看明细</button></td>`;
   html += '</tr>';
   return html;
@@ -2490,6 +3054,7 @@ async function loadTableTeam() {
     html += '<th class="num-cell-th">管理费</th>';
     html += '<th class="num-cell-th">结余</th>';
     html += '<th style="text-align:center;width:80px">明细</th>';
+    html += '<th style="text-align:center;width:80px">专项分析</th>';
     html += '</tr></thead><tbody>';
 
     for (const natureRow of natureData) {
@@ -2497,7 +3062,7 @@ async function loadTableTeam() {
       const inc = natureRow['收入'] || 0;
       const exp = natureRow['支出'] || 0;
       const fee = natureRow['平台管理费'] || 0;
-      const bal = inc - exp - fee;
+      const bal = natureRow['结余'] || 0; // 后端 raw相减后to_wan
       const balCls = bal >= 0 ? 'positive' : 'negative';
 
       // 跳过 nature 行（若所有值 < 0.05）
@@ -2518,6 +3083,7 @@ async function loadTableTeam() {
       } else {
         html += '<td style="text-align:center"><button class="detail-btn" onclick="showTeamDetailMatrix(\x27' + encodeURIComponent(natureName) + '\x27)"><i class="fa-solid fa-eye"></i> 查看明细</button></td>';
       }
+      html += '<td style="text-align:center">' + _analysisBtnHtml(encodeURIComponent(natureName)) + '</td>';
       html += '</tr>';
 
       // Parent 子行（只有当有多于1个孩子时才显示parent层级）
@@ -2527,14 +3093,14 @@ async function loadTableTeam() {
           const pInc = pRow['收入'] || 0;
           const pExp = pRow['支出'] || 0;
           const pFee = pRow['平台管理费'] || 0;
-          const pBal = pInc - pExp - pFee;
+          const pBal = pRow['结余'] || 0; // raw相减后to_wan
           // 跳过 parent 行（若所有值 < 0.05）
           if (Math.abs(pInc) < 0.05 && Math.abs(pExp) < 0.05 && Math.abs(pFee) < 0.05 && Math.abs(pBal) < 0.05) continue;
           const pBalCls = pBal >= 0 ? 'positive' : 'negative';
           const prevInc = (prevParent[pName] && prevParent[pName]['收入']) || 0;
           const prevExp = (prevParent[pName] && prevParent[pName]['支出']) || 0;
           const prevFee = (prevParent[pName] && prevParent[pName]['平台管理费']) || 0;
-          const prevPBal = prevInc - prevExp - prevFee;
+          const prevPBal = (prevParent[pName] && prevParent[pName]['结余']) || 0;
 
           html += '<tr class="' + (hasMultiChildren ? 'tree-child' : 'tree-parent') + '" data-level="1" data-nature="' + natureName + '" style="display:' + (hasMultiChildren ? '' : 'none') + '">';
           html += '<td class="' + (hasMultiChildren ? 'tree-indent-1' : '') + '"><div class="tree-row">';
@@ -2544,6 +3110,7 @@ async function loadTableTeam() {
           html += '<td class="num-cell"><div class="num-main">' + fmt(pFee) + '</div></td>';
           html += '<td class="num-cell balance-cell"><div class="num-main ' + pBalCls + '">' + fmt(pBal) + '</div></td>';
           html += '<td style="text-align:center"><button class="detail-btn" onclick="showTeamDetail(\x27' + encodeURIComponent(pName) + '\x27, 1, \x27' + encodeURIComponent(natureName) + '\x27)"><i class="fa-solid fa-eye"></i> 查看明细</button></td>';
+          html += '<td style="text-align:center">' + _analysisBtnHtml(encodeURIComponent(pName)) + '</td>';
           html += '</tr>';
         }
       }
@@ -2663,29 +3230,27 @@ window.doSortTeamTree = async function() {
   for (const row of data) {
     row._momData = momDataMap[row['H团队线-上级']] || {};
     const rInc = row.收入 || 0, rExp = row.支出 || 0, rFee = row.平台管理费 || 0;
-    const rBal = rInc - rExp - rFee;
+    const rBal = row.结余 || 0;
     if (Math.abs(rInc) < 0.05 && Math.abs(rExp) < 0.05 && Math.abs(rFee) < 0.05 && Math.abs(rBal) < 0.05) continue;
     html += renderTeamRow(row, 0, prevData);
   }
   
   const totalFee = data.reduce((sum, r) => sum + (r.平台管理费 || 0), 0);
-  const totalBalance = totalIncome - totalExpense - totalFee; // 结余 = 收入 - 支出 - 管理费
+  const totalBalance = data.reduce((sum, r) => sum + (r.结余 || 0), 0); // raw相减后to_wan
   const totalBalanceColor = totalBalance >= 0 ? '#34C759' : '#FF3B30';
   html += '<tr style="background:#f0f0f5;font-weight:700;border-top:2px solid var(--wp-border)">';
   html += '<td>合计</td>';
+  html += '<td class="num-cell budget-cell"><div class="budget-inner"><span style="font-size:10px;color:var(--wp-text3);font-weight:500">—</span></div></td>';
   html += `<td class="num-cell"><div class="num-main">${fmt(totalIncome)}</div></td>`;
   html += `<td class="num-cell"><div class="num-main">${fmt(totalExpense)}</div></td>`;
   html += `<td class="num-cell"><div class="num-main">${fmt(totalFee)}</div></td>`;
   html += `<td class="num-cell balance-cell"><div class="num-main" style="color:${totalBalanceColor}">${fmt(totalBalance)}</div></td>`;
-  html += '<td></td>';
   html += '</tr>';
   
   html += '</tbody></table>';
   document.getElementById('tableWrapTeam').innerHTML = html;
   bindTeamTreeEvents();
 };
-
-
 
 // === Share Modal ===
 async function openTeamShare(parentName) {
@@ -2732,197 +3297,304 @@ async function refreshProductTab() {
   await Promise.all([loadKPIProduct(), loadChartsProduct(), loadTableProduct()]);
 }
 async function refreshTeamTab() {
-  await Promise.all([loadKPITeam(), loadChartsTeam(), loadTableTeam()]);
-}
-
-// === 创业团队AI分析面板 ===
-async function renderTeamAICard() {
-  const panel = document.getElementById('specialPanelTeam');
-  if (!panel) return;
-  if (!S.monthsTeam || S.monthsTeam.length === 0) {
-    panel.innerHTML = '';
-    return;
+  const overlay = document.getElementById("teamLoadingOverlay");
+  let timer = null;
+  if (overlay) {
+    timer = setTimeout(function(){ overlay.style.display = "flex"; }, 300);
   }
-  const ms = S.monthsTeam.join(',');
-  let html = '<div class="ai-card"><div class="ai-card-header"><div class="ai-card-title"><i class="fa-solid fa-robot"></i> AI 智能分析</div><div class="ai-card-meta"><span id="teamAIMeta"></span></div></div><div class="ai-card-body" id="teamAIBody"><div class="ai-card-loading"><i class="fa-solid fa-spinner fa-spin"></i><div>分析中…</div></div></div></div>';
-  panel.innerHTML = html + '<div id="actionCardArea"></div>';
-
   try {
-    const d = await apiPost('/api/team/ai_analysis', { year: S.year, months: S.monthsTeam, team_name: '总体' });
-    const metaEl = document.getElementById('teamAIMeta');
-    if (d.generated_at) metaEl.textContent = 'AI 生成 · ' + d.generated_at;
-    if (d.fallback) metaEl.innerHTML += '<span class="ai-fallback-badge">规则引擎</span>';
-    const body = document.getElementById('teamAIBody');
-    if (d.analysis && d.analysis.items && d.analysis.items.length > 0) {
-      body.innerHTML = d.analysis.items.map(it => '<div class="ai-card-item">' + it.replace(/\n/g, '<br>') + '</div>').join('');
-    } else if (d.analysis && d.analysis.summary) {
-      body.innerHTML = '<div class="ai-card-item">' + d.analysis.summary + '</div>';
-    } else {
-      body.innerHTML = '<div class="ai-card-empty">暂无分析数据</div>';
-    }
-  } catch (e) {
-    document.getElementById('teamAIBody').innerHTML = '<div class="ai-card-empty">分析加载失败: ' + e.message + '</div>';
+    await Promise.all([loadKPITeam(), loadChartsTeam(), loadTableTeam()]);
+  } finally {
+    if (timer) clearTimeout(timer);
+    if (overlay) overlay.style.display = "none";
   }
 }
 
-// === OPENAI 行动建议卡片 ===
-async function renderActionCard() {
-  const area = document.getElementById('actionCardArea');
-  if (!area) return;
-  if (!S.monthsTeam || S.monthsTeam.length === 0 || S.monthsTeam.length < 3) {
-    area.innerHTML = '';
-    return;
-  }
-  area.innerHTML = '<div class="ai-card" style="border-left:3px solid var(--accent)"><div class="ai-card-header"><div class="ai-card-title"><i class="fa-solid fa-lightbulb" style="color:var(--accent)"></i> 行动建议</div><button class="ai-generate-btn" id="actionBtn" onclick="loadActionSuggestions()" style="background:var(--accent)"><i class="fa-solid fa-wand-magic-sparkles"></i> 生成建议</button></div><div class="ai-card-body" id="actionBody"><div class="ai-card-empty">点击生成，基于当前数据获取北京市场可落地方向</div></div></div>';
-}
-
-async function loadActionSuggestions() {
-  const btn = document.getElementById('actionBtn');
-  const body = document.getElementById('actionBody');
-  if (!btn || !body) return;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 生成中';
+// === 行动建议（经营明细弹窗） ===
+async function loadDetailActionSuggestions() {
+  const list = document.getElementById('actionList');
+  if (!list) return;
   try {
     const d = await apiPost('/api/team/action_suggestions', { year: S.year, months: S.monthsTeam });
     if (d.suggestions && d.suggestions.length > 0) {
-      body.innerHTML = d.suggestions.map((s, i) => '<div class="ai-card-item" style="border-left-color:var(--accent)"><strong>' + (i+1) + '. ' + s.title + '</strong><br>' + s.detail + '</div>').join('');
+      list.innerHTML = d.suggestions.map((s, i) => 
+        '<div class="analysis-item info"><i class="fa-solid fa-' + (['one','two'][i] || 'circle-check') + '"></i><span><strong>' + s.title + '</strong>：' + s.detail + '</span></div>'
+      ).join('');
     } else {
-      body.innerHTML = '<div class="ai-card-empty">暂无建议</div>';
+      list.innerHTML = '<div class="analysis-item info"><i class="fa-solid fa-info-circle"></i><span>暂无建议</span></div>';
     }
   } catch (e) {
-    body.innerHTML = '<div class="ai-card-empty">生成失败: ' + e.message + '</div>';
-  }
-  btn.disabled = false;
-  btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> 生成建议';
-}
-
-// === Q&A ===
-const presets = ['哪些板块结余率低于5%？', '支出增长最快的产品？', '收入波动异常的板块？', '物业板块详情', '管理费占比超过10%的板块？', '机构医疗各产品结余'];
-function initQA() {
-  const g = document.getElementById('presetGrid');
-  if (g.children.length > 0) return;
-  g.innerHTML = presets.map(p => '<button class="preset-btn"><i class="fa-solid fa-circle-question" style="color:var(--accent);margin-right:4px"></i>' + p + '</button>').join('');
-  g.querySelectorAll('.preset-btn').forEach(b => b.addEventListener('click', () => { const q = b.textContent.replace(/^.*?(?=[^\s])/, ''); document.getElementById('qaInput').value = q; doQuery(q); }));
-  document.getElementById('qaBtn').addEventListener('click', () => doQuery(document.getElementById('qaInput').value));
-  document.getElementById('qaInput').addEventListener('keydown', e => { if (e.key === 'Enter') doQuery(e.target.value); });
-}
-
-async function loadReportList() {
-  try {
-    const meta = S.meta || await apiGet('/api/meta');
-    S.meta = meta;
-    // 获取趋势数据以确定有数据的月份
-    const trend = await apiGet('/api/trend');
-    const reportCard = document.getElementById('reportListCard');
-    const wrap = document.getElementById('reportListWrap');
-    if (!reportCard || !wrap) return;
-    // 只显示2026年3月起有数据的月份
-    const reports = [];
-    for (const yr of (meta.years || []).sort().reverse()) {
-      const yearMonths = trend[String(yr)];
-      if (!yearMonths) continue;
-      for (const mObj of yearMonths) {
-        const m = mObj.month;
-        if (yr < 2026 || (yr === 2026 && m < 3)) continue;
-        // 检查该月是否有财务数据（板键值为数字且大于0）
-        const boardVals = ['物业板块', '医养板块', '餐饮板块', '美好生活', '支持团队']
-          .filter(k => typeof mObj[k] === 'number' && mObj[k] > 0);
-        if (boardVals.length === 0) continue;
-        reports.push({ year: yr, month: m });
-      }
-    }
-    if (reports.length === 0) { reportCard.style.display = 'none'; return; }
-    // 直接展示最近月份月报内容
-    const latest = reports[0];
-    reportCard.style.display = 'block';
-    wrap.innerHTML = '<div class="loading"><div class="spinner"></div>生成简报中...</div>';
-    try {
-      const d = await apiPost('/api/generate_report', { year: latest.year, month: latest.month });
-      if (d.success && d.html) {
-        wrap.innerHTML = '<div style="width:100%;overflow:auto;border-radius:10px">' + d.html + '</div>';
-        wrap.style.maxHeight = 'none';
-      } else {
-        wrap.innerHTML = '<span style="font-size:13px;color:var(--text2)">简报生成失败: ' + (d.error || '未知错误') + '</span>';
-      }
-    } catch (e2) {
-      wrap.innerHTML = '<span style="font-size:13px;color:var(--text2)">简报加载失败</span>';
-    }
-  } catch (e) {
-    console.error('加载延伸阅读列表失败', e);
+    list.innerHTML = '<div class="analysis-item warning"><i class="fa-solid fa-exclamation-triangle"></i><span>加载失败</span></div>';
   }
 }
 
-async function queryMonthlyReport(year, month) {
-  const area = document.getElementById('qaResult');
-  area.innerHTML = '<div class="loading"><div class="spinner"></div>生成简报中...</div>';
+// === 管理简报 ===
+let _briefingInited = false;
+function initBriefing() {
+  if (_briefingInited) return;
+  _briefingInited = true;
+  // 简报已改为静态报告目录，无需初始化按钮或加载 API
+}
+
+async function loadBriefing() {
+  const btn = document.getElementById('briefingGenBtn');
+  const content = document.getElementById('briefingContent');
+  const meta = document.getElementById('briefingMeta');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div> 生成中...';
+  content.innerHTML = '<div class="empty-state"><div class="spinner"></div>正在生成管理简报，请稍候...</div>';
   try {
-    const d = await apiPost('/api/generate_report', { year, month });
-    if (d.success && d.html) {
-      area.innerHTML = '<div style="width:100%;overflow:auto;border-radius:10px">'
-        + d.html
-        + '</div>';
-    } else {
-      area.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation" style="color:var(--red);font-size:24px;margin-bottom:8px"></i><br>\u7b80\u62a5\u751f\u6210\u5931\u8d25<br><span style="font-size:12px;color:var(--text2)">' + (d.error || '\u672a\u77e5\u9519\u8bef') + '</span></div>';
-    }
+    const ms = (S.tab === 'team' ? S.monthsTeam : S.monthsProduct);
+    const monthsStr = ms.join(',');
+    const resp = await fetch('/api/briefing?year=' + S.year + '&months=' + monthsStr);
+    const d = await resp.json();
+    if (d.detail) { content.innerHTML = '<div class="empty-state" style="color:var(--red)">' + d.detail + '</div>'; return; }
+    renderBriefing(d);
+    const srcLabel = d.source === 'cache' ? '缓存' : (d.source === 'refreshed' ? '已刷新' : '已计算');
+    const srcClass = d.source === 'cache' ? 'source-cache' : 'source-computed';
+    meta.style.display = 'flex';
+    meta.innerHTML = '<span class="source-tag ' + srcClass + '">' + srcLabel + '</span> ' + (d.generated_at || '') + ' · ' + d.year + '年' + ms[0] + '-' + ms[ms.length-1] + '月';
   } catch (e) {
-    area.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation" style="color:var(--red);font-size:24px;margin-bottom:8px"></i><br>\u7b80\u62a5\u751f\u6210\u5931\u8d25</div>';
+    content.innerHTML = '<div class="empty-state" style="color:var(--red)">生成失败: ' + e.message + '</div>';
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-bolt"></i> 生成简报';
   }
 }
 
-async function doQuery(question) {
-  if (!question.trim()) return;
-  const area = document.getElementById('qaResult');
-  area.innerHTML = '<div class="loading"><div class="spinner"></div>分析中...</div>';
-  try {
-    const d = await apiPost('/api/ai/query', { question, year: S.year, months: S.monthsProduct.join(',') });
-    if (d.type === 'table' && d.data && d.data.length > 0) {
-      let html = '<table><thead><tr>';
-      (d.columns || []).forEach(c => html += '<th>' + c + '</th>');
-      html += '</tr></thead><tbody>';
-      // 定义名称列的关键词
-      const nameKeywords = ['产品', '板块', '项目', '核算单元', '科目', '团队', '名称'];
-      for (const row of d.data) {
-        html += '<tr>';
-        (d.columns || []).forEach((c, idx) => {
-          let val = row[c];
-          // 检测是否为名称列：列名包含关键词或值为字符串
-          const colNameLower = c.toLowerCase();
-          const isNameCol = nameKeywords.some(kw => colNameLower.includes(kw.toLowerCase())) || 
-                           (typeof val === 'string' && val.trim() !== '' && !/^-?\d+\.?\d*$/.test(val));
-          // 名称列不进行数字格式化
-          const isNumeric = typeof val === 'number' && !isNaN(val);
-          let display;
-          if (isNameCol) {
-            display = val != null ? String(val) : '-';
-          } else if (isNumeric) {
-            display = Math.abs(val) < 20 && val.toString().includes('.') ? Math.round(val) + '%' : fmt(val);
-          } else {
-            display = val != null ? String(val) : '-';
-          }
-          // 名称列使用drill-link样式
-          if (isNameCol) {
-            html += '<td><span class="drill-link" data-q="' + (val || '') + '">' + display + '</span></td>';
-          } else {
-            html += '<td>' + display + '</td>';
-          }
-        });
-        html += '</tr>';
+function renderBriefing(d) {
+  const b = d.briefing;
+  if (!b) return;
+  const content = document.getElementById('briefingContent');
+  const months = b.months || [];
+  const period = b.year + '年' + months[0] + '-' + months[months.length-1] + '月累计';
+  const prevYear = b.year - 1;
+  let h = '';
+
+  // ── 模块1: 经营快照 ──
+  const snap = b.snapshot || {};
+  h += '<div class="bf-card bf-mod-snap"><div class="bf-card-hd"><span class="bf-badge">1</span>经营快照<span class="bf-period">' + period + '</span></div>';
+  h += '<table class="bf-tbl"><thead><tr><th>指标</th><th>当期</th><th>同比(' + prevYear + ')</th></tr></thead><tbody>';
+  h += '<tr><td>总收入</td><td class="r">' + (snap.income||0) + '万</td><td class="r">' + _bfYoy(snap.yoy_income, true) + '</td></tr>';
+  h += '<tr><td>总支出</td><td class="r">' + (snap.expense||0) + '万</td><td class="r">' + _bfYoy(snap.yoy_expense, true) + '</td></tr>';
+  h += '<tr><td>总结余</td><td class="r"><strong>' + (snap.balance||0) + '万</strong></td><td class="r">' + _bfYoy(snap.yoy_balance, true) + '</td></tr>';
+  h += '<tr><td>结余率</td><td class="r">' + (snap.rate||0) + '%</td><td class="r">—</td></tr>';
+  h += '</tbody></table>';
+  if (snap.summary) h += '<div class="bf-obs"><i class="fa-solid fa-lightbulb"></i>' + snap.summary + '</div>';
+  h += '</div>';
+
+  // ── 模块2: 红灯区 ──
+  const rz = b.red_zone || {};
+  h += '<div class="bf-card bf-mod-red"><div class="bf-card-hd"><span class="bf-badge">2</span>红灯区<span class="bf-period">' + period + '</span></div>';
+  h += '<div class="bf-footnote" style="margin-bottom:8px">条件：结余率 &lt; 5% 且累计亏损 &gt; 10万（排除支持团队）</div>';
+  var hasRedItems = false;
+  if (rz.teams && rz.teams.length) {
+    hasRedItems = true;
+    h += '<div class="bf-sub-hd">团队红灯</div>';
+    h += '<table class="bf-tbl"><thead><tr><th>H团队线-上级</th><th class="r">收入(万)</th><th class="r">结余(万)</th><th class="r">结余率</th></tr></thead><tbody>';
+    rz.teams.forEach(function(x) { h += '<tr><td><strong>' + x.name + '</strong></td><td class="r">' + (x.income||0) + '</td><td class="r neg">' + x.balance + '</td><td class="r neg">' + x.rate + '%</td></tr>'; });
+    h += '</tbody></table>';
+  }
+  if (rz.boards && rz.boards.length) {
+    hasRedItems = true;
+    h += '<div class="bf-sub-hd">板块红灯</div>';
+    h += '<table class="bf-tbl"><thead><tr><th>板块</th><th class="r">收入(万)</th><th class="r">结余(万)</th><th class="r">结余率</th></tr></thead><tbody>';
+    rz.boards.forEach(function(x) { h += '<tr><td><strong>' + x.name + '</strong></td><td class="r">' + (x.income||0) + '</td><td class="r neg">' + x.balance + '</td><td class="r neg">' + x.rate + '%</td></tr>'; });
+    h += '</tbody></table>';
+  }
+  /* 亏损项目已隐藏 */
+  if (!hasRedItems) h += '<div class="bf-empty">无重大风险项，各板块经营正常。</div>';
+  h += '</div>';
+
+  // ── 模块3: 趋势预警 ──
+  h += '<div class="bf-card bf-mod-trend"><div class="bf-card-hd"><span class="bf-badge">3</span>趋势预警<span class="bf-period">环比</span></div>';
+  if (b.trends && b.trends.length) {
+    h += '<table class="bf-tbl"><thead><tr><th>维度</th><th>预警</th><th>变化</th></tr></thead><tbody>';
+    b.trends.forEach(function(w) {
+      var isOk = w.type === 'ok' || w.type === 'info';
+      h += '<tr><td>' + (w.target||'—') + '</td><td>' + w.type + '</td><td>' + (w.message||'') + '</td></tr>';
+    });
+    h += '</tbody></table>';
+  } else {
+    h += '<div class="bf-empty">各板块近期趋势平稳，无显著下滑。</div>';
+  }
+  h += '</div>';
+
+  // ── 模块4-6: 专项洞察 ──
+  (b.insights || []).forEach(function(ins) {
+    var d = ins.data;
+    if (!d) return;
+    var topicNum = '';
+    if (ins.topic.indexOf('国管局') >= 0) topicNum = '4';
+    else if (ins.topic.indexOf('销售网点') >= 0) topicNum = '5';
+    else if (ins.topic.indexOf('三里屯') >= 0 || ins.topic.indexOf('医疗') >= 0) topicNum = '6';
+    h += '<div class="bf-card bf-mod-insight"><div class="bf-card-hd"><span class="bf-badge">' + topicNum + '</span>' + ins.topic + '<span class="bf-period">' + (ins.period || period) + '</span></div>';
+    h += '<div class="bf-footnote" style="margin-bottom:8px">取数：创业团队 sheet</div>';
+
+    // 国管局
+    if (d.products && d.products.length) {
+      h += '<table class="bf-tbl"><thead><tr><th>指标</th><th class="r">数值</th></tr></thead><tbody>';
+      h += '<tr><td>总收入</td><td class="r"><strong>' + (d.income||0) + '万</strong></td></tr>';
+      if (d.yoy && d.yoy.display) h += '<tr><td>同比变化</td><td class="r">' + d.yoy.display + '</td></tr>';
+      h += '</tbody></table>';
+      h += '<div class="bf-sub-hd">产品构成</div>';
+      h += '<table class="bf-tbl"><thead><tr><th>产品</th><th class="r">金额(万)</th><th class="r">占比</th></tr></thead><tbody>';
+      d.products.forEach(function(p) { h += '<tr><td>' + p.name + '</td><td class="r">' + p.amount + '</td><td class="r">' + p.pct + '%</td></tr>'; });
+      h += '</tbody></table>';
+      if (d.departments && d.departments.length) {
+        h += '<div class="bf-sub-hd">部委收入 TOP3</div>';
+        h += '<table class="bf-tbl"><thead><tr><th>部门</th><th class="r">金额(万)</th><th class="r">占比</th></tr></thead><tbody>';
+        d.departments.slice(0,3).forEach(function(dep) { h += '<tr><td>' + dep.name + '</td><td class="r">' + dep.amount + '</td><td class="r">' + dep.pct + '%</td></tr>'; });
+        h += '</tbody></table>';
       }
-      html += '</tbody></table>';
-      area.innerHTML = html;
-      area.querySelectorAll('.drill-link').forEach(el => el.addEventListener('click', () => {
-        const q = el.dataset.q;
-        if (q) {
-          document.getElementById('qaInput').value = q + '详情';
-          doQuery(q + '详情');
+    }
+
+    // 销售网点
+    if (d.outlets && d.outlets.length) {
+      h += '<div class="bf-sub-hd">共 <strong>' + (d.total_count||d.outlets.length) + '</strong> 个网点，全量榜单：</div>';
+      h += '<table class="bf-tbl"><thead><tr><th>#</th><th>网点</th><th class="r">收入(万)</th><th class="r">占比</th></tr></thead><tbody>';
+      d.outlets.forEach(function(o,i) { h += '<tr><td>' + (i+1) + '</td><td>' + o.name + '</td><td class="r">' + o.amount + '</td><td class="r">' + o.pct + '%</td></tr>'; });
+      h += '</tbody></table>';
+      if (d.outlets.length) h += '<div class="bf-footnote">第1名占' + (d.outlets[0]?.pct||0) + '%</div>';
+    }
+
+    // 三里屯诊所透视表
+    if (d.pivot) {
+      var pv = d.pivot;
+      var cols = pv.columns || [];
+      h += '<table class="bf-tbl"><thead><tr><th>行标签</th>';
+      cols.forEach(function(c) { h += '<th class="r">' + c + '</th>'; });
+      h += '<th class="r">总计</th></tr></thead><tbody>';
+      (pv.rows || []).forEach(function(r) {
+        var isHard = r._hard;
+        h += '<tr' + (isHard ? ' style="background:#fffbf0"' : '') + '>';
+        h += '<td>' + (r._sub ? '&nbsp;&nbsp;- ' + r._sub : '<strong>' + r._type + '</strong>') + '</td>';
+        cols.forEach(function(c) { h += '<td class="r">' + (r[c]||0) + '</td>'; });
+        h += '<td class="r">' + (r._total||0) + '</td></tr>';
+      });
+      // 合计行
+      var tr = pv.total_row || {};
+      h += '<tr style="font-weight:600;border-top:2px solid #d2d2d7"><td><strong>合计</strong></td>';
+      cols.forEach(function(c) { h += '<td class="r">' + (tr[c]||0) + '</td>'; });
+      h += '<td class="r">' + (tr._total||0) + '</td></tr>';
+      // 可考核结余行
+      h += '<tr style="font-weight:600;color:var(--wp-accent)"><td><strong>不扣除硬性固定成本结余</strong></td>';
+      var adj = pv.adj_balance || {};
+      cols.forEach(function(c) { h += '<td class="r">' + (adj[c]||0) + '</td>'; });
+      h += '<td class="r">—</td></tr>';
+      h += '</tbody></table>';
+      if (pv.hard_total) {
+        h += '<div class="bf-obs" style="margin-top:10px"><i class="fa-solid fa-info-circle"></i>硬性固定成本（2.7 房屋/物业/能源/网络 + 2.8 折旧）合计 <strong>' + pv.hard_total + '万</strong>，属装修分摊和资产折旧，非日常运营成本。扣除后各科室可考核结余：';
+        var parts = [];
+        if (cols.length) {
+          for (var k in adj) { if (cols.indexOf(k) >= 0) parts.push(k + ' ' + adj[k] + '万'); }
         }
-      }));
-    } else if (d.type === 'text') {
-      area.innerHTML = '<div style="font-size:14px;line-height:1.8;color:var(--text2);padding:8px">' + (d.answer || '未找到结果') + '</div>';
-    } else {
-      area.innerHTML = '<div class="empty-state">暂无匹配结果</div>';
+        h += parts.join('、') + '，建议以此评估各科室实际经营表现。</div>';
+      }
     }
-  } catch (e) { area.innerHTML = '<div style="color:var(--red);padding:20px">查询出错: ' + e.message + '</div>'; }
+
+    if (ins.observation && !d.pivot) h += '<div class="bf-obs"><i class="fa-solid fa-lightbulb"></i>' + ins.observation + '</div>';
+    h += '</div>';
+  });
+
+  // 模块7已删除 — 管理行动建议并入红灯区模块
+
+  content.innerHTML = h;
+}
+
+function _bfYoy(v, showAbs) {
+  if (v == null) return '—';
+  var sign = v >= 0 ? '+' : '';
+  var abs = Math.abs(v);
+  var absW = showAbs ? '（' + sign + '待查' + '）' : '';
+  return sign + abs + '%';
+}
+
+
+function _yoyTag(v) {
+  if (v == null) return '';
+  var cls = v >= 0 ? 'up' : 'down';
+  var icon = v >= 0 ? '↑' : '↓';
+  return '<div class="yoy ' + cls + '">同比 ' + icon + Math.abs(v) + '%</div>';
+}
+
+async function exportBriefing() {
+  var ms = (S.tab === 'team' ? S.monthsTeam : S.monthsProduct);
+  var monthsStr = ms.join(',');
+  window.open('/api/briefing/export?year=' + S.year + '&months=' + monthsStr, '_blank');
+}
+
+// === 政策延伸 v3.0 — 卡片式布局 ===
+
+const POLICY_ICONS = {
+  elderly: 'fa-heart-pulse', property: 'fa-building', medical: 'fa-stethoscope',
+  food: 'fa-utensils', greening: 'fa-leaf', union: 'fa-users'
+};
+
+async function initPolicy() {
+  const grid = document.getElementById('policyGrid');
+  if (!grid) return;
+  grid.innerHTML = '<div class="empty-state"><div class="spinner"></div>加载政策数据…</div>';
+  try {
+    const d = await apiGet('/api/policy/segments');
+    if (!d.success) throw new Error(d.error || '加载失败');
+    renderPolicyCards(d.data, d.updated);
+  } catch (e) {
+    grid.innerHTML = '<div class="empty-state"><i class="fa-solid fa-circle-exclamation" style="color:var(--red);font-size:24px;margin-bottom:8px"></i><br>政策数据加载失败<br><span style="font-size:12px;color:var(--text2)">' + e.message + '</span></div>';
+  }
+}
+
+function renderPolicyCards(segments, updated) {
+  const grid = document.getElementById('policyGrid');
+  if (!segments || !segments.length) {
+    grid.innerHTML = '<div class="empty-state">暂无政策数据</div>';
+    return;
+  }
+  let html = '';
+  segments.forEach(seg => {
+    const iconClass = POLICY_ICONS[seg.id] || 'fa-file-lines';
+    const total = (seg.regulations?.length || 0) + (seg.tax_policies?.length || 0);
+    html += '<div class="policy-card">';
+    html += '<div class="policy-card-head">';
+    html += '<div class="policy-card-icon" style="background:' + (seg.color || '#007AFF') + '"><i class="fa-solid ' + iconClass + '"></i></div>';
+    html += '<span class="policy-card-name">' + seg.name + '</span>';
+    html += '<span class="policy-card-count">' + total + '条</span>';
+    html += '</div>';
+    html += '<div class="policy-card-body">';
+    // Part 1: 长期有效的政策文件
+    html += '<div class="policy-section-label"><i class="fa-solid fa-landmark"></i> 长期有效的政策文件</div>';
+    if (seg.regulations && seg.regulations.length) {
+      seg.regulations.forEach(item => {
+        html += renderPolicyItem(item);
+      });
+    } else {
+      html += '<div class="policy-empty">暂无数据</div>';
+    }
+    // Part 2: 行业税收政策
+    html += '<div class="policy-section-label" style="margin-top:4px"><i class="fa-solid fa-calculator"></i> 行业税收政策</div>';
+    if (seg.tax_policies && seg.tax_policies.length) {
+      seg.tax_policies.forEach(item => {
+        html += renderPolicyItem(item);
+      });
+    } else {
+      html += '<div class="policy-empty">暂无数据</div>';
+    }
+    html += '</div></div>';
+  });
+  // Footer
+  html += '<div style="text-align:center;padding:6px;font-size:10px;color:var(--text2)">数据更新时间：' + (updated || '-') + ' | 数据来源：政府官网(.gov.cn)及国家税务总局</div>';
+  grid.innerHTML = html;
+}
+
+function renderPolicyItem(item) {
+  let h = '<div class="policy-item">';
+  h += '<div class="policy-item-row">';
+  h += '<a href="' + (item.url || '#') + '" target="_blank" rel="noopener noreferrer" class="policy-item-title">' + item.title + '</a>';
+  h += '<div class="policy-item-meta">' + (item.source || '') + ' · ' + (item.date || '') + '</div>';
+  h += '</div>';
+  if (item.summary) {
+    h += '<div class="policy-item-summary">' + item.summary + '</div>';
+  }
+  h += '</div>';
+  return h;
 }
 
 // === Budget ===
@@ -3040,7 +3712,7 @@ async function init() {
   renderGlobalMonths();
   initChartsProduct();
   initChartsTeam();
-  initQA();
+  initBriefing();
   initBudget();
   
   // 初始化两个Tab的状态
@@ -3054,7 +3726,7 @@ async function init() {
     S.meta = meta;
     if (meta.years && meta.years.length) S.year = Math.max(...meta.years);
     const now = new Date();
-    S.lastMonth = now.getMonth() === 0 ? 12 : now.getMonth();
+    S.lastMonth = now.getMonth() === 0 ? 12 : now.getMonth();  // 6月=5，默认累计到上月（1-5月）
     // 默认选择"累计"模式
     if (S.monthsProduct.length === 0) { S.monthsProduct = Array.from({ length: S.lastMonth }, (_, i) => i + 1); S.isCumulativeProduct = true; }
     if (S.monthsTeam.length === 0) { S.monthsTeam = Array.from({ length: S.lastMonth }, (_, i) => i + 1); S.isCumulativeTeam = true; }
@@ -3067,13 +3739,75 @@ async function init() {
   }
   
   const h = location.hash.slice(1);
-  if (['product', 'business', 'team', 'policy', 'qa'].includes(h)) switchTab(h);
+  if (['product', 'business', 'team', 'policy', 'briefing'].includes(h)) switchTab(h);
   else refreshProductTab(); // 默认加载整体情况Tab
 
   // 初始化创业团队备注编辑功能
   initTeamNotes();
 }
+// === 创业团队专项分析入口 ===
+var TEAM_REPORTS = ["03.老干局", "老干局", "三里屯", "三里屯医疗诊所", "驿站"]; // 有正式报告的团队名列表
+function hasTeamReport(teamName) { return TEAM_REPORTS.indexOf(teamName) >= 0; }
+async function openTeamAnalysis(teamName) {
+  var team = decodeURIComponent(teamName);
+  if (!hasTeamReport(team)) return;
+
+  // 路由：不同团队不同报告文件
+  var reportUrl;
+  if (team === '03.老干局' || team === '老干局') {
+    reportUrl = '/国管局1_分析报告.html';
+  } else if (team === '三里屯' || team === '三里屯医疗诊所') {
+    reportUrl = '/三里屯_分析报告.html';
+  } else if (team === '驿站') {
+    reportUrl = '/驿站_分析报告.html';
+  } else {
+    reportUrl = '/国管局1_分析报告.html';
+  }
+
+  var modal = document.getElementById('analysisReportModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'analysisReportModal';
+    modal.className = 'detail-modal';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = '<div class="detail-modal-content" style="max-width:98vw;width:1150px;height:90vh"><div class="detail-modal-header"><h3><i class="fa-solid fa-chart-simple" style="color:var(--accent)"></i> ' + team + ' - 专项分析报告</h3><button class="detail-modal-close" onclick="document.getElementById(\'analysisReportModal\').style.display=\'none\'">&times;</button></div><div class="detail-modal-body" style="padding:0;height:calc(100% - 48px)"><div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> 加载中...</div></div></div>';
+  modal.style.display = 'flex';
+
+  fetch('/api/team/report/check', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({team_name: team, cache_key: window._reportCacheKey || ''})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){ if (d.cache_key) window._reportCacheKey = d.cache_key; })
+  .catch(function(){})
+  .finally(function(){
+    var url = reportUrl + '?_t=' + Date.now();
+    modal.querySelector('.detail-modal-body').innerHTML = '<iframe src="' + url + '" style="width:100%;height:100%;border:none;border-radius:0 0 10px 10px"></iframe>';
+  });
+}
+
+function _analysisBtnHtml(teamName) {
+  teamName = decodeURIComponent(teamName);
+  if (hasTeamReport(teamName)) {
+    return '<button class="detail-btn analysis-btn" onclick="openTeamAnalysis(\x27' + encodeURIComponent(teamName) + '\x27)" title="查看专项分析报告"><i class="fa-solid fa-chart-simple"></i> 报告</button>';
+  }
+  return '<button class="detail-btn analysis-btn disabled" disabled title="报告开发中"><i class="fa-solid fa-clock"></i> 开发中</button>';
+}
 document.addEventListener('DOMContentLoaded', init);
+
+// ===== 维护横幅：每月1-5号显示 =====
+(function() {
+  const today = new Date();
+  const day = today.getDate();
+  const banner = document.getElementById('maintenance-banner');
+  if (banner && day >= 1 && day <= 5) {
+    banner.style.display = 'block';
+    document.body.classList.add('has-maintenance');
+  }
+})();
 
 // === 创业团队备注编辑功能 ===
 const TEAM_NOTE_PASSWORD = 'a1b2';

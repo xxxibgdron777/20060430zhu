@@ -8,6 +8,9 @@ import json
 import time
 from typing import Optional, Dict, Any, List
 
+# AI API Key fallback（容器无环境变量时使用硬编码）
+_DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "") or "sk-28f9f7bc51144cefaf3c570cbb5295b4"
+
 # 缓存基准数据
 _benchmark_cache = None
 _benchmark_cache_time = 0
@@ -49,7 +52,7 @@ def fetch_industry_benchmark(force_refresh: bool = False) -> dict:
     
     # 尝试从 DeepSeek API 获取
     try:
-        api_key = os.environ.get("DEEPSEEK_API_KEY", "")
+        api_key = _DEEPSEEK_API_KEY
         if api_key:
             result = _fetch_from_deepseek(api_key)
             _benchmark_cache = result

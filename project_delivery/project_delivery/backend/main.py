@@ -37,6 +37,48 @@ from vip_progress import (
 )
 from admin_api import router as admin_router
 
+# AI 路由
+from ai_router import router as ai_router
+from rag_service import init_rag
+
+# 管理简报路由
+from briefing_api import router as briefing_router
+from team_report import router as team_report_router
+from briefing_cache import invalidate_all as briefing_invalidate_cache
+
+# 北京时间
+BJT = datetime.timezone(datetime.timedelta(hours=8))
+def bj_now():
+    return datetime.datetime.now(BJT)
+
+# AI 模型配置
+QWEN_API_KEY = os.environ.get("QWEN_API_KEY", "")
+QWEN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+QWEN_MODEL = "qwen3.7-max"
+
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "") or "sk-f51bfc8f60f34a2f86b42fe3614ecdb9"
+DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
+DEEPSEEK_MODEL = "deepseek-chat"
+
+# team/ai_analysis 缓存: {(team_name, year, tuple(months)): result_dict}
+_team_analysis_cache = {}
+
+def _get_ai_client(model="qwen"):
+    """获取 AI 客户端，model: 'qwen' 或 'deepseek'"""
+    if model == "qwen":
+        if not QWEN_API_KEY:
+            return None
+        from openai import OpenAI
+        return OpenAI(api_key=QWEN_API_KEY, base_url=QWEN_BASE_URL)
+    else:
+        if not DEEPSEEK_API_KEY:
+            return None
+        from openai import OpenAI
+        return OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
+
+def _get_ai_model(model="qwen"):
+    return QWEN_MODEL if model == "qwen" else DEEPSEEK_MODEL
+
 # 全局数据 + 缓存时间
 product_df = None
 team_df = None
@@ -44,9 +86,11 @@ _load_time = float('inf')  # 初始化为无穷大，避免启动时重复加载
 CACHE_SECONDS = 60  # 1分钟缓存
 
 def parse_months(months: str) -> List[int]:
-    """解析月份参数字符串，返回月份列表"""
+    """解析月份参数字符串，返回月份列表
+    注意：当传入空字符串时返回 [1] 而非 []，防止下游 max() 崩溃（ValueError: max() arg is an empty sequence）
+    """
     if not months or not months.strip():
-        return []
+        return [1]
     return [int(x) for x in months.split(",") if x.strip()]
 
 @asynccontextmanager
@@ -66,6 +110,21 @@ async def lifespan(app: FastAPI):
     # 关闭时清理资源（如果需要）
 
 app = FastAPI(title="财务综述 Agent API", lifespan=lifespan)
+
+# 注册 AI 路由
+app.include_router(ai_router)
+
+# 注册管理简报路由
+app.include_router(briefing_router)
+app.include_router(team_report_router, prefix="/api/team")
+
+# 启动时初始化 RAG 索引
+@app.on_event("startup")
+async def _startup_rag():
+    try:
+        init_rag()
+    except Exception as e:
+        print(f"[Startup] RAG 初始化失败: {e}")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
@@ -81,6 +140,7 @@ _frontend_candidates = [
 ]
 frontend_path = next((p for p in _frontend_candidates if os.path.isdir(p)), None)
 if frontend_path:
+    # 挂载 /static 提供静态文件（js/css 等）
     app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 
 
@@ -103,13 +163,11 @@ def _ensure_native(obj):
 
 def _refresh_if_needed():
     global product_df, team_df, _load_time
-    # 检查文件是否被更新（飞书同步），或缓存超时
-    if is_file_updated() or time.time() - _load_time > CACHE_SECONDS:
+    if time.time() - _load_time > CACHE_SECONDS:
         try:
             product_df = load_product_df()
             team_df = load_team_df()
             _load_time = time.time()
-            mark_loaded()
         except Exception:
             pass
 
@@ -718,7 +776,7 @@ def api_save_team_annotation(
     annotation_key = team or "default"
     _team_annotations[key][annotation_key] = {
         "text": text,
-        "updated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "updated_at": bj_now().strftime("%Y-%m-%d %H:%M"),
         "team": team
     }
     return {"success": True}
@@ -759,7 +817,7 @@ def api_save_team_tip(
     tips = _load_tips()
     tips[team] = {
         "text": text,
-        "updated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "updated_at": bj_now().strftime("%Y-%m-%d %H:%M:%S")
     }
     _save_tips(tips)
     return {"success": True, "team": team}
@@ -778,6 +836,11 @@ def api_team_ai_analysis(
     分析要点：收入构成、扩大销售、经营建议（不提资金缺口/管理费）
     支出参考"说明/备注"列提供业务背景
     """
+    # 缓存命中
+    _cache_key = (team_name, year, tuple(months))
+    if _cache_key in _team_analysis_cache:
+        return _ensure_native(_team_analysis_cache[_cache_key])
+
     _refresh_if_needed()
     if team_df is None or team_df.empty:
         raise HTTPException(500, "团队数据未加载")
@@ -854,7 +917,7 @@ def api_team_ai_analysis(
 
     # 调用 AI
     try:
-        api_key = _os.environ.get("DEEPSEEK_API_KEY", "")
+        api_key = DEEPSEEK_API_KEY
         if not api_key:
             return _ensure_native(_fallback_ai_analysis(
                 team_name, to_wan(inc), to_wan(exp), to_wan(fee), to_wan(balance),
@@ -908,42 +971,17 @@ def api_team_ai_analysis(
         team_context = team_context_map.get(team_name, "")
         NL = "\n"
 
-        prompt = f"""你是一位资深企业财务顾问。请从企业决策层角度对团队做简要经营分析。
-
-## 当前团队
-{team_name}
-
-## 核心经营数据
-- 收入: {to_wan(inc):.2f} 万元
-- 支出: {to_wan(exp):.2f} 万元
-- 净结余: {to_wan(balance):.2f} 万元
-- 结余率: {bal_rate}%
-
-## 收入构成 (TOP)
-{income_str}
-
-## 支出构成 (TOP)
-{expense_str}
-
-## 支出相关说明/备注
-{notes_str}
-{f"{NL}## B项目1（客户单位分布）{NL}{b_project1_str}" if b_project1_str else ""}
-{f"{NL}## 数据说明{NL}{data_notes}" if data_notes else ""}
-{f"{NL}## 团队专属背景{NL}{team_context}" if team_context else ""}
-
-## 分析要求
-从企业决策者视角给出最多3条简洁分析，严格遵守：
-1. 可从收入构成、扩大销售、经营改善等角度分析
-2. 可结合"说明/备注"理解支出发生的业务背景
-3. 如果数据中有B项目1信息，可结合客户单位分布分析客户集中度或拓展方向
-4. 绝对不要出现"资金缺口""管理费""毛利偏低""毛利不足""毛利率低""毛利差"这些词，也不要做毛利相关结论
-5. 绝对不要将"抗衰老"项目与"净利为负""结余为负""亏损"等负面盈利判断放在同一条分析中
-6. 不要说"是否有必要存在""存在价值""是否合理"这类质疑团队存在性的表述
-7. 每条≤80字，精炼直接，直面问题
-8. 不带序号编号，每条独立成段落
-
-## 输出格式（纯JSON，不带markdown标记）
-{{"items":["分析内容1","分析内容2","分析内容3"]}}"""
+        prompt = f"""资深财务顾问，从决策层角度分析团队经营。
+团队:{team_name}
+收入:{to_wan(inc):.1f}万 支出:{to_wan(exp):.1f}万 结余:{to_wan(balance):.1f}万 结余率:{bal_rate}%
+收入构成:{income_str}
+支出构成:{expense_str}
+备注:{notes_str}
+{f"客户分布:{b_project1_str}" if b_project1_str else ""}
+{f"说明:{data_notes}" if data_notes else ""}
+{f"背景:{team_context}" if team_context else ""}
+要求:最多3条,每条≤60字。从收入构成/扩大销售/经营改善角度分析。禁止词:资金缺口/管理费/毛利偏低/毛利不足/毛利率低/毛利差。禁止质疑团队存在性。禁止将抗衰老与亏损放在同一条。
+输出纯JSON:{{"items":["分析1","分析2","分析3"]}}"""
 
         client = OpenAI(
             base_url="https://api.deepseek.com/v1",
@@ -952,11 +990,11 @@ def api_team_ai_analysis(
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[
-                {"role": "system", "content": "你是一位资深企业财务顾问。请严格按JSON格式回复，不要输出任何其他内容。"},
+                {"role": "system", "content": "资深财务顾问。严格按JSON回复，不输出其他内容。"},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
-            max_tokens=800,
+            max_tokens=500,
         )
         content = response.choices[0].message.content.strip()
 
@@ -970,21 +1008,25 @@ def api_team_ai_analysis(
         result = _j.loads(content)
         items = result.get("items", [])
 
-        return _ensure_native({
+        _result = {
             "analysis": items[:3],
-            "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "generated_at": bj_now().strftime("%Y-%m-%d %H:%M:%S"),
             "fallback": False,
             "income_items": income_items[:5],
             "expense_items": expense_items[:5],
             "expense_notes": expense_notes[:5],
-        })
+        }
+        _team_analysis_cache[_cache_key] = _result
+        return _ensure_native(_result)
 
     except Exception as e:
         print(f"[AI Analysis] Error: {e}")
-        return _ensure_native(_fallback_ai_analysis(
+        _result = _fallback_ai_analysis(
             team_name, to_wan(inc), to_wan(exp), to_wan(fee), to_wan(balance),
             income_items, expense_items, expense_notes, b_project1_items
-        ))
+        )
+        _team_analysis_cache[_cache_key] = _result
+        return _ensure_native(_result)
 
 
 def _fallback_ai_analysis(team_name, inc_w, exp_w, fee_w, bal_w, income_items, expense_items, notes, b_project1_items=None):
@@ -1019,7 +1061,7 @@ def _fallback_ai_analysis(team_name, inc_w, exp_w, fee_w, bal_w, income_items, e
 
     return {
         "analysis": items[:3],
-        "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generated_at": bj_now().strftime("%Y-%m-%d %H:%M:%S"),
         "fallback": True,
         "income_items": income_items[:5] if income_items else [],
         "expense_items": expense_items[:5] if expense_items else [],
@@ -1076,7 +1118,7 @@ def api_team_action_suggestions(
 返回JSON格式：{{"suggestions":[{{"title":"标题","detail":"具体建议"}}]}}"""
 
     try:
-        api_key = os.environ.get("DEEPSEEK_API_KEY", "")
+        api_key = DEEPSEEK_API_KEY
         if not api_key:
             raise Exception("no key")
 
@@ -1084,7 +1126,7 @@ def api_team_action_suggestions(
         client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com/v1")
         resp = client.chat.completions.create(
             model="deepseek-chat", messages=[{"role": "user", "content": prompt}],
-            temperature=0.7, max_tokens=400
+            temperature=0.7, max_tokens=250
         )
         text = resp.choices[0].message.content.strip()
         if text.startswith("```"):
@@ -1633,6 +1675,136 @@ def api_generate_report(
         return {"success": False, "error": str(e)}
 
 
+@app.post("/api/policy/chat")
+def api_policy_chat(message: str = Body(...), history: List[dict] = Body([])):
+    """
+    政策咨询 AI — 基于 DeepSeek API
+    环境变量: DEEPSEEK_API_KEY
+    """
+    from silver_headlines import policy_chat
+    result = policy_chat(message, history)
+    return _ensure_native(result)
+
+
+@app.get("/api/policy/segments")
+def api_policy_segments():
+    """
+    获取按业务板块分类的政策数据（卡片式布局数据源）
+    读取 policy_data.json，按6板块返回 regulations + tax_policies
+    """
+    import json
+    import os
+    data_path = os.path.join(os.path.dirname(__file__), "policy_data.json")
+    try:
+        with open(data_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return {
+            "success": True,
+            "data": data.get("segments", []),
+            "updated": data.get("updated", ""),
+            "_update_guide": data.get("_update_guide", {})
+        }
+    except FileNotFoundError:
+        return {"success": False, "error": "policy_data.json 未找到，请检查后端文件部署"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/agent/chat")
+def api_agent_chat(
+    message: str = Body(...),
+    history: List[dict] = Body([]),
+    year: int = Body(2026),
+    months: List[int] = Body([1, 2, 3, 4]),
+    mode: str = Body("product"),
+):
+    """
+    智能问答 Agent — 财务分析 + 政策咨询 + 行动建议
+    基于 DeepSeek API，自动识别问题类型
+    环境变量: DEEPSEEK_API_KEY
+    """
+    _refresh_if_needed()
+    from silver_headlines import policy_chat, _build_policy_summary, _load_data
+
+    # 判断问题类型
+    msg_lower = message.lower()
+    is_policy = any(w in msg_lower for w in ['政策', '条例', '法规', '规定', '税收', '免税', '税', '补贴标准'])
+    is_action = any(w in msg_lower for w in ['建议', '改进', '怎么做', '如何提升', '风险', '机会'])
+    is_finance = not (is_policy and not is_action)
+
+    # 构建财务数据上下文
+    fin_summary = ""
+    if is_finance and product_df is not None and not product_df.empty:
+        ml = months
+        df_p = filter_product(product_df, year, ml)
+        inc = int(df_p["收入"].sum()) if "收入" in df_p.columns else 0
+        exp = int(df_p["支出"].sum()) if "支出" in df_p.columns else 0
+        fee = int(df_p["平台管理费"].sum()) if "平台管理费" in df_p.columns else 0
+        bal = inc - exp - fee
+
+        boards = {}
+        for b in df_p["业务板块"].dropna().unique():
+            bd = df_p[df_p["业务板块"] == b]
+            b_inc = int(bd["收入"].sum())
+            b_exp = int(bd["支出"].sum())
+            boards[str(b)] = {"收入": b_inc, "支出": b_exp, "结余": b_inc - b_exp}
+
+        products = {}
+        for p in df_p["产品"].dropna().unique():
+            pd_data = df_p[df_p["产品"] == p]
+            p_inc = int(pd_data["收入"].sum())
+            p_exp = int(pd_data["支出"].sum())
+            if p_inc > 0 or p_exp > 0:
+                products[str(p)] = {"收入": p_inc, "支出": p_exp, "结余": p_inc - p_exp}
+
+        fin_summary = f"【财务数据】{year}年{months[0]}-{months[-1]}月（产品线），收入{to_wan(inc)}万，支出{to_wan(exp)}万，管理费{to_wan(fee)}万，结余{to_wan(bal)}万。\n"
+        fin_summary += "板块明细：" + "；".join([f"{k} 收入{to_wan(v['收入'])}万 支出{to_wan(v['支出'])}万 结余{to_wan(v['结余'])}万" for k, v in sorted(boards.items(), key=lambda x: -x[1]['收入'])])
+        if products:
+            fin_summary += "\n产品明细：" + "；".join([f"{k} 收入{to_wan(v['收入'])}万 结余{to_wan(v['结余'])}万" for k, v in sorted(products.items(), key=lambda x: -x[1]['收入'])[:10]])
+
+        if team_df is not None and not team_df.empty:
+            tf = filter_team(team_df, year, ml)
+            t_inc, t_exp, t_fee = _team_calc(tf)
+            fin_summary += f"\n【团队数据】收入{to_wan(t_inc)}万，支出{to_wan(t_exp)}万，结余{to_wan(t_inc-t_exp-t_fee)}万。"
+
+    # 构建政策上下文
+    policy_summary = ""
+    try:
+        policy_data = _load_data(validate=False)
+        policy_summary = _build_policy_summary(policy_data)
+    except:
+        pass
+
+    # 构建提示词
+    system_prompt = f"""你是北京养老/物业/餐饮/医疗行业财务决策顾问。根据以下真实数据回答，简洁专业，适合领导层阅读。数字用万元为单位，不编造。无法回答时明确告知。
+
+{fin_summary}
+
+【已收录政策】
+{policy_summary}"""
+
+    try:
+        api_key = DEEPSEEK_API_KEY
+        if not api_key:
+            return _ensure_native({"answer": "AI 服务暂不可用，请检查 API Key 配置"})
+
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com/v1")
+        messages = [{"role": "system", "content": system_prompt[:1500]}]
+        for h in history[-6:]:
+            role = h.get("role", "user")
+            content = h.get("content", "")[:200]
+            messages.append({"role": role, "content": content})
+        messages.append({"role": "user", "content": message[:300]})
+        resp = client.chat.completions.create(
+            model="deepseek-chat", messages=messages,
+            temperature=0.5, max_tokens=400
+        )
+        return _ensure_native({"answer": resp.choices[0].message.content.strip()})
+    except Exception as e:
+        return _ensure_native({"answer": f"AI 服务调用失败，请稍后重试。"})
+
+
 @app.get("/api/ai/suggestions")
 def api_ai_suggestions(
     year: int = Query(2026),
@@ -1683,6 +1855,69 @@ def api_export_product(
     from api_extensions import export_product_summary
     return _ensure_native(export_product_summary(product_df, year, ml, board))
 
+
+# ==================== 产品线预算进度 ====================
+
+@app.post("/api/product/budget")
+def api_product_budget(
+    year: int = Body(...),
+    months: list = Body(...),
+):
+    """产品线预算进度。预算sheet为全年累计快照，直接按年份汇总，不筛选月份"""
+    import pandas as pd
+    raw_path = os.path.join(os.path.dirname(__file__), "管理报表.xlsx")
+    if not os.path.exists(raw_path):
+        raw_path = "/app/管理报表.xlsx"
+    try:
+        b = pd.read_excel(raw_path, sheet_name="预算", engine="calamine")
+    except Exception:
+        return _ensure_native({"boards": {}})
+    b = b[b["年"] == year]
+    if b.empty:
+        return _ensure_native({"boards": {}})
+    time_p = round(float(b["时间进度"].iloc[0]), 4)  # 时间进度恒定，取任意行
+    boards = {}
+    for board_name in sorted(b["业务板块"].dropna().unique()):
+        bd = b[b["业务板块"] == board_name]
+        b_total = int(bd["年收入预算"].sum())
+        d_total = int(bd["已完成"].sum())
+        p_total = round(d_total / b_total, 4) if b_total else 0
+        products = {}
+        for prod_name in bd["产品"].dropna().unique():
+            pd_rows = bd[bd["产品"] == prod_name]
+            p_b = int(pd_rows["年收入预算"].sum())
+            p_d = int(pd_rows["已完成"].sum())
+            p_p = round(p_d / p_b, 4) if p_b else 0
+            projs = {}
+            for _, r in pd_rows.iterrows():
+                pn = str(r["项目"]) if pd.notna(r["项目"]) else ""
+                if pn and r["年收入预算"]:
+                    pj_b = int(r["年收入预算"])
+                    pj_d = int(r["已完成"])
+                    projs[pn] = {"budget": pj_b, "done": pj_d,
+                                 "progress": round(pj_d / pj_b, 4) if pj_b else 0,
+                                 "time_progress": time_p}
+            products[str(prod_name)] = {"budget": p_b, "done": p_d,
+                                        "progress": p_p, "projects": projs}
+        boards[str(board_name)] = {"time_progress": time_p,
+            "budget": b_total, "done": d_total, "progress": p_total,
+            "products": products}
+    return _ensure_native({"boards": boards})
+
+# ==================== 三里屯医疗诊所 专项分析报告 ====================
+
+@app.post("/api/team/report/sanlitun")
+def api_team_report_sanlitun(
+    year: int = Body(2026),
+    months: List[int] = Body([1,2,3,4,5,6]),
+):
+    """三里屯医疗诊所透视表 → _gen_report_sanlitun.compute_pivot"""
+    _refresh_if_needed()
+    from _gen_report_sanlitun import compute_pivot
+    data = compute_pivot(year, months)
+    if data is None:
+        return {"success": False, "error": "无数据"}
+    return _ensure_native(data)
 
 # ==================== VIP疗程进度管理 API ====================
 
@@ -1762,6 +1997,7 @@ async def feishu_webhook(request: Request):
         ok, msg = feishu_sync()
         if ok:
             _load_time = 0
+            briefing_invalidate_cache()
         print(f"[webhook] {msg}")
 
     threading.Thread(target=_do_sync, daemon=True).start()
@@ -1775,6 +2011,7 @@ async def feishu_manual_sync():
     ok, msg = feishu_sync()
     if ok:
         _load_time = 0
+        briefing_invalidate_cache()
     return {"code": 0 if ok else 1, "msg": msg}
 
 

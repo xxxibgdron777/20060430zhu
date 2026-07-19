@@ -716,6 +716,11 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
     total_expense = float(sum(_get_subject_total(piv_e, s) for s in expense_subjects))
     total_balance = total_income - total_expense
 
+    # 3-12月合计（原始金额求和后一次四舍五入，口径与1-12月一致）
+    total_income_3_12 = float(sum(_get_subject_total(piv_i, s, m) for s in income_subjects for m in months_3_12))
+    total_expense_3_12 = float(sum(_get_subject_total(piv_e, s, m) for s in expense_subjects for m in months_3_12))
+    total_balance_3_12 = total_income_3_12 - total_expense_3_12
+
     # 上期全年
     prev_total_income = float(sum(_get_subject_total(prev_piv_i, s) for s in income_subjects))
     prev_total_expense = float(sum(_get_subject_total(prev_piv_e, s) for s in expense_subjects))
@@ -736,6 +741,8 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
 
         ratio = f"{(total / ratio_base * 100):.1f}%" if (ratio_base and ratio_base != 0) else None
         yoy = _get_yoy(total, prev_total)
+        # 3-12月合计：先对原始金额求和再四舍五入，与1-12月合计口径一致
+        total_3_12_raw = sum(vals[m] for m in months_3_12)
 
         return {
             "name": name,
@@ -743,6 +750,7 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
             "type": rtype,
             "values": {m: to_wan(vals[m]) for m in months},
             "total": to_wan(total),
+            "total_3_12": to_wan(total_3_12_raw),
             "yoy_pct": yoy,
             "yoy_prev": to_wan(prev_total),
             "ratio": ratio,
@@ -767,6 +775,7 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
                     vals[m] = float(dept_piv.loc[dept_name, m])
                 except (KeyError, ValueError):
                     vals[m] = 0.0
+            total_3_12_raw = sum(vals[m] for m in months_3_12)
             ratio = f"{(total_val / ratio_base * 100):.1f}%" if (ratio_base and ratio_base != 0) else None
             rows.append({
                 "name": dept_name_str,
@@ -774,6 +783,7 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
                 "type": rtype,
                 "values": {m: to_wan(vals[m]) for m in months},
                 "total": to_wan(total_val),
+                "total_3_12": to_wan(total_3_12_raw),
                 "yoy_pct": None,
                 "yoy_prev": 0,
                 "ratio": ratio,
@@ -792,15 +802,19 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
 
     # 结余行
     balance_yoy = _get_yoy(total_balance, prev_total_balance)
+    balance_by_month_raw = {
+        m: sum(_get_subject_total(piv_i, s, m) for s in income_subjects) -
+            sum(_get_subject_total(piv_e, s, m) for s in expense_subjects)
+        for m in months
+    }
+    balance_3_12_raw = sum(balance_by_month_raw[m] for m in months_3_12)
     rows.append({
         "name": "结余",
         "level": "balance",
         "type": "balance",
-        "values": {m: to_wan(
-            sum(_get_subject_total(piv_i, s, m) for s in income_subjects) -
-            sum(_get_subject_total(piv_e, s, m) for s in expense_subjects)
-        ) for m in months},
+        "values": {m: to_wan(balance_by_month_raw[m]) for m in months},
         "total": to_wan(total_balance),
+        "total_3_12": to_wan(balance_3_12_raw),
         "yoy_pct": balance_yoy,
         "yoy_prev": to_wan(prev_total_balance),
         "ratio": None,
@@ -857,6 +871,9 @@ def get_team_compressed_table(team_df: pd.DataFrame, parent_name: str, year: int
             "income_prev": to_wan(prev_total_income),
             "expense_prev": to_wan(prev_total_expense),
             "balance_prev": to_wan(prev_total_balance),
+            "income_3_12": to_wan(total_income_3_12),
+            "expense_3_12": to_wan(total_expense_3_12),
+            "balance_3_12": to_wan(total_balance_3_12),
         },
         "analysis": analysis,
     }
